@@ -148,7 +148,21 @@ class DataVisualization:
                 return ErrorCode.ERR_NO_ERROR, sig_list
             order = int(self.low_pass_filter["order"])
             freq1 = int(self.low_pass_filter["freq"])
-            return ErrorCode.ERR_NO_ERROR, sig_list
+            sig = np.asarray(sig_list, dtype=np.float32)
+            sig = sig - sig[0]
+            nyq = 0.5 * self.sample_rate  # Nyquist frequency
+            high = freq1 / nyq
+            b, a = butter(order, high, btype='low')
+            # apply filter
+            if self.low_pass_filter["type"] == 'lfilter':
+                sig_filt = lfilter(b, a, sig, axis=axis)
+            elif self.low_pass_filter["type"] == 'filtfilt':
+                sig_filt = filtfilt(b, a, sig, axis=axis)
+            else:
+                self.logger.error(f"filter type is invalid, do nothing")
+                return ErrorCode.ERR_BAD_ARGS, sig_list
+
+            return ErrorCode.ERR_NO_ERROR, sig_filt.tolist()
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN, sig_list
@@ -194,6 +208,8 @@ class DataVisualization:
                 continue
         return ErrorCode.ERR_NO_ERROR, _data
 
+    def draw_checkbutton(self):
+        pass
     def do_plot_list(self, data):
         _nrows = len(self.list) + 1
         fig = plt.figure(self.sensor, figsize=(20, 10))
@@ -430,7 +446,7 @@ class DataVisualization:
             ac_peak_freq = fft_freq[ac_peak_index]
             ac_peak_dbv = fft_dbv[ac_peak_index]
             ac_peak_coord = (ac_peak_freq, ac_peak_dbv)
-
+            self.logger.info(f"peak:{ac_peak_freq},{ac_peak_dbv}")
             # Find cycle time and max/min values in each cycle
             cycle_time = 1 / ac_peak_freq
             num_cycles = int(len(ac_signal) / (cycle_time * self.sample_rate))
@@ -539,9 +555,8 @@ class DataVisualization:
         # plt.ylabel('Amplitude (dBV)', fontsize=10)
         plt.text(-0.05, 1.05, f"Amplitude (dBV)",
                 fontsize=10, transform=plt.gca().transAxes)
-        plt.xlim(1, 1000)
-        plt.ylim(-50, 20)
-        # plt.legend()
+        plt.xlim(1, self.sample_rate/2)
+        # plt.ylim(-50, 20)
         plt.subplot(2, 2, 4)
         plt.rcParams.update({'font.size': 10})
         table_data = np.array([[""]+self.list,
@@ -676,8 +691,8 @@ class DataVisualization:
         table_data = np.array(
             [[""] + self.list,
              ["avg."] + ["{:.8f}".format(val) for val in list_avg],
-             ["ho noise"] + ["{:.8f}".format(val) for val in list_hp_noise],
-             ["hp snr"] + ["{:.8f}".format(val) for val in list_hp_snr]
+             ["noise"] + ["{:.8f}".format(val) for val in list_hp_noise],
+             ["snr"] + ["{:.8f}".format(val) for val in list_hp_snr]
              ]).T
         table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
         # table.auto_set_font_size(False)

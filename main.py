@@ -9,8 +9,8 @@ from tkinter import filedialog
 import pandas as pd
 from data_visualization_utility import DataVisualization, ErrorCode
 
-tver = "v0.1.002"
-tag = "2024/07/12 12:00 +0800"
+tver = "v0.1.003"
+tag = "2024/07/12 16:00 +0800"
 
 ErrorMsg = {
     f"{ErrorCode.ERR_BAD_FILE}": "ErrorCode.ERR_BAD_FILE",
@@ -46,7 +46,7 @@ class SensorDataVisualizationUI(MyTtkFrame):
             self.file_frm.pack(side=LEFT, fill=X, expand=True, padx=5, pady=5)
 
             frm = ttk.Frame(main_frm)
-            frm.pack(fill=X, padx=5, pady=5, anchor='w')
+            frm.pack(fill=X, expand=True, padx=5, pady=5, anchor='w')
 
             _values = ["EMG", "PPG", "IMU", "ALT", "Compass", "BTI"]
             self.parameter_frm = ParameterFrm(frm, logger=self.logger,
@@ -73,7 +73,7 @@ class SensorDataVisualizationUI(MyTtkFrame):
                                                         "valid value: scalar value"]
                                                 ],
                                                 "Low PASS Filter ": [
-                                                    ["combobox", "type", [5,6], "", ["", ""]],
+                                                    ["combobox", "type", [5,6], "", _filter_type],
                                                     ["entry", "order", [5,6], "", ""],
                                                     ["entry", "freq", [5,10], "", "valid value: scalar value"]
                                                 ],
@@ -229,13 +229,9 @@ class SensorDataVisualizationUI(MyTtkFrame):
             self.set_drop_samples("0;-1")
             self.set_filter("High PASS Filter", False)
             self.set_filter("Low PASS Filter ", False)
-            self.set_filter("Notch Filter 1", True)
-            self.set_filter("Notch Filter 1", True)
-            self.set_filter_parameters("Notch Filter 1", {"freq":2430, "q value":10})
-            self.set_filter("Notch Filter 2", True)
-            self.set_filter_parameters("Notch Filter 2", {"freq":3130, "q value":10})
-            self.set_filter("Notch Filter 3", True)
-            self.set_filter_parameters("Notch Filter 3", {"freq":2400, "q value":50})
+            self.set_filter("Notch Filter 1", False)
+            self.set_filter("Notch Filter 2", False)
+            self.set_filter("Notch Filter 3", False)
             pass
         elif sensor_type == "PPG":
             '''

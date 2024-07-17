@@ -173,7 +173,7 @@ class ComboboxWithLabel(MyTtkFrame):
         self._comb.bind("<<ComboboxSelected>>", _func)
         self._comb.pack(side=ttk.LEFT, padx=5)
 
-    def _on_selected(self):
+    def _on_selected(self, event):
         pass
 
     def get(self):

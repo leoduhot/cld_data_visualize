@@ -1,0 +1,6 @@
+PyQt5
+PySide2
+numpy
+pandas
+matplotlib
+ttkbootstrap

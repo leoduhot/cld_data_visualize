@@ -9,7 +9,7 @@ import os
 import numpy as np
 # from threading import Thread
 import ttkbootstrap as ttk
-import windnd
+# import windnd
 from ttkbootstrap.style import Bootstyle
 from ttkbootstrap.constants import *
 from ttkbootstrap.toast import ToastNotification
@@ -156,7 +156,8 @@ class FileFrm(MyTtkFrame):
         # self.text.pack(side=LEFT, expand=True, fill=X, padx=5)
         # dnd.bindtarget(self.text, 'text/uri-list', '<Drop>', self.drop)
         if self._drop_func is not None:
-            windnd.hook_dropfiles(_root, func=self.drop)
+            # windnd.hook_dropfiles(_root, func=self.drop)
+            _root.dnd_bind('<<Drop>>', self.drop)
         file_btn = ttk.Button(frm, text="Browser", command=self._on_button)
         file_btn.pack(side=LEFT, padx=5)
 
@@ -169,8 +170,9 @@ class FileFrm(MyTtkFrame):
             self._func()
         pass
 
-    def drop(self, files):
-        msg = '\n'.join((item.decode('gbk') for item in files))
+    def drop(self, event):
+        files = event.data.strip().split()
+        msg = '\n'.join((item for item in files))
         self.logger.debug(f"get data:[{msg}]")
         self.entry.insert(0, msg)
         self.filepath = msg

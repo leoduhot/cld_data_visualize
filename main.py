@@ -6,8 +6,10 @@ from my_logger import MyLogger
 from datetime import datetime
 from tkinter import filedialog
 import pandas as pd
+from tkinterdnd2 import DND_FILES, TkinterDnD
 from data_visualization_utility import DataVisualization, ErrorCode
 from data_parser import RawDataParser
+
 
 tver = "v0.2.000"
 tag = "2024/07/18 13:00 +0800"
@@ -346,6 +348,11 @@ class SensorDataVisualizationUI(MyTtkFrame):
         pass
 
 
+class MyDnDWindow(ttk.Window, TkinterDnD.Tk):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        TkinterDnD.__init__("DnD")
+
 if __name__ == '__main__':
     log_path = os.path.join(os.path.abspath("."), 'log')
     if not os.path.exists(log_path):
@@ -358,16 +365,19 @@ if __name__ == '__main__':
     try:
         dt = datetime.now()
         filename = dt.strftime("%Y%m%d_%H%M%S")
-
         _logger = MyLogger(True, os.path.join(log_path, f"log_{filename}.log"), "info")
 
-        wm = ttk.Window(
+        # wm = ttk.Window(
+        #     title=f'Sensor Data Visualization {tver} ({tag})',
+        #     themename="litera",
+        # )
+        wm = MyDnDWindow(
             title=f'Sensor Data Visualization {tver} ({tag})',
             themename="litera",
         )
         wm.geometry(f"{int(wm.winfo_screenwidth()*0.4)}x{int(wm.winfo_screenheight()*0.6)}"
                     f"+{int(wm.winfo_screenwidth()*0.3)}+{int(wm.winfo_screenheight()*0.2)}")
-
+        wm.drop_target_register(DND_FILES)
         t = SensorDataVisualizationUI(wm, logger=_logger)
         wm.mainloop()
     except Exception as ex:

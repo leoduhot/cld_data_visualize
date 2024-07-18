@@ -2,15 +2,15 @@
 from ttkbootstrap.scrolled import ScrolledFrame
 # from ttkbootstrap.toast import ToastNotification
 from ui_utility import *
-from threading import Thread
 from my_logger import MyLogger
 from datetime import datetime
 from tkinter import filedialog
 import pandas as pd
 from data_visualization_utility import DataVisualization, ErrorCode
+from data_parser import RawDataParser
 
-tver = "v0.1.003"
-tag = "2024/07/12 16:00 +0800"
+tver = "v0.2.000"
+tag = "2024/07/18 13:00 +0800"
 
 ErrorMsg = {
     f"{ErrorCode.ERR_BAD_FILE}": "ErrorCode.ERR_BAD_FILE",
@@ -20,6 +20,7 @@ ErrorMsg = {
     f"{ErrorCode.ERR_BAD_UNKNOWN}": "ErrorCode.ERR_BAD_UNKNOWN",
 }
 
+
 class SensorDataVisualizationUI(MyTtkFrame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
@@ -27,31 +28,32 @@ class SensorDataVisualizationUI(MyTtkFrame):
             self.logger = kwargs['logger']
             # self.pack(fill=ttk.BOTH, expand=True)
             self.logger.info(f"\n{tver}\n{tag}\nstart...")
-            # self.master.iconbitmap(os.path.join(self.resource_path("resource"), "icon.ico"))
+            self.master.iconbitmap(os.path.join(self.resource_path("resource"), "icon.ico"))
 
             self.data_file = None
+            self.df_data = None
+            self.rdp = RawDataParser(self.logger)
             self.dv = DataVisualization(self.logger)
             # main_frm = ttk.Frame(args[0])
             main_frm = ScrolledFrame(args[0], bootstyle='round')
             # main_frm.pack(fill=BOTH, padx=5, pady=5)
 
-            # frm = ttk.Frame(main_frm)
-            # frm.pack(fill=X, padx=5, pady=5)
-            # analysis_btn = ttk.Button(frm, bootstyle='primary-outline', text="Browser", command=self.on_button_browser)
-            # analysis_btn.pack(padx=5)
-
             frm = ttk.Frame(main_frm)
             frm.pack(expand=True, fill=X, padx=5, pady=5)
-            self.file_frm = FileFrm(frm, text="File Path", command=self.on_button_browser)
+            self.file_frm = FileFrm(frm, text="File Path", command=self.on_button_browser,
+                                      drop=self.on_drop, root=args[0])
             self.file_frm.pack(side=LEFT, fill=X, expand=True, padx=5, pady=5)
 
             frm = ttk.Frame(main_frm)
             frm.pack(fill=X, expand=True, padx=5, pady=5, anchor='w')
 
-            _values = ["EMG", "PPG", "IMU", "ALT", "Compass", "BTI"]
+            _values = ["EMG", "PPG", "IMU", "ALT", "MAG", "BTI"]
             self.parameter_frm = ParameterFrm(frm, logger=self.logger,
-                                              _combobox=[["Sensor Type", _values,
+                                              _combobox=[
+                                                        ["Sensor Type", _values,
                                                           self._on_sensor_type_change, [10, 10], ""],
+                                                        ["Data Type", ["Raw Data", "Tester Data"],
+                                                           self.on_data_type_change, [10, 10], ""],
                                                          ],
                                               _entry=[["Data Rate", [10, 12], 8192, ""],
                                                       ["Data Drop", [10, 12], "0;-1",
@@ -107,6 +109,8 @@ class SensorDataVisualizationUI(MyTtkFrame):
             main_frm.pack(fill=BOTH, expand=YES, padx=5, pady=5)
 
             self.channel_name = []
+            self.data_type = None
+            self.sensor_type = None
 
             # # logo
             # imgpath = os.path.join(self.resource_path("resource"), "logo.png")s
@@ -122,36 +126,56 @@ class SensorDataVisualizationUI(MyTtkFrame):
     def on_button_browser(self):
         self.data_file = filedialog.askopenfilename(title="Select a File",
                                                     filetypes=(("Text files", "*.txt"), ("CSV files", "*.csv")))
-        self.parameter_frm.state_config(0)
-        self.filter_frm.state_config(0)
-        self.file_frm.entry.delete(0, END)
-        self.file_frm.entry.insert(0, os.path.basename(self.data_file))
-        self.parameter_frm.set("Sensor Type", "")
-        self.channel_frm.show_channels([], 0)
+        self.logger.info(f"{__name__}, file path: {self.data_file}")
+        self.parameter_state_config(0)
+        self.filter_state_config(0)
+        self.sensor_type = None
+        self.file_frm.set(os.path.basename(self.data_file))
+        self.set_parameter("Sensor Type", "")
+        self.set_parameter("Data Type", "")
+        self.show_data_columns("")
 
-        try:
-            data = pd.read_csv(self.data_file)
-        except Exception as ex:
-            self.logger.error(f"Exception: {ex}")
-            self.message_box("Error", "File is not correct!!")
-            return
-        self.parameter_frm.state_config(1)
-        self.filter_frm.state_config(1)
-        self.channel_name = data.columns.tolist()  # [val for val in data]
-        self.logger.info(f"available columns: {self.channel_name}")
+        self.parameter_state_config(1)
+        self.filter_state_config(1)
         pass
 
-    def _get_sensor_type(self):
-        return self.parameter_frm.get("Sensor Type")
+    def on_drop(self):
+        self.data_file = self.file_frm.get_filepath()
+        self.logger.info(f"{__name__}, file path:{self.data_file}")
+        self.parameter_state_config(0)
+        self.filter_state_config(0)
+        self.sensor_type = None
+        # self.file_frm.entry.delete(0, END)
+        # self.file_frm.entry.insert(0, os.path.basename(self.data_file))
+        self.file_frm.set(os.path.basename(self.data_file))
+        self.set_parameter("Sensor Type", "")
+        self.set_parameter("Data Type", "")
+        self.show_data_columns("")
+
+        self.parameter_state_config(1)
+        self.filter_state_config(1)
+        pass
+
+    def get_parameter(self, name):
+        return self.parameter_frm.get(name)
+
+    def set_parameter(self, name, val):
+        self.parameter_frm.set(name, val)
+
+    def parameter_state_config(self, s):
+        self.parameter_frm.state_config(s)
+
+    def get_data_type(self):
+        return self.get_parameter("Data Type")
 
     def _get_rate(self):
-        return self.parameter_frm.get("Data Rate")
+        return self.get_parameter("Data Rate")
 
     def _set_rate(self, val):
         return self.parameter_frm.set("Data Rate", val)
 
     def get_drop_samples(self):
-        return self.parameter_frm.get("Data Drop")
+        return self.get_parameter("Data Drop")
 
     def set_drop_samples(self, val):
         return self.parameter_frm.set("Data Drop", val)
@@ -159,6 +183,7 @@ class SensorDataVisualizationUI(MyTtkFrame):
     def get_filter(self, name):
         return self.filter_frm.get(name)
 
+    # check or uncheck filter
     def set_filter(self, name, val):
         self.filter_frm.set(name, val)
 
@@ -168,177 +193,110 @@ class SensorDataVisualizationUI(MyTtkFrame):
     def set_filter_parameters(self, name, params):
         self.filter_frm.set_parameters(name, params)
 
-    def _get_channels(self):
-        return self.channel_frm.get_channels()
-
-    def _on_filter_type_change(self, event):
-        pass
-
-    def _get_filter_type(self):
-        return self.parameter_frm.get("Filter Type")
+    def filter_state_config(self, s):
+        self.filter_frm.state_config(s)
 
     def show_data_columns(self, sensor_type):
-
-        self.logger.debug(f"sensor type:{sensor_type}")
+        self.logger.debug(f"{__name__}: sensor type:{sensor_type}")
+        _list_filter = self.channel_name
         if sensor_type == "EMG":
-            _list_filter = ['CH1', 'CH2', 'CH3', 'CH5', 'CH6', 'CH7', 'CH11', 'CH13']
             _columns = 3
         elif sensor_type == "PPG":
-            _list_filter = ["MES0_pd1", "MES0_pd2", "MES0_pd3", "MES0_pd4", "MES1_pd1", "MES1_pd2", "MES1_pd3",
-                            "MES1_pd4",
-                            "MES2_pd1", "MES2_pd2", "MES2_pd3", "MES2_pd4", "MES3_pd1", "MES3_pd2", "MES3_pd3",
-                            "MES3_pd4",
-                            "MES4_pd1", "MES4_pd2", "MES4_pd3", "MES4_pd4", "MES5_pd1", "MES5_pd2", "MES5_pd3",
-                            "MES5_pd4",
-                            "MES6_pd1", "MES6_pd2", "MES6_pd3", "MES6_pd4", "MES7_pd1", "MES7_pd2", "MES7_pd3",
-                            "MES7_pd4"]
             _columns = 4
         elif sensor_type == "IMU":
-            _list_filter = ['ACC_X-Axis', 'ACC_Y-Axis', 'ACC_Z-Axis', 'GYRO_X-Axis', 'GYRO_Y-Axis', 'GYRO_Z-Axis']
             _columns = 3
         elif sensor_type == "ALT":
-            _list_filter = ['Pressure', 'Temperature']
             _columns = 2
-
-        elif sensor_type == "Compass":
-            _list_filter = ['Compass X', 'Compass Y', 'Compass Z', 'Temperature']
+        elif sensor_type == "MAG":
             _columns = 2
         elif sensor_type == "BTI":
-            _list_filter = ['Force_sensor0', 'Temperature_sensor0', 'Force_sensor1', 'Temperature_sensor1']
             _columns = 2
         else:
             _list_filter = []
             _columns = 0
 
-        _list = [val for val in _list_filter if val in self.channel_name]
-        self.logger.info(f"{_list}")
-        self.channel_frm.show_channels(_list, _columns)
+        # _list = [val for val in _list_filter if val in self.channel_name]
+        # self.logger.info(f"{_list}")
+        self.channel_frm.show_channels(_list_filter, _columns)
 
     def refresh_parameter_default(self, sensor_type):
+        self.set_filter("High PASS Filter", False)
+        self.set_filter("Low PASS Filter ", False)
+        self.set_filter("Notch Filter 1", False)
+        self.set_filter("Notch Filter 2", False)
+        self.set_filter("Notch Filter 3", False)
         if sensor_type == "EMG":
-            '''
-                rate: 8192
-                drop: 0;-1
-                hpf: uncheck,
-                lpf: uncheck
-                notch filter1: 2430;10
-                notch filter2: 3130;10
-                notch filter3: 2400;50  
-            '''
             self._set_rate(8192)
             self.set_drop_samples("0;-1")
-            self.set_filter("High PASS Filter", False)
-            self.set_filter("Low PASS Filter ", False)
-            self.set_filter("Notch Filter 1", False)
-            self.set_filter("Notch Filter 2", False)
-            self.set_filter("Notch Filter 3", False)
             pass
         elif sensor_type == "PPG":
-            '''
-                rate: 25
-                drop: 5;20
-                hpf: check, "lfilter", 3, 0.5,
-                lpf: uncheck
-                notch filter1: uncheck
-                notch filter2: uncheck
-                notch filter3: uncheck 
-            '''
             self._set_rate(25)
             self.set_drop_samples("125;500")
             self.set_filter("High PASS Filter", True)
             self.set_filter_parameters("High PASS Filter", {"type":"lfilter", "order":3, "freq":0.5})
-            self.set_filter("Low PASS Filter ", False)
-            self.set_filter("Notch Filter 1", False)
-            self.set_filter("Notch Filter 2", False)
-            self.set_filter("Notch Filter 3", False)
             pass
         elif sensor_type == "IMU":
-            '''
-                rate: 120
-                drop: 10;490
-                hpf: uncheck
-                lpf: uncheck
-                notch filter1: uncheck
-                notch filter2: uncheck
-                notch filter3: uncheck 
-            '''
             self._set_rate(120)
             self.set_drop_samples("10;490")
-            self.set_filter("High PASS Filter", False)
-            self.set_filter("Low PASS Filter ", False)
-            self.set_filter("Notch Filter 1", False)
-            self.set_filter("Notch Filter 2", False)
-            self.set_filter("Notch Filter 3", False)
             pass
         elif sensor_type == "ALT":
-            '''
-               rate: 10
-               drop: 0;-1
-               hpf: uncheck
-               lpf: uncheck
-               notch filter1: uncheck
-               notch filter2: uncheck
-               notch filter3: uncheck 
-           '''
             self._set_rate(10)
             self.set_drop_samples("0;-1")
-            self.set_filter("High PASS Filter", False)
-            self.set_filter("Low PASS Filter ", False)
-            self.set_filter("Notch Filter 1", False)
-            self.set_filter("Notch Filter 2", False)
-            self.set_filter("Notch Filter 3", False)
             pass
         elif sensor_type == "Compass":
-            '''
-               rate: 50
-               drop: 0;-1
-               hpf: uncheck
-               lpf: uncheck
-               notch filter1: uncheck
-               notch filter2: uncheck
-               notch filter3: uncheck 
-           '''
             self._set_rate(50)
             self.set_drop_samples("0;-1")
-            self.set_filter("High PASS Filter", False)
-            self.set_filter("Low PASS Filter ", False)
-            self.set_filter("Notch Filter 1", False)
-            self.set_filter("Notch Filter 2", False)
-            self.set_filter("Notch Filter 3", False)
             pass
         elif sensor_type == "BTI":
-            '''
-               rate: 31.25
-               drop: 10;-1
-               hpf: uncheck
-               lpf: uncheck
-               notch filter1: uncheck
-               notch filter2: uncheck
-               notch filter3: uncheck 
-           '''
             self._set_rate(31.25)
             self.set_drop_samples("10;72")
-            self.set_filter("High PASS Filter", False)
-            self.set_filter("Low PASS Filter ", False)
-            self.set_filter("Notch Filter 1", False)
-            self.set_filter("Notch Filter 2", False)
-            self.set_filter("Notch Filter 3", False)
             pass
         else:
 
             pass
 
+    def on_data_type_change(self, event):
+        self.logger.info(f"on_data_type_change, {event}")
+        if self.sensor_type is None:
+            self.message_box("Error", f"Select sensor type first!!")
+            return
+
+        self.data_type = self.get_data_type()
+        try:
+            if self.data_type == "Tester Data":
+                self.df_data = pd.read_csv(self.data_file, index_col=False)
+            elif self.data_type == "Raw Data":
+                err, self.df_data = self.rdp.extract_sensor_data(self.data_file, self.sensor_type.lower())
+                if err != ErrorCode.ERR_NO_ERROR:
+                    self.message_box("Error", f"Bad raw data!! {err}")
+                    return
+            else:
+                self.message_box("Error", "Not supported data type!!")
+                return
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            self.message_box("Error", "File is not correct!!")
+            return
+
+        self.channel_name = [val for val in self.df_data.columns.tolist() if 'Unnamed: ' not in val]
+        self.logger.info(f"available columns: {self.channel_name}")
+        # self.logger.info(f"{self.df_data[self.channel_name[0]]}")
+        self.show_data_columns(self.sensor_type)
+        self.refresh_parameter_default(self.sensor_type)
+
     def _on_sensor_type_change(self, event):
         self.logger.info(f"{event}")
-        sensor_type = self._get_sensor_type()
-        self.show_data_columns(sensor_type)
-        self.refresh_parameter_default(sensor_type)
+        self.sensor_type = self.get_parameter("Sensor Type")
+        self.set_parameter("Data Type", "")
+        self.show_data_columns("others")
+        # self.show_data_columns(sensor_type)
+        self.refresh_parameter_default(self.sensor_type)
         pass
 
     def on_button_go(self):
-        _sensor = self._get_sensor_type()
+        _sensor = self.get_parameter("Sensor Type")
         self.logger.info(f"Sensor: {_sensor}")
-        _rate = float(self._get_rate())
+        _rate = float(self.get_parameter("Data Rate"))
         self.logger.info(f"Data rate: {_rate}")
         _drop = [int(val) for val in self.get_drop_samples().split(";")]
         self.logger.info(f"Drop samples: {_drop}")
@@ -374,7 +332,7 @@ class SensorDataVisualizationUI(MyTtkFrame):
         self.logger.info(f"Notch Filter 3: {_notchfilter3}")
 
         if len(_channels):
-            _err_code = self.dv.visualize(file=self.data_file, logger=self.logger,
+            _err_code = self.dv.visualize(data=self.df_data, logger=self.logger,
                                           sensor=_sensor, channels=_channels, rate=_rate,
                                           drop=_drop, highpassfilter=_highpassfilter, lowpassfilter=_lowpassfilter,
                                           notchfilter=[_notchfilter1, _notchfilter2, _notchfilter3])
@@ -394,8 +352,8 @@ if __name__ == '__main__':
         try:
             os.makedirs(log_path, True)
             os.chmod(log_path, 0o755)
-        except Exception as ret:
-            print(str(ret))
+        except Exception as ex:
+            print(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             sys.exit(-1)
     try:
         dt = datetime.now()
@@ -412,6 +370,6 @@ if __name__ == '__main__':
 
         t = SensorDataVisualizationUI(wm, logger=_logger)
         wm.mainloop()
-    except Exception as e:
-        print(f"Excetpion: {str(e)}:{str(e.__traceback__.tb_lineno)}")
+    except Exception as ex:
+        print(f"Excetpion: {str(ex)}:{str(ex.__traceback__.tb_lineno)}")
         sys.exit(-1)

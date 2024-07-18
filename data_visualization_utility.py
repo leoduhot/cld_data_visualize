@@ -1,5 +1,4 @@
 # -*- coding: UTF-8 -*-
-import sys
 import numpy as np
 import pandas as pd
 import scipy.fftpack
@@ -10,9 +9,8 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
 matplotlib.use('TkAgg')
 import math
-import os
 import logging
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 
 class ErrorCode(IntEnum):
@@ -37,13 +35,14 @@ class DataVisualization:
         self.low_pass_filter = {"type": '', "order": 0, "freq": 0}
         self.notch_filter = [[0, 0], [0, 0], [0, 0]]
         self.df_data = None
+        self.check_btn = None
 
         self.process_func = {
             "emg": self.emg_data,
             "ppg": self.ppg_data,
             "imu": self.imu_data,
             "alt": self.alt_data,
-            "compass": self.compass_data,
+            "mag": self.compass_data,
             "bti": self.bti_data,
             "others": self.others_data,
         }
@@ -54,15 +53,22 @@ class DataVisualization:
         self.sample_rate = float(kwargs["rate"]) if "rate" in kwargs else 1
         self.data_drop = kwargs["drop"] if "drop" in kwargs else [0, -1]
         self.data_file = kwargs["file"] if "file" in kwargs else None
+
         self.high_pass_filter = kwargs["highpassfilter"] if "highpassfilter" in kwargs else {"type": '', "order": 0, "freq": 0}
         self.low_pass_filter = kwargs["lowpassfilter"] if "lowpassfilter" in kwargs else {"type": '', "order": 0, "freq": 0}
         self.notch_filter = kwargs["notchfilter"] if "notchfilter" in kwargs else [[0,0], [0,0], [0,0]]
 
-        try:
-            self.df_data = pd.read_csv(self.data_file)
-        except Exception as ex:
-            self.logger.error(f"Exception: {str(ex)}")
-            return ErrorCode.ERR_BAD_FILE
+        if self.data_file is not None:
+            try:
+                self.df_data = pd.read_csv(self.data_file)
+            except Exception as ex:
+                self.logger.error(f"Exception: {str(ex)}")
+                return ErrorCode.ERR_BAD_FILE
+        else:
+            self.df_data = kwargs["data"] if "data" in kwargs else None
+
+        if self.df_data is None:
+            return ErrorCode.ERR_BAD_DATA
 
         return self.process_func[self.sensor.lower()]()
 
@@ -173,7 +179,10 @@ class DataVisualization:
         self.bad_channel = []
         for channel in self.list:
             try:
-                _sig = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
+                if int(self.data_drop[1]) > 0:
+                    _sig = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
+                else:
+                    _sig = self.df_data[channel].iloc[int(self.data_drop[0]):]
                 avg = np.mean(_sig)
                 _sig_ac = _sig - avg
 
@@ -208,8 +217,24 @@ class DataVisualization:
                 continue
         return ErrorCode.ERR_NO_ERROR, _data
 
-    def draw_checkbutton(self):
-        pass
+    def draw_checkbutton(self, _plt, _lines, _colors):
+        _h = 0.03*len(self.list)
+        rax = _plt.axes((0.91, 0.88-_h, 0.07, _h))
+        self.check_btn = CheckButtons(
+            ax=rax,
+            labels=self.list,
+            actives=[True for _ in range(len(self.list))],
+            label_props={'color': _colors},
+            frame_props={'edgecolor': _colors},
+            check_props={'facecolor': _colors},
+        )
+
+        def callback(label):
+            for line in _lines[label]:
+                line.set_visible(not line.get_visible())
+                line.figure.canvas.draw_idle()
+        self.check_btn.on_clicked(callback)
+
     def do_plot_list(self, data):
         _nrows = len(self.list) + 1
         fig = plt.figure(self.sensor, figsize=(20, 10))
@@ -282,119 +307,8 @@ class DataVisualization:
     def do_plot_together(self, time_data, freq_data, statistics_data):
         pass
 
-    def emg_data_with_notch(self, *args, **kwargs):
-
-        # Get file path and sample rate from command line arguments
-        file_path = self.data_file
-        sample_rate = self.sample_rate
-
-        # Read data from file and convert to voltage
-        data = pd.read_csv(file_path)
-        for channel in self.list:
-            voltage = data[channel]
-
-            # Calculate DC bias
-            dc_bias = np.mean(voltage)
-
-            # Remove DC bias from waveform
-            ac_signal = voltage - dc_bias
-
-            # Create time axis
-            time = np.arange(len(data)) / sample_rate
-
-            # Calculate RMS level value
-            rms_val = np.sqrt(np.mean(ac_signal ** 2))
-
-            # Calculate FFT of AC signal before notch filter
-            fft_size = 2 ** int(np.ceil(np.log2(len(ac_signal))))
-            fft_freq = np.fft.rfftfreq(fft_size, d=1 / sample_rate)
-            fft_amplitude = np.abs(np.fft.rfft(ac_signal, fft_size))
-            fft_dbv = 20 * np.log10(fft_amplitude / 1)  # Convert to dBV
-
-            # Find peak value of AC signal in FFT plot before notch filter
-            ac_peak_index = np.argmax(fft_amplitude)
-            ac_peak_freq = fft_freq[ac_peak_index]
-            ac_peak_dbv = fft_dbv[ac_peak_index]
-            ac_peak_coord = (ac_peak_freq, ac_peak_dbv)
-
-            # Apply notch filters to remove dedicated frequency spurs
-            notch_freq_1 = self.notch_filter[0][0] # 2430  # Specify the frequency of the first spur to be removed
-            Q_1 = self.notch_filter[0][1] # 10  # Specify the quality factor of the first notch filter
-            b1, a1 = signal.iirnotch(notch_freq_1, Q_1, fs=sample_rate)
-            ac_signal_filtered_1 = signal.lfilter(b1, a1, ac_signal)
-
-            notch_freq_2 = self.notch_filter[1][0] # 3130  # Specify the frequency of the second spur to be removed
-            Q_2 = self.notch_filter[1][1] # 10  # Specify the quality factor of the second notch filter
-            b2, a2 = signal.iirnotch(notch_freq_2, Q_2, fs=sample_rate)
-            ac_signal_filtered_2 = signal.lfilter(b2, a2, ac_signal_filtered_1)
-
-            notch_freq_3 = self.notch_filter[2][0] # 2400  # Specify the frequency of the second spur to be removed
-            Q_3 = self.notch_filter[2][1] # 50  # Specify the quality factor of the second notch filter
-            b3, a3 = signal.iirnotch(notch_freq_3, Q_3, fs=sample_rate)
-            ac_signal_filtered_3 = signal.lfilter(b3, a3, ac_signal_filtered_2)
-
-            # Calculate RMS level value after notch filters
-            rms_val_filtered = np.sqrt(np.mean(ac_signal_filtered_3 ** 2))
-
-            # Calculate FFT of AC signal after notch filters
-            fft_amplitude_filtered = np.abs(np.fft.rfft(ac_signal_filtered_3, fft_size))
-            fft_dbv_filtered = 20 * np.log10(fft_amplitude_filtered / 1)  # Convert to dBV
-
-            # Specify the frequency range to plot
-            start_freq = 50  # Starting frequency for the plot
-
-            # Find the indices corresponding to the desired frequency range
-            start_index = np.argmax(fft_freq >= start_freq)
-            end_index = len(fft_freq)
-
-            plt.figure(f"{channel}", figsize=(20, 10))
-            # Plot AC signal and DC bias
-            plt.subplot(4, 1, 1)
-            plt.plot(time, ac_signal, label='AC Signal')
-            plt.text(0.1, 1.2, 'RMS Level Value: {:.8f} V'.format(rms_val), transform=plt.gca().transAxes, fontsize=10)
-            plt.text(0.1, 1, 'RMS Level Value after filter: {:.8f} V'.format(rms_val_filtered),
-                     transform=plt.gca().transAxes, fontsize=10)
-            plt.ylabel('Signal (V)')
-            plt.xlabel('Time (S)')
-            plt.legend()
-
-            # Plot AC signal after filter
-            plt.subplot(4, 1, 2)
-            plt.plot(time, ac_signal_filtered_2, label='AC Signal after filter')
-            # plt.text(0.1, 1.2, 'RMS Level Value: {:.8f} V'.format(rms_val), transform=plt.gca().transAxes, fontsize=10)
-            # plt.text(0.1, 1, 'RMS Level Value after filter: {:.8f} V'.format(rms_val_filtered), transform=plt.gca().transAxes, fontsize=10)
-            plt.ylabel('Signal (V)')
-            plt.xlabel('Time (S)')
-            plt.legend()
-
-            # Plot FFT before notch filters
-            plt.subplot(4, 1, 3)
-            plt.plot(fft_freq[start_index:end_index], fft_dbv[start_index:end_index], label='FFT Before Notch Filter')
-            plt.axvline(ac_peak_freq, color='r', linestyle='--', label='Peak Frequency: {:.2f} Hz'.format(ac_peak_freq))
-            plt.xlim(start_freq, fft_freq[end_index - 1])
-            plt.ylabel('Magnitude (dBV)')
-            plt.xlabel('Frequency (Hz)')
-            plt.legend()
-
-            # Plot FFT after notch filters
-            plt.subplot(4, 1, 4)
-            plt.plot(fft_freq[start_index:end_index], fft_dbv_filtered[start_index:end_index],
-                     label='FFT After Notch Filters')
-            plt.xlim(start_freq, fft_freq[end_index - 1])
-            plt.ylabel('Magnitude (dBV)')
-            plt.xlabel('Frequency (Hz)')
-            plt.legend()
-
-            plt.tight_layout()
-            plt.show()
-
-            self.logger.info("AC RMS Level (Filtered): {:.8f} V".format(rms_val_filtered))
-
     def emg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
-        title = os.path.basename(self.data_file)
-        aggressor_name = title.replace(".csv", "")
-        aggressor_name = aggressor_name.replace("EMG_Data_", "")
 
         list_time = []
         list_ac_signal = []
@@ -412,8 +326,15 @@ class DataVisualization:
         self.bad_channel = []
         # time,ac_signal,rms_val,avg_peak_to_peak_val,num_cycles,cycle_time,max_vals,min_vals,fft_freq,ac_peak_freq,fft_dbv,ac_peak_dbv
         for channel in self.list:
-            voltage = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
+            if int(self.data_drop[1]) > 0:
+                voltage = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
+            else:
+                voltage = self.df_data[channel].iloc[int(self.data_drop[0]):]
+            # voltage = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
             # Calculate DC bias
+            # self.logger.debug(f"voltage[0]: {voltage[0]} {+len(voltage)}")
+            # self.logger.debug(f"voltage:\n{voltage}")
+            # return
             dc_bias = np.mean(voltage)
             # Remove DC bias from waveform
             ac_signal = voltage - dc_bias
@@ -483,7 +404,7 @@ class DataVisualization:
             list_ac_peak_dbv.append(ac_peak_dbv)
             list_dc_bias.append(dc_bias)
 
-        fig = plt.figure(f"EMG v.s. {aggressor_name}", figsize=(20, 10))
+        fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
         axes = fig.subplots(2, 2)
         plt.subplot(2, 2, 1)
         plt.rcParams.update({'font.size': 10})
@@ -576,24 +497,7 @@ class DataVisualization:
             cell.set_linewidth(0.3)
         plt.axis('off')
 
-        colors = list(channel_colors.values())
-        # rax = plt.axes((0.025, 0.68, 0.05, 0.2))
-        rax = plt.axes((0.925, 0.68, 0.05, 0.2))
-        check = CheckButtons(
-            ax=rax,
-            labels=self.list,
-            actives=[True for _ in range(len(self.list))],
-            label_props={'color': colors},
-            frame_props={'edgecolor': colors},
-            check_props={'facecolor': colors},
-        )
-
-        def callback(label):
-            for line in channel_lines[label]:
-                line.set_visible(not line.get_visible())
-                line.figure.canvas.draw_idle()
-
-        check.on_clicked(callback)
+        self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
         if len(self.list):
@@ -605,10 +509,7 @@ class DataVisualization:
 
     def ppg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
-        title = os.path.basename(self.data_file)
-        # path = os.path.join(file_path, title)
-        aggressor_name = title.replace(".csv", "")
-        aggressor_name = aggressor_name.replace("PPG_Data_", "")
+
         list_avg = []
         list_timex = []
         list_hp_data = []
@@ -616,19 +517,18 @@ class DataVisualization:
         list_hp_noise = []
         list_hp_snr = []
         list_sum_vector = []
-        # writelog(aggressor_name + ":\n", logpath)
-        try:
-            data = pd.read_csv(self.data_file, index_col=False)
-        except Exception as ex:
-            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
-            return ErrorCode.ERR_BAD_FILE
+
+        data = self.df_data
         self.bad_channel = []
         fs = self.sample_rate
         start = int(self.data_drop[0])
         end = int(self.data_drop[1])
         for channel in self.list:
             try:
-                _sig = data[channel].iloc[start:end]
+                if end > 0:
+                    _sig = data[channel].iloc[start:end]
+                else:
+                    _sig = data[channel].iloc[start:]
                 _avg = abs(np.mean(_sig))
                 _sig_ac = _sig - _avg
                 _err_code, _sig_ac = self.do_high_pass_filter(_sig_ac)
@@ -655,11 +555,11 @@ class DataVisualization:
                 list_hp_snr.append(_snr)
             except Exception as ex:
                 self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
-                self.logger.error("this channel have problem:" + title + channel)
+                self.logger.error("this channel have problem:" + channel)
                 self.bad_channel.append(channel)
                 continue
 
-        fig = plt.figure(f"{self.sensor} v.s. {aggressor_name}", figsize=(20, 20))
+        fig = plt.figure(f"{self.sensor}", figsize=(20, 20))
         axes = fig.subplots(2, 2)
         channel_lines = {key: [] for key in self.list}
         channel_colors = {}
@@ -732,24 +632,7 @@ class DataVisualization:
 
         plt.subplot(2, 2, 4)
         plt.axis('off')
-
-        colors = list(channel_colors.values())
-        # rax = plt.axes((0.025, 0.68, 0.05, 0.2))
-        rax = plt.axes((0.91, 0.68, 0.06, 0.2))
-        check = CheckButtons(
-            ax=rax,
-            labels=self.list,
-            actives=[True for _ in range(len(self.list))],
-            label_props={'color': colors},
-            frame_props={'edgecolor': colors},
-            check_props={'facecolor': colors},
-        )
-
-        def callback(label):
-            for line in channel_lines[label]:
-                line.set_visible(not line.get_visible())
-                line.figure.canvas.draw_idle()
-        check.on_clicked(callback)
+        self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
 
         plt.show()
         plt.cla()
@@ -760,16 +643,12 @@ class DataVisualization:
     def imu_data(self):
         try:
             self.logger.info(f"process {self.sensor} data")
-            try:
-                self.df_data = pd.read_csv(self.data_file, index_col=False)
-            except Exception as ex:
-                self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
-                return ErrorCode.ERR_BAD_FILE
             _err_code, _data = self.do_data_conversion()
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 return _err_code
-            self.do_plot_list(_data)
-            return self.do_plot_list(_data)
+            _err_code = self.do_plot_list(_data)
+            self.logger.info(f"finish: {self.sensor}, {_err_code}")
+            return _err_code
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN
@@ -816,6 +695,7 @@ class DataVisualization:
 
 # example
 if __name__ == '__main__':
-    dv = DataVisualization()
-    dv.visualize(file=sys.argv[1], sensor="EMG",
-                  channels=["CH1","CH2","CH3","CH5","CH6","CH7","CH11","CH13"], rate=float(sys.argv[2]), drop=0)
+    # dv = DataVisualization()
+    # dv.visualize(file=sys.argv[1], sensor="EMG",
+    #               channels=["CH1","CH2","CH3","CH5","CH6","CH7","CH11","CH13"], rate=float(sys.argv[2]), drop=0)
+    pass

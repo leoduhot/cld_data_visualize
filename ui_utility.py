@@ -4,11 +4,12 @@ import unicodedata
 import time
 import sys
 import os
-import platform
-import subprocess
+# import platform
+# import subprocess
 import numpy as np
 # from threading import Thread
 import ttkbootstrap as ttk
+import windnd
 from ttkbootstrap.style import Bootstyle
 from ttkbootstrap.constants import *
 from ttkbootstrap.toast import ToastNotification
@@ -141,16 +142,52 @@ class FileFrm(MyTtkFrame):
         frm = ttk.Frame(self)
         frm.pack(fill=X, expand=True, pady=5)
         _txt = kwargs["text"] if "text" in kwargs else "Undefined"
-        _func = kwargs["command"] if "command" in kwargs else self._on_button()
+        self._func = kwargs["command"] if "command" in kwargs else None
+        self._drop_func = kwargs["drop"] if "drop" in kwargs else None
+        _root = kwargs["root"] if "root" in kwargs else self
         _lb = ttk.Label(frm, text=_txt)
         _lb.pack(side=LEFT, padx=5)
         self.entry = ttk.Entry(frm, bootstyle='primary')
         self.entry.pack(side=LEFT, expand=True, fill=X, padx=5)
-        file_btn = ttk.Button(frm, text="Browser", command=_func)
+        self.entry.insert(0, "drap file to the window or click browser button")
+        self.entry.config(foreground='gray')
+
+        # self.text = ttk.Text(frm, width=40, height=10)
+        # self.text.pack(side=LEFT, expand=True, fill=X, padx=5)
+        # dnd.bindtarget(self.text, 'text/uri-list', '<Drop>', self.drop)
+        if self._drop_func is not None:
+            windnd.hook_dropfiles(_root, func=self.drop)
+        file_btn = ttk.Button(frm, text="Browser", command=self._on_button)
         file_btn.pack(side=LEFT, padx=5)
 
+        self.filepath = None
+
     def _on_button(self):
+        self.entry.delete(0, END)
+        self.entry.config(foreground='')
+        if self._func() is not None:
+            self._func()
         pass
+
+    def drop(self, files):
+        msg = '\n'.join((item.decode('gbk') for item in files))
+        self.logger.debug(f"get data:[{msg}]")
+        self.entry.insert(0, msg)
+        self.filepath = msg
+        self.entry.config(foreground='')
+        self._drop_func()
+
+    def set(self, value):
+        self.entry.delete(0, END)
+        self.entry.insert(0, value)
+        pass
+
+    def get(self):
+        return self.entry.get()
+
+    def get_filepath(self):
+        return self.filepath
+
 
 
 class ComboboxWithLabel(MyTtkFrame):
@@ -230,7 +267,6 @@ class EntryWithLabel(MyTtkFrame):
         if "bootstyle" in kwargs:
             self._entry.configure(bootstyle=kwargs["bootstyle"])
             self._lb.configure(bootstyle=kwargs["bootstyle"])
-
 
 
 class ParameterFrm(MyTtkFrame):

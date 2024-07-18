@@ -11,8 +11,8 @@ from data_visualization_utility import DataVisualization, ErrorCode
 from data_parser import RawDataParser
 
 
-tver = "v0.2.000"
-tag = "2024/07/18 13:00 +0800"
+tver = "v0.2.001"
+tag = "2024/07/18 17:30 +0800"
 
 ErrorMsg = {
     f"{ErrorCode.ERR_BAD_FILE}": "ErrorCode.ERR_BAD_FILE",
@@ -352,6 +352,7 @@ class MyDnDWindow(ttk.Window, TkinterDnD.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         TkinterDnD.__init__("DnD")
+
 
 if __name__ == '__main__':
     log_path = os.path.join(os.path.abspath("."), 'log')

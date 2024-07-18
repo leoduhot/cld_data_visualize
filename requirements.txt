@@ -5,3 +5,4 @@ pandas
 matplotlib
 ttkbootstrap
 scipy
+tkinterdnd2

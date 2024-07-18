@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-import sys
+# import sys
 import numpy as np
 import pandas as pd
 import logging
@@ -253,12 +253,12 @@ class RawDataParser:
 
 
 # example
-if __name__ == '__main__':
-    rdp = RawDataParser()
-    s = sys.argv[2].strip()
-
-    err, df_data = rdp.extract_sensor_data(sys.argv[1], s)
-    if err == ErrorCode.ERR_NO_ERROR:
-        print(df_data.to_string())
-    else:
-        print("convert json data failed!")
+# if __name__ == '__main__':
+#     rdp = RawDataParser()
+#     s = sys.argv[2].strip()
+#
+#     err, df_data = rdp.extract_sensor_data(sys.argv[1], s)
+#     if err == ErrorCode.ERR_NO_ERROR:
+#         print(df_data.to_string())
+#     else:
+#         print("convert json data failed!")

@@ -36,6 +36,10 @@ class DataVisualization:
         self.notch_filter = [[0, 0], [0, 0], [0, 0]]
         self.df_data = None
         self.check_btn = None
+        self.fft_scale = [[], []]
+        self.markers = list()
+        self.fig = None
+        self.channel_lines = dict()  #save {ax:[lines]) for click event
 
         self.process_func = {
             "emg": self.emg_data,
@@ -48,15 +52,19 @@ class DataVisualization:
         }
 
     def visualize(self, *args, **kwargs):
+        self.logger.info(f"start visualize ...")
         self.list = kwargs["channels"] if "channels" in kwargs else []
         self.sensor = kwargs["sensor"] if "sensor" in kwargs else "others"
         self.sample_rate = float(kwargs["rate"]) if "rate" in kwargs else 1
         self.data_drop = kwargs["drop"] if "drop" in kwargs else [0, -1]
         self.data_file = kwargs["file"] if "file" in kwargs else None
-
         self.high_pass_filter = kwargs["highpassfilter"] if "highpassfilter" in kwargs else {"type": '', "order": 0, "freq": 0}
         self.low_pass_filter = kwargs["lowpassfilter"] if "lowpassfilter" in kwargs else {"type": '', "order": 0, "freq": 0}
         self.notch_filter = kwargs["notchfilter"] if "notchfilter" in kwargs else [[0,0], [0,0], [0,0]]
+        self.fft_scale = kwargs["fftscale"] if "fftscale" in kwargs else [[], []]
+        self.markers = []
+        self.fig = None
+        self.channel_lines = {}
 
         if self.data_file is not None:
             try:
@@ -86,7 +94,7 @@ class DataVisualization:
 
     def do_notch_filter(self, _sig):
         try:
-            self.logger.debug(f"do_notch_filter")
+            self.logger.info(f"do_notch_filter")
             _new_sig = _sig
             for f in self.notch_filter:
                 if f != [0, 0] and f != []:
@@ -123,6 +131,7 @@ class DataVisualization:
 
     def do_high_pass_filter(self, sig_list, axis=-1):
         try:
+            self.logger.info(f"do_high_pass_filter ...")
             if self.high_pass_filter["type"] == "":
                 self.logger.info(f"bad high pass filter parameters, do nothing!")
                 return ErrorCode.ERR_NO_ERROR, sig_list
@@ -149,6 +158,7 @@ class DataVisualization:
 
     def do_low_pass_filter(self, sig_list, axis=-1):
         try:
+            self.logger.info(f"do_low_pass_filter ...")
             if self.low_pass_filter["type"] == "":
                 self.logger.info(f"bad low pass filter parameters, do nothing!")
                 return ErrorCode.ERR_NO_ERROR, sig_list
@@ -174,6 +184,7 @@ class DataVisualization:
             return ErrorCode.ERR_BAD_UNKNOWN, sig_list
 
     def do_data_conversion(self, b_snr=False):
+        self.logger.info(f"do_data_conversion ...")
         keys = ["avg", "sig", "noise", "time", "sum_vector", "snr"]
         _data = {key: [] for key in keys}
         self.bad_channel = []
@@ -217,6 +228,53 @@ class DataVisualization:
                 continue
         return ErrorCode.ERR_NO_ERROR, _data
 
+    def on_click(self, event):
+        if event.button != 3:  #  1: left key, 2: middle key, 3: right key
+            # self.logger.info("not right key, do nothing ...")
+            return
+        if event.inaxes not in self.channel_lines:  # axis is not in tracker
+            return
+        x = event.xdata
+        y = event.ydata
+        ax = event.inaxes
+        self.logger.info(f"click on: {x}, {y}")
+
+        _line = self.channel_lines[ax][0]
+        x_length = len(_line.get_data()[0])
+        for line in self.channel_lines[ax]:
+            x_data, y_data = list(line.get_data())
+            if x_length < len(x_data):
+                x_length = len(x_data)
+                _line = line
+        # find most close x point
+        x_data, y_data = list(_line.get_data())
+        idx = np.argmin(np.abs(x_data - x))
+        # find the most close y point
+        y_distance = np.abs(y - y_data[idx])
+        for line in self.channel_lines[ax]:
+            x_data, y_data = list(line.get_data())
+            if idx < len(y_data) and np.abs(y - y_data[idx]) < y_distance:
+                y_distance = np.abs(y - y_data[idx])
+                _line = line
+
+        x_data, y_data = list(_line.get_data())
+        for point in self.markers:  # remove duplicate marker
+            if point[0] == _line and point[1] == idx:
+                point[2].remove()
+                point[3].remove()
+                self.markers.remove(point)
+                self.fig.canvas.draw_idle()
+                self.logger.info(f"remove duplicate point!!")
+                return
+        # Add a new marker
+        marker = ax.plot(x_data[idx], y_data[idx], 'ro')[0]
+        text = ax.annotate(f'({x_data[idx]:.4f}, {y_data[idx]:.4f})',
+                           xy=(x_data[idx], y_data[idx]))
+        self.markers.append((_line, idx, marker, text))
+        self.fig.canvas.draw_idle()
+        self.logger.info(f"add a new mark on:{x_data[idx]},{y_data[idx]}")
+        return
+
     def draw_checkbutton(self, _plt, _lines, _colors):
         _h = 0.03*len(self.list)
         rax = _plt.axes((0.91, 0.88-_h, 0.07, _h))
@@ -235,10 +293,37 @@ class DataVisualization:
                 line.figure.canvas.draw_idle()
         self.check_btn.on_clicked(callback)
 
+    def _draw_table(self, _plt, _table_data):
+        try:
+            self.logger.info(f"_draw_table..")
+            # _plt.rcParams.update({'font.size': 10})
+            # table = _plt.table(cellText=_table_data, cellLoc='center', loc='center')
+            table = _plt.table(cellText=_table_data, cellLoc='center', bbox=[0, 0, 1, 1])
+            table.auto_set_font_size(True)
+            # table.scale(1, 2.5)
+            colors = ["#f8f8ff", "#f5f5f5"]
+            for (row, col), cell in table.get_celld().items():
+                # self.logger.info(f"{row}, {col}")
+                cell.set_linewidth(0.3)
+                cell.set_text_props(fontsize=8)
+                cell.set_edgecolor("white")
+                # cell.set_width(0.3)
+                # cell.set_height(0.03)
+                if row == 0:
+                    cell.set_facecolor("#e6e6fa")
+                else:
+                    cell.set_facecolor(colors[row%2])
+            _plt.axis('off')
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            _plt.axis("off")
+
     def do_plot_list(self, data):
+        self.logger.info(f"do_plot_list..")
         _nrows = len(self.list) + 1
-        fig = plt.figure(self.sensor, figsize=(20, 10))
-        fig.subplots(_nrows, 2)
+        self.fig = plt.figure(self.sensor, figsize=(20, 10))
+        self.fig.subplots(_nrows, 2)
+        self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         # plt.subplots(_nrows, 2, figsize=(20, 20))
         plt.subplots_adjust(hspace=0.6)
         colors = ["#00cd00", "#0000ff"]
@@ -250,27 +335,40 @@ class DataVisualization:
                     self.logger.error(f"skip bad channel: {self.list[i]}")
                     continue
                 # Time domain
-                plt.subplot(_nrows, 2, i * 2 + 1)
+                ax = plt.subplot(_nrows, 2, i * 2 + 1)
                 plt.text(-0.05, 1.05, self.list[i], fontsize=10, transform=plt.gca().transAxes)
-                plt.plot(data["time"][i], data["sig"][i], color=colors[0])
+                _line, = plt.plot(data["time"][i], data["sig"][i], color=colors[0])
+                if ax in self.channel_lines:
+                    self.channel_lines[ax].append(_line)
+                else:
+                    self.channel_lines.update({ax: [_line]})
                 plt.xlabel('Time [s]', fontsize=10)
                 plt.xticks(fontsize=8)
                 plt.yticks(fontsize=8)
 
                 # Frequency domain
-                plt.subplot(_nrows, 2, i * 2 + 2)
+                ax = plt.subplot(_nrows, 2, i * 2 + 2)
                 plt.text(-0.05, 1.05, f"{self.list[i]}[unit/sqrt(Hz)]",
                          fontsize=10, transform=plt.gca().transAxes)
                 FFT = 2.0 / len(data["sum_vector"][i]) * abs(scipy.fft.fft(data["sum_vector"][i]))
                 _freqs = scipy.fftpack.fftfreq(len(data["time"][i]), data["time"][i][1] - data["time"][i][0])
-
-                plt.plot(_freqs[1:int(len(_freqs) / 2)], (FFT[1:int(len(_freqs) / 2)]), color=colors[1])
+                _line, = plt.plot(_freqs[1:int(len(_freqs) / 2)], (FFT[1:int(len(_freqs) / 2)]), color=colors[1])
+                if ax in self.channel_lines:
+                    self.channel_lines[ax].append(_line)
+                else:
+                    self.channel_lines.update({ax: [_line]})
                 # Peak
                 peak_index = np.argmax(FFT[1:int(len(_freqs) / 2)])
-                plt.plot(_freqs[1:int(len(_freqs) / 2)][peak_index],
+                _line, = plt.plot(_freqs[1:int(len(_freqs) / 2)][peak_index],
                          FFT[1:int(len(_freqs) / 2)][peak_index], 'o', color="#ff0000")
                 plt.axvline(_freqs[1:int(len(_freqs) / 2)][peak_index], color="#ff0000", linestyle='--')
-
+                if len(self.fft_scale[0]):
+                    _start, _end = list(self.fft_scale[0])
+                    _end = self.sample_rate / 2 if _end == -1 else _end
+                    plt.xlim(_start, _end)
+                if len(self.fft_scale[1]):
+                    _start, _end = list(self.fft_scale[1])
+                    plt.ylim([_start, _end])
                 # plt.xlim([0.1, fs / 2])
                 plt.xlabel('frequency [Hz]')
                 plt.xticks(fontsize=8)
@@ -284,23 +382,25 @@ class DataVisualization:
 
         # statistics table
         plt.subplot(_nrows, 2, (_nrows-1) * 2 + 1)
-        plt.rcParams.update({'font.size': 10})
+
+        # plt.rcParams.update({'font.size': 10})
         table_data = np.array(
-            [[""] + self.list,
-             ["avg."] + ["{:.8f}".format(val) for val in data["avg"]],
+            [["signal"] + self.list,
+             ["average"] + ["{:.8f}".format(val) for val in data["avg"]],
              ["noise"] + ["{:.8f}".format(val) for val in data["noise"]]
              ]).T
-        table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10, 10, 10])
-        # table.auto_set_font_size(False)
-        # table.scale(1, 2.5)
-        for (row, col), cell in table.get_celld().items():
-            cell.set_linewidth(0.3)
-        plt.axis('off')
+        self._draw_table(plt, table_data)
+        # table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10, 10, 10])
+        # # table.auto_set_font_size(False)
+        # # table.scale(1, 2.5)
+        # for (row, col), cell in table.get_celld().items():
+        #     cell.set_linewidth(0.3)
+        # plt.axis('off')
         plt.subplot(_nrows, 2, (_nrows-1) * 2 + 2)
         plt.axis("off")
 
         plt.show()
-        plt.cla()
+        plt.clf()
         plt.close("all")
         return ErrorCode.ERR_NO_ERROR
 
@@ -309,7 +409,6 @@ class DataVisualization:
 
     def emg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
-
         list_time = []
         list_ac_signal = []
         list_rms_val = []
@@ -404,11 +503,13 @@ class DataVisualization:
             list_ac_peak_dbv.append(ac_peak_dbv)
             list_dc_bias.append(dc_bias)
 
-        fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
-        axes = fig.subplots(2, 2)
-        plt.subplot(2, 2, 1)
+        self.fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
+        plt.subplots_adjust(hspace=0.6)
+        self.fig.subplots(2, 2)
+        self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+        ax = plt.subplot(2, 2, 1)
         plt.rcParams.update({'font.size': 10})
-        ax = axes[0][0]
+        # ax = axes[0][0]
         channel_lines = {key: [] for key in self.list}
         channel_colors = {}
         _shift = np.amax(list_ac_signal)-np.amin(list_ac_signal)
@@ -418,26 +519,31 @@ class DataVisualization:
                 self.logger.error(f"skip bad channel: {self.list[i]}")
                 continue
             plt.rcParams.update({'font.size': 10})
-            _line, = ax.plot(list_time[i], list_ac_signal[i]+i*_shift, label=f'{self.list[i]} AC Signal')
+            _line, = plt.plot(list_time[i], list_ac_signal[i]+i*_shift, label=f'{self.list[i]} AC Signal')
             channel_colors[self.list[i]] = _line.get_color()
+            if ax in self.channel_lines:
+                self.channel_lines[ax].append(_line)
+            else:
+                self.channel_lines.update({ax: [_line]})
 
-        ax.text(-0.05, 1.05, f"Signal (V)", fontsize=10, transform=plt.gca().transAxes)
-        ax.set_xlabel('Time (S)', fontsize=10)
-        ax.set_yticks([_shift*i for i in np.arange(0,len(self.list))])
+        plt.text(-0.05, 1.05, f"Signal (V)", fontsize=10, transform=plt.gca().transAxes)
+        plt.xlabel('Time (S)', fontsize=10)
+        plt.yticks([_shift*i for i in np.arange(0, len(self.list))])
         ax.set_yticklabels(self.list)
         # ax.legend()
 
         plt.subplot(2, 2, 3)
-        plt.rcParams.update({'font.size': 10})
-        table_data = np.array([[""]+self.list, ["RMS Level(V)"]+["{:.8f}".format(val) for val in list_rms_val],
+        # plt.rcParams.update({'font.size': 10})
+        table_data = np.array([["Signal"]+self.list, ["RMS Level(V)"]+["{:.8f}".format(val) for val in list_rms_val],
                     ["Average Peak-to-Peak"]+["{:.8f}".format(val) for val in list_avg_peak_to_peak_val],
                     ["DC bias"]+["{:.8f}".format(val) for val in list_dc_bias]]).T
-        _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
-        for (row, col), cell in _table.get_celld().items():
-            cell.set_linewidth(0.3)
-        plt.axis('off')
+        self._draw_table(plt, table_data)
+        # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
+        # for (row, col), cell in _table.get_celld().items():
+        #     cell.set_linewidth(0.3)
+        # plt.axis('off')
 
-        plt.subplot(2, 2, 2)
+        ax = plt.subplot(2, 2, 2)
         harmonics = [2, 3, 4, 5]
         harmonic_data = [[(0, 0)]*len(self.list) for _ in range(len(harmonics))]
         for i in range(0, len(self.list)):
@@ -457,6 +563,10 @@ class DataVisualization:
             # Plot FFT of AC signal
             _line, = plt.plot(list_fft_freq[i], list_fft_dbv[i])
             channel_lines[self.list[i]].append(_line)
+            if ax in self.channel_lines:
+                self.channel_lines[ax].append(_line)
+            else:
+                self.channel_lines.update({ax: [_line]})
 
             _line, = plt.plot(list_ac_peak_freq[i], list_ac_peak_dbv[i], 'o',
                               color=self.adjust_color(channel_colors[self.list[i]]))
@@ -476,11 +586,17 @@ class DataVisualization:
         # plt.ylabel('Amplitude (dBV)', fontsize=10)
         plt.text(-0.05, 1.05, f"Amplitude (dBV)",
                 fontsize=10, transform=plt.gca().transAxes)
-        plt.xlim(1, self.sample_rate/2)
-        # plt.ylim(-50, 20)
+        # plt.xlim(1, self.sample_rate/2)
+        if len(self.fft_scale[0]):
+            _start, _end = list(self.fft_scale[0])
+            _end = self.sample_rate/2 if _end == -1 else _end
+            plt.xlim(_start, _end)
+        if len(self.fft_scale[1]):
+            _start, _end = list(self.fft_scale[1])
+            plt.ylim(_start, _end)
         plt.subplot(2, 2, 4)
-        plt.rcParams.update({'font.size': 10})
-        table_data = np.array([[""]+self.list,
+        # plt.rcParams.update({'font.size': 10})
+        table_data = np.array([["Signal"]+self.list,
                                ["Peak"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
                                          zip(list_ac_peak_freq, list_ac_peak_dbv)],
                                ["Harmonic 2"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
@@ -492,17 +608,19 @@ class DataVisualization:
                                ["Harmonic 5"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
                                                  harmonic_data[3]],
                                ]).T
-        _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
-        for (row, col), cell in _table.get_celld().items():
-            cell.set_linewidth(0.3)
-        plt.axis('off')
+        self._draw_table(plt, table_data)
+        # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
+        # for (row, col), cell in _table.get_celld().items():
+        #     cell.set_linewidth(0.3)
+        # plt.axis('off')
 
         self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
         if len(self.list):
             plt.show()
-        plt.cla()
+        #plt.cla()
+        plt.clf()
         plt.close("all")
         self.logger.info(f"finish: {self.sensor}")
         return ErrorCode.ERR_NO_ERROR
@@ -559,49 +677,41 @@ class DataVisualization:
                 self.bad_channel.append(channel)
                 continue
 
-        fig = plt.figure(f"{self.sensor}", figsize=(20, 20))
-        axes = fig.subplots(2, 2)
+        self.fig = plt.figure(f"{self.sensor}", figsize=(20, 20))
+        # plt.subplots_adjust(hspace=0.6)
+        plt.rcParams.update({'font.size': 10})
+        self.fig.subplots(2, 2)
+        self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         channel_lines = {key: [] for key in self.list}
         channel_colors = {}
         _shift = np.amax(list_hp_data) - np.amin(list_hp_data)
 
-        plt.subplot(2, 2, 1)
-        plt.rcParams.update({'font.size': 10})
-        ax = axes[0][0]
+        ax = plt.subplot(2, 2, 1)
+        # plt.rcParams.update({'font.size': 10})
+        # ax = axes[0][0]
         for i in range(0, len(self.list)):
             if self.list[i] in self.bad_channel:
                 self.logger.error(f"skip bad channel: {self.list[i]}")
                 continue
             try:
                 plt.rcParams.update({'font.size': 10})
-                _line, = ax.plot(list_timex[i], list_hp_data[i]+i*_shift)
+                _line, = plt.plot(list_timex[i], list_hp_data[i]+i*_shift)
+                if ax in self.channel_lines:
+                    self.channel_lines[ax].append(_line)
+                else:
+                    self.channel_lines.update({ax: [_line]})
                 channel_colors[self.list[i]] = _line.get_color()
             except Exception as ex:
                 self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
                 continue
         # ax.set_ylabel('Raw Cnt', fontsize=10)
-        ax.text(-0.05, 1.05, f"Raw Cnt",
+        plt.text(-0.05, 1.05, f"Raw Cnt",
                  fontsize=10, transform=plt.gca().transAxes)
-        ax.set_xlabel('Time (s)', fontsize=10)
-        ax.set_yticks([_shift * i for i in np.arange(0, len(self.list))])
+        plt.xlabel('Time (s)', fontsize=10)
+        plt.yticks([_shift * i for i in np.arange(0, len(self.list))])
         ax.set_yticklabels(self.list, fontsize=10)
 
-        plt.subplot(2, 2, 3)
-        plt.rcParams.update({'font.size': 10})
-        table_data = np.array(
-            [[""] + self.list,
-             ["avg."] + ["{:.8f}".format(val) for val in list_avg],
-             ["noise"] + ["{:.8f}".format(val) for val in list_hp_noise],
-             ["snr"] + ["{:.8f}".format(val) for val in list_hp_snr]
-             ]).T
-        table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
-        # table.auto_set_font_size(False)
-        table.scale(1, 2.5)
-        for (row, col), cell in table.get_celld().items():
-            cell.set_linewidth(0.3)
-        plt.axis('off')
-
-        plt.subplot(2, 2, 2)
+        ax = plt.subplot(2, 2, 2)
         for i in range(0, len(self.list)):
             if self.list[i] in self.bad_channel:
                 self.logger.error(f"skip bad channel: {self.list[i]}")
@@ -611,8 +721,13 @@ class DataVisualization:
                 FFT = 2.0 / len(list_sum_vector[i]) * abs(scipy.fft.fft(list_sum_vector[i]))
                 freqs = scipy.fftpack.fftfreq(len(list_timex[i]), timex[1] - timex[0])
 
+                print(f"freq length:{len(freqs)}")
                 _line, = plt.plot(freqs[1:int(len(freqs) / 2)], (FFT[1:int(len(freqs) / 2)]), color=channel_colors[self.list[i]])
                 channel_lines[self.list[i]].append(_line)
+                if ax in self.channel_lines:
+                    self.channel_lines[ax].append(_line)
+                else:
+                    self.channel_lines.update({ax: [_line]})
                 # Peak
                 peak_index = np.argmax(FFT[1:int(len(freqs) / 2)])
                 _line, = plt.plot(freqs[1:int(len(freqs) / 2)][peak_index],
@@ -623,19 +738,44 @@ class DataVisualization:
             except Exception as ex:
                 self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
                 continue
-        plt.xlim([0.1, fs / 2])
-        # plt.ylim([-0.1, 5])
-        plt.xlabel('frequency [Hz]', fontsize=10)
         # plt.ylabel('FFT[cnt/sqrt(Hz)]', fontsize=10)
         plt.text(-0.05, 1.05, f"FFT[cnt/sqrt(Hz)]",
-                fontsize=10, transform=plt.gca().transAxes)
+                 fontsize=10, transform=plt.gca().transAxes)
+        plt.xlabel('frequency [Hz]', fontsize=10)
+        if len(self.fft_scale[0]):
+            _x_start, _x_end = list(self.fft_scale[0])
+            _x_end = self.sample_rate / 2 if _x_end == -1 else _x_end
+            plt.xlim(_x_start, _x_end)
+
+        if len(self.fft_scale[1]):
+            _y_start, _y_end = list(self.fft_scale[1])
+            plt.ylim(_y_start, _y_end)
+        # plt.xlim([0.1, fs / 2])
+        # plt.ylim([-0.1, 5])
+
+        plt.subplot(2, 2, 3)
+        # plt.rcParams.update({'font.size': 10})
+        table_data = np.array(
+            [["signal"] + self.list,
+             ["avg."] + ["{:.8f}".format(val) for val in list_avg],
+             ["noise"] + ["{:.8f}".format(val) for val in list_hp_noise],
+             ["snr"] + ["{:.8f}".format(val) for val in list_hp_snr]
+             ]).T
+        self._draw_table(plt, table_data)
+        # table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
+        # # table.auto_set_font_size(False)
+        # table.scale(1, 2.5)
+        # for (row, col), cell in table.get_celld().items():
+        #     cell.set_linewidth(0.3)
+        # plt.axis('off')
 
         plt.subplot(2, 2, 4)
         plt.axis('off')
         self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
 
         plt.show()
-        plt.cla()
+        # plt.cla()
+        plt.clf()
         plt.close("all")
         self.logger.info(f"finish: {self.sensor}")
         return ErrorCode.ERR_NO_ERROR
@@ -691,11 +831,3 @@ class DataVisualization:
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN
-
-
-# example
-if __name__ == '__main__':
-    # dv = DataVisualization()
-    # dv.visualize(file=sys.argv[1], sensor="EMG",
-    #               channels=["CH1","CH2","CH3","CH5","CH6","CH7","CH11","CH13"], rate=float(sys.argv[2]), drop=0)
-    pass

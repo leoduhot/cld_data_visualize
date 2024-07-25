@@ -151,10 +151,6 @@ class FileFrm(MyTtkFrame):
         self.entry.pack(side=LEFT, expand=True, fill=X, padx=5)
         self.entry.insert(0, "drap file to the window or click browser button")
         self.entry.config(foreground='gray')
-
-        # self.text = ttk.Text(frm, width=40, height=10)
-        # self.text.pack(side=LEFT, expand=True, fill=X, padx=5)
-        # dnd.bindtarget(self.text, 'text/uri-list', '<Drop>', self.drop)
         if self._drop_func is not None:
             # windnd.hook_dropfiles(_root, func=self.drop)
             _root.dnd_bind('<<Drop>>', self.drop)
@@ -172,10 +168,12 @@ class FileFrm(MyTtkFrame):
 
     def drop(self, event):
         files = event.data.strip().split()
-        msg = '\n'.join((item for item in files))
-        self.logger.debug(f"get data:[{msg}]")
-        self.entry.insert(0, msg)
-        self.filepath = msg
+        self.logger.info(f"files:<{files}>")
+        self.logger.info(f"file[0]:<{files[0]}>")
+        # msg = '\n'.join((item for item in files))
+        # self.logger.info(f"get data:[{msg}]")
+        self.filepath = os.path.normpath(files[0].strip())
+        self.entry.insert(0, self.filepath)
         self.entry.config(foreground='')
         self._drop_func()
 
@@ -191,7 +189,6 @@ class FileFrm(MyTtkFrame):
         return self.filepath
 
 
-
 class ComboboxWithLabel(MyTtkFrame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
@@ -205,7 +202,7 @@ class ComboboxWithLabel(MyTtkFrame):
 
         frm = ttk.Frame(self)
         frm.pack(fill=ttk.X, pady=5)
-        self._lb = ttk.Label(frm, text=_txt, width=_width[0])
+        self._lb = ttk.Label(frm, text=f"{_txt:<10}", width=_width[0])
         self._lb.pack(side=ttk.LEFT, padx=5)
         self._comb = ttk.Combobox(frm, bootstyle='primary', values=_values, width=_width[1])
         self._comb.set(_default)
@@ -242,7 +239,7 @@ class EntryWithLabel(MyTtkFrame):
         _tips = kwargs["tips"] if "tips" in kwargs else ""
         frm = ttk.Frame(self)
         frm.pack(fill=ttk.X, pady=5)
-        self._lb = ttk.Label(frm, text=_txt, width=_width[0])
+        self._lb = ttk.Label(frm, text=f"{_txt:<10}", width=_width[0])
         self._lb.pack(side=ttk.LEFT, padx=5)
         self._entry = ttk.Entry(frm, bootstyle='primary', width=_width[1])
         self._entry.pack(side=ttk.LEFT, padx=5)
@@ -338,7 +335,7 @@ class FilterFrm(MyTtkFrame):
                     frm = ttk.Frame(self)
                     frm.pack(fill=ttk.X)
                     self.filter_var[key] = ttk.BooleanVar()
-                    self.filter_ckb[key] = ttk.Checkbutton(frm, text=key, variable=self.filter_var[key],
+                    self.filter_ckb[key] = ttk.Checkbutton(frm, text=f"{key:<30}", variable=self.filter_var[key],
                                                            command=self._on_check)
                     self.filter_ckb[key].pack(side=ttk.LEFT, padx=5)
                     for _type, _txt, _width, _default, _tips_or_values in kwargs["parameters"][key]:

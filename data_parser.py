@@ -35,7 +35,7 @@ class RawDataParser:
     }
 
     def __init__(self, *args, **kwargs):
-        self.logger = kwargs["logger"] if 'logger' in kwargs else logging
+        self.logger = kwargs["logger"] if 'logger' in kwargs else logging.getLogger()
         self.sensor = None
 
     def read_value(self, _sample, _name):
@@ -81,7 +81,7 @@ class RawDataParser:
             values = list()
             col_line = _data_lines[_reg_index+1].strip().replace("(V)", "")
             col_line = col_line.replace(":", "")
-            col = [val.upper() for val in col_line.strip().split('\t')]
+            col = [val.strip().upper() for val in col_line.strip().split()]
             self.logger.info(f"col:{col}")
             for line in _data_lines[_reg_index+2:]:
                 if "CMD_CMPT" != line[0:8]:

@@ -15,6 +15,7 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.toast import ToastNotification
 from ttkbootstrap.dialogs.dialogs import MessageDialog
 import logging
+import platform
 
 
 class MyTtkFrame(ttk.Frame):
@@ -151,9 +152,10 @@ class FileFrm(MyTtkFrame):
         self.entry.pack(side=LEFT, expand=True, fill=X, padx=5)
         self.entry.insert(0, "drap file to the window or click browser button")
         self.entry.config(foreground='gray')
-        if self._drop_func is not None:
-            # windnd.hook_dropfiles(_root, func=self.drop)
-            _root.dnd_bind('<<Drop>>', self.drop)
+        if not (platform.system().lower() == "darwin" and platform.machine().lower().startswith("arm")):
+            if self._drop_func is not None:
+                # windnd.hook_dropfiles(_root, func=self.drop)
+                _root.dnd_bind('<<Drop>>', self.drop)
         file_btn = ttk.Button(frm, text="Browser", command=self._on_button)
         file_btn.pack(side=LEFT, padx=5)
 

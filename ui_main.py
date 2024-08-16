@@ -9,6 +9,7 @@ import pandas as pd
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from data_visualization_utility import DataVisualization, ErrorCode
 from data_parser import RawDataParser
+from plot_summary_data import SummaryDataParser
 
 ErrorMsg = {
     f"{ErrorCode.ERR_BAD_FILE}": "ErrorCode.ERR_BAD_FILE",
@@ -32,6 +33,7 @@ class SensorDataVisualizationUI(MyTtkFrame):
             self.df_data = None
             self.rdp = RawDataParser(self.logger)
             self.dv = DataVisualization(self.logger)
+            self.sdp = SummaryDataParser(self.logger, master=self.master)
             # main_frm = ttk.Frame(args[0])
             main_frm = ScrolledFrame(args[0], bootstyle='round')
             # main_frm.pack(fill=BOTH, padx=5, pady=5)
@@ -50,7 +52,7 @@ class SensorDataVisualizationUI(MyTtkFrame):
                                               _combobox=[
                                                         ["Sensor Type", _values,
                                                           self._on_sensor_type_change, [10, 10], ""],
-                                                        ["Data Type", ["Raw Data", "Tester Data"],
+                                                        ["Data Type", ["Raw Data", "Tester Data", "Summary Data"],
                                                            self.on_data_type_change, [10, 10], ""],
                                                          ],
                                               _entry=[["Data Rate", [10, 12], 8192, ""],
@@ -111,6 +113,17 @@ class SensorDataVisualizationUI(MyTtkFrame):
             frm.pack(fill=X, padx=5, pady=5)
             analysis_btn = ttk.Button(frm, bootstyle='primary-outline', text="GO", command=self.on_button_go)
             analysis_btn.pack(padx=5)
+
+            frm = ttk.Frame(main_frm)
+            frm.pack(fill=X, padx=5, pady=10, side=RIGHT)
+            sub_frm = ttk.Frame(frm)
+            sub_frm.pack(fill=X, padx=10, pady=5)
+            info_label = ttk.Label(sub_frm, text="By APAC Engineering Team")
+            info_label.pack(side=LEFT, padx=10)
+            sub_frm = ttk.Frame(frm)
+            sub_frm.pack(fill=X, padx=5, pady=10)
+            contact_label = ttk.Label(sub_frm, text="Contact us:\nwenzhao.li@oculus.com\neric.si@oculus.com\nduleo@meta.com")
+            contact_label.pack(side=LEFT, padx=10)
 
             main_frm.pack(fill=BOTH, expand=YES, padx=5, pady=5)
 
@@ -277,6 +290,8 @@ class SensorDataVisualizationUI(MyTtkFrame):
                 if err != ErrorCode.ERR_NO_ERROR:
                     self.message_box("Error", f"Bad raw data!! {err}")
                     return
+            elif self.data_type == "Summary Data":
+                self.df_data = pd.read_csv(self.data_file, index_col=False)
             else:
                 self.message_box("Error", "Not supported data type!!")
                 return
@@ -350,11 +365,14 @@ class SensorDataVisualizationUI(MyTtkFrame):
             _fft_scale_y = []
 
         if len(_channels):
-            _err_code = self.dv.visualize(data=self.df_data, logger=self.logger,
-                                          sensor=_sensor, channels=_channels, rate=_rate,
-                                          drop=_drop, highpassfilter=_highpassfilter, lowpassfilter=_lowpassfilter,
-                                          notchfilter=[_notchfilter1, _notchfilter2, _notchfilter3],
-                                          fftscale=[_fft_scale_x, _fft_scale_y])
+            if self.data_type == "Summary Data":
+                _err_code = self.sdp.summary_data_visualize(data=self.df_data, sensor=_sensor, channels=_channels)
+            else:
+                _err_code = self.dv.visualize(data=self.df_data, logger=self.logger,
+                                              sensor=_sensor, channels=_channels, rate=_rate,
+                                              drop=_drop, highpassfilter=_highpassfilter, lowpassfilter=_lowpassfilter,
+                                              notchfilter=[_notchfilter1, _notchfilter2, _notchfilter3],
+                                              fftscale=[_fft_scale_x, _fft_scale_y])
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 self.message_box("Error", ErrorMsg[f"{_err_code}"])
         else:

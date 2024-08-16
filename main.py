@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*-
 from ui_main import *
 
-tver = "v0.2.010"
-tag = "2024/07/26 10:00 +0800"
+tver = "v0.2.020"
+tag = "2024/08/16 14:00 +0800"
 
 if __name__ == '__main__':
     log_path = os.path.join(os.path.abspath("."), 'log')

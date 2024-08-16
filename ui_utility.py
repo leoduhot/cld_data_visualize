@@ -439,8 +439,8 @@ class ChannelFrm(MyTtkFrame):
             self.logger = kwargs['logger']
         _count = kwargs["count"] if "count" in kwargs else 40
 
-        frm = ttk.Frame(self)
-        frm.pack(fill=ttk.X, pady=5)
+        self.frm = ttk.Frame(self)
+        self.frm.pack(fill=ttk.X, pady=5)
         self.channels = [val for val in range(_count)]
         self.available_channels = []
 
@@ -451,11 +451,11 @@ class ChannelFrm(MyTtkFrame):
         self.channel_var = {}
         self.channel_ckb = {}
         self.text_var = {}
-        # row_inx = col_inx = 0
+        row_inx = col_inx = 0
         for ch in self.channels:
             self.channel_var[ch] = ttk.BooleanVar()
             # self.channel_var[count].set(True)
-            self.channel_ckb[ch] = ttk.Checkbutton(frm, text=ch,
+            self.channel_ckb[ch] = ttk.Checkbutton(self.frm, text=ch,
                                                       command=self.command,
                                                       variable=self.channel_var[ch])
             # self.channel_ckb[ch].grid(row=row_inx, column=col_inx, padx=5, pady=5)
@@ -464,13 +464,28 @@ class ChannelFrm(MyTtkFrame):
         self.channel_ckb[0].configure(command=self._on_all_check)
 
     def show_channels(self, channel_list, columns):
+        if not len(channel_list):
+            return
+        default = len(self.channels)
+        if default-1 < len(channel_list):
+            diff = len(channel_list) - default+1
+            self.logger.info(f"channel len: {default}, {len(channel_list)}")
+            for ch in [val+default for val in range(diff)]:
+                self.channels.append(ch)
+                self.channel_var[ch] = ttk.BooleanVar()
+                # self.channel_var[count].set(True)
+                self.channel_ckb[ch] = ttk.Checkbutton(self.frm, text=ch,
+                                                          command=self.command,
+                                                          variable=self.channel_var[ch])
+            # self.channel_ckb[0].configure(command=self._on_all_check)
+
         self.available_channels = channel_list
         for ch in self.channels:
             self.channel_var[ch].set(False)
             self.channel_ckb[ch].grid_forget()
 
-        if not len(channel_list):
-            return
+        # if not len(channel_list):
+        #     return
 
         self.channel_var[0].set(True)
         self.channel_ckb[0].configure(text="ALL")

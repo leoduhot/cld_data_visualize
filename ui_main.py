@@ -221,15 +221,15 @@ class SensorDataVisualizationUI(MyTtkFrame):
         if sensor_type == "EMG":
             _columns = 3
         elif sensor_type == "PPG":
-            _columns = 4
+            _columns = 3
         elif sensor_type == "IMU":
             _columns = 3
         elif sensor_type == "ALT":
-            _columns = 2
+            _columns = 3
         elif sensor_type == "MAG":
-            _columns = 2
+            _columns = 3
         elif sensor_type == "BTI":
-            _columns = 2
+            _columns = 3
         else:
             _list_filter = []
             _columns = 0

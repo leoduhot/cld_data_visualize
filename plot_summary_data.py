@@ -85,11 +85,11 @@ class SummaryDataParser:
             # ch_data = [data.iloc[:, j].dropna() for j in range(group_data_index[i], data.shape[1], group_size)]
             ch_data = [self.df_data[ch].dropna() for ch in self.channels]
             ax_main.boxplot(ch_data, patch_artist=True)
-            ax_main.set_ylim([0.8, 1.3])
-            ax_main.set_xticklabels([val.replace(f"{self.sensor}_", "") for val in self.channels])
+            # ax_main.set_ylim([0.8, 1.3])
+            ax_main.set_xticklabels([re.sub(r"^.*_data_", "", val, flags=re.IGNORECASE) for val in self.channels])
             base_mean = self.df_data.loc[:, self.channels[0]].mean()
             ax_main.axhline(base_mean, color='g', linestyle='-.')
-            ax_main.axhline(1.2, color='b', linestyle='-.')
+            # ax_main.axhline(1.2, color='b', linestyle='-.')
 
             for j in range(num_of_columns):
                 ax_hist = fig.add_subplot(gs[3:6, j])
@@ -164,7 +164,7 @@ class SummaryDataParser:
             # # 添加导航工具栏
             # toolbar = NavigationToolbar2Tk(canvas, plot_window)
             # canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-            # return ErrorCode.ERR_NO_ERROR
+            return ErrorCode.ERR_NO_ERROR
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN

@@ -262,7 +262,7 @@ class SensorDataVisualizationUI(MyTtkFrame):
             self._set_rate(10)
             self.set_drop_samples("0;-1")
             pass
-        elif sensor_type == "Compass":
+        elif sensor_type == "MAG":
             self._set_rate(50)
             self.set_drop_samples("0;-1")
             pass

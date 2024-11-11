@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 from enum import IntEnum
 import json
+import re
 
 
 class ErrorCode(IntEnum):
@@ -86,8 +87,12 @@ class RawDataParser:
             # col_line = col_line.replace(":", "")
             # col = [val.strip().upper() for val in col_line.strip().split()]
             # self.logger.info(f"col:{col}")
+            _find = False
             for line in _data_lines:
+                if _find and "CMD_CMPT" == line[0:8]:
+                    break
                 if re.match(r'^(\d\.\d{6}\t){8}$', line):
+                    _find = True
                     _row = [float(val) for val in line.strip().split()]
                     values.append(_row)
             

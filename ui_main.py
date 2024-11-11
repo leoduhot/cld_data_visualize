@@ -290,6 +290,10 @@ class SensorDataVisualizationUI(MyTtkFrame):
                 if err != ErrorCode.ERR_NO_ERROR:
                     self.message_box("Error", f"Bad raw data!! {err}")
                     return
+                _path = os.path.dirname(self.data_file)
+                _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+                _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
+                self.df_data.to_csv(os.path.join(_path, _name), index=False)
             elif self.data_type == "Summary Data":
                 self.df_data = pd.read_csv(self.data_file, index_col=False)
             else:

@@ -18,20 +18,23 @@ class ErrorCode(IntEnum):
 
 class RawDataParser:
     ref_key_names = {
-        "emg":  ["CH3", "CH5"],
+        "emg":  ["CH03", "CH05", "CH07", "CH08", "CH10", "CH12", "CH13", "CH15"],
         "ppg":  ["measurement", "timestamp", "pd_1", "pd_2", "pd_3", "pd_4"],
-        "imu":  ["Timestamp", "X-Axis", "Y-Axis", "Z-Axis"],
+        "imu":  ["Timestamp", "X-Axis", "Y-Axis", "Z-Axis", "Temperature"],
         "alt":  ["Pressure", "Temperature", "Timestamp"],
         "mag":  ["Compass X", "Compass Y", "Compass Z", "Temperature", "Timestamp"],
         "bti":  ["Force", "Temperature", "Timestamp", "Sensor"],
+        "als":  ["Time", "Raw"]
     }
     sensor_pattern = {
-        "emg": "sending cmd: ad469x dump_last_stream emg_adc0@0",
-        "ppg": "ppg print_samples",
-        "imu": "imu get_samples",
-        "alt": "press get_samples",
-        "mag": "mag print_samples",
-        "bti": "bti print_samples",
+        "emg": ["sending cmd: ad469x dump_last_stream emg_adc0@0"],
+        "ppg": ["FT> {", "ppg print_samples"],
+        "imu": ["FT> {", "imu get_samples"],
+        "alt": ["FT> {", "press get_samples"],
+        "mag": ["FT> {", "mag print_samples"],
+        "bti": ["FT> {", "bti print_samples"],
+        "als": ["Reading samples", "millilux, timestamp"],
+        "def": ["FT> {"],
     }
 
     def __init__(self, *args, **kwargs):
@@ -76,19 +79,20 @@ class RawDataParser:
     def extract_emg_data(self, _data):
         try:
             _data_lines = _data.splitlines()
-            _reg_index = _data_lines.index(self.sensor_pattern['emg'])
-            self.logger.info(f"find [{self.sensor_pattern['emg']}] in {_reg_index}")
+            # _reg_index = _data_lines.index(self.sensor_pattern['emg'])
+            # self.logger.info(f"find [{self.sensor_pattern['emg']}] in {_reg_index}")
             values = list()
-            col_line = _data_lines[_reg_index+1].strip().replace("(V)", "")
-            col_line = col_line.replace(":", "")
-            col = [val.strip().upper() for val in col_line.strip().split()]
-            self.logger.info(f"col:{col}")
-            for line in _data_lines[_reg_index+2:]:
-                if "CMD_CMPT" != line[0:8]:
+            # col_line = _data_lines[_reg_index+1].strip().replace("(V)", "")
+            # col_line = col_line.replace(":", "")
+            # col = [val.strip().upper() for val in col_line.strip().split()]
+            # self.logger.info(f"col:{col}")
+            for line in _data_lines:
+                if re.match(r'^(\d\.\d{6}\t){8}$', line):
                     _row = [float(val) for val in line.strip().split()]
                     values.append(_row)
-                else:
-                    break
+            
+            col = self.ref_key_names["emg"]
+
             _df = pd.DataFrame(np.array(values), columns=col)
             self.logger.debug(f"{__name__}: {len(_df)}")
             return ErrorCode.ERR_NO_ERROR, _df
@@ -102,8 +106,16 @@ class RawDataParser:
             json_obj = list()
             json_decoded = list()
             _data_lines = _data.splitlines()
-            _reg_index = _data_lines.index(_reg)
-            self.logger.info(f"find [{_reg}] in {_reg_index}")
+            if _reg is not None:
+                for item in _reg:
+                    if item in _data_lines:
+                        _reg_index = _data_lines.index(item)
+                        self.logger.info(f"find [{item}] in line:{_reg_index}")
+                        break
+                    else:
+                        _reg_index = 0
+            else:
+                _reg_index = 0
             for line in _data_lines[_reg_index:]:
                 if line.startswith("      {"):
                     is_json = True
@@ -169,19 +181,24 @@ class RawDataParser:
         try:
             samples_gyro = []
             samples_acc = []
+            samples_temper = []
             for obj in _json_data:
                 if obj["desc"] == "IMU gyro data":
                     samples_gyro.append(obj["samples"])
                 elif obj["desc"] == "IMU accelerometer data":
                     samples_acc.append(obj["samples"])
-            _gyro_expected = self.ref_key_names["imu"]
+                elif obj["desc"] == "IMU temperature data":
+                    samples_temper.append(obj["samples"])
+            _gyro_expected = self.ref_key_names["imu"][0:4]
             _err1, values_gyro = self.extract_df_values(samples_gyro, self.ref_key_names["imu"], _gyro_expected)
-            _acc_expected = self.ref_key_names["imu"][1:]
+            _acc_expected = self.ref_key_names["imu"][1:4]
             _err2, values_acc = self.extract_df_values(samples_acc, self.ref_key_names["imu"], _acc_expected)
-            if _err1 == ErrorCode.ERR_NO_ERROR and _err2 == ErrorCode.ERR_NO_ERROR:
-                values_all = [x + y for x, y in zip(values_gyro, values_acc)]
+            _temper_expected = self.ref_key_names["imu"][4:]
+            _err3, values_temper= self.extract_df_values(samples_temper, self.ref_key_names["imu"], _temper_expected)
+            if _err1 == ErrorCode.ERR_NO_ERROR and _err2 == ErrorCode.ERR_NO_ERROR and _err3 == ErrorCode.ERR_NO_ERROR:
+                values_all = [x + y + z for x, y, z in zip(values_gyro, values_acc, values_temper)]
                 col = ([_gyro_expected[0]] + ["gyro_" + x for x in _gyro_expected[1:]] +
-                       ["acc_" + x for x in _acc_expected])
+                       ["acc_" + x for x in _acc_expected] + _temper_expected)
                 _df = pd.DataFrame(np.array(values_all), columns=col)
                 self.logger.debug(f"{__name__}: {len(_df)}")
                 return ErrorCode.ERR_NO_ERROR, _df
@@ -204,13 +221,13 @@ class RawDataParser:
                 else:
                     continue
             _expected = self.ref_key_names["bti"][:-1]
-            print(f"{samples_sensor0}")
+            # print(f"{samples_sensor0}")
             _err0, values_0 = self.extract_df_values(samples_sensor0, self.ref_key_names["bti"], _expected)
             _err1, values_1 = self.extract_df_values(samples_sensor1, self.ref_key_names["bti"], _expected)
             if _err0 == ErrorCode.ERR_NO_ERROR and _err1 == ErrorCode.ERR_NO_ERROR:
                 values_all = [x + y for x, y in zip(values_0, values_1)]
                 col = (["sensor0_"+val for val in _expected] + ["sensor1_" + val for val in _expected])
-                print(f"columns name:{col}")
+                # print(f"columns name:{col}")
                 _df = pd.DataFrame(np.array(values_all), columns=col)
                 self.logger.debug(f"{__name__}: {len(_df)}")
                 return ErrorCode.ERR_NO_ERROR, _df

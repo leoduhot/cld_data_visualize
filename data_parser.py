@@ -89,8 +89,8 @@ class RawDataParser:
             # self.logger.info(f"col:{col}")
             _find = False
             for line in _data_lines:
-                if _find and "CMD_CMPT" == line[0:8]:
-                    break
+                # if _find and "CMD_CMPT" == line[0:8]:
+                #     break
                 if re.match(r'^(\d\.\d{6}\t){8}$', line):
                     _find = True
                     _row = [float(val) for val in line.strip().split()]
@@ -111,16 +111,13 @@ class RawDataParser:
             json_obj = list()
             json_decoded = list()
             _data_lines = _data.splitlines()
+            _reg_index = 0
             if _reg is not None:
                 for item in _reg:
                     if item in _data_lines:
                         _reg_index = _data_lines.index(item)
                         self.logger.info(f"find [{item}] in line:{_reg_index}")
                         break
-                    else:
-                        _reg_index = 0
-            else:
-                _reg_index = 0
             for line in _data_lines[_reg_index:]:
                 if line.startswith("      {"):
                     is_json = True

@@ -76,7 +76,7 @@ class SummaryDataParser:
             num_of_columns = len(self.channels)
 
             # for i, ch in enumerate(self.channels):
-            x = 54/21*len(self.channels)
+            x = 3*len(self.channels)
             fig = plt.figure(f"{self.sensor}", figsize=(x, 12))
             fig.suptitle(self.sensor, fontsize=16)
             gs = GridSpec(8, num_of_columns, figure=fig)
@@ -94,6 +94,7 @@ class SummaryDataParser:
             for j in range(num_of_columns):
                 ax_hist = fig.add_subplot(gs[3:6, j])
                 ax_hist.hist(ch_data[j], orientation='horizontal')
+                # plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, loc: f"{x:.3e}"))
 
             for k in range(num_of_columns):
                 ax_label = fig.add_subplot(gs[6:8, k])
@@ -122,17 +123,17 @@ class SummaryDataParser:
                 outlier_count = len(outliers)
 
                 text_list = [
-                    f"100% (maximum): {col_max:.3f}",
-                    f" 75%          : {percentile_75:.3f}",
-                    f" 50% (median) : {percentile_50:.3f}",
-                    f" 25%          : {percentile_25:.3f}",
-                    f"  0% (minimum): {col_min:.3f}",
+                    f"100% (maximum): {col_max:.3e}",
+                    f" 75%          : {percentile_75:.3e}",
+                    f" 50% (median) : {percentile_50:.3e}",
+                    f" 25%          : {percentile_25:.3e}",
+                    f"  0% (minimum): {col_min:.3e}",
                     f"",
-                    f"Mean          : {col_mean:.3f}",
-                    f"Std Dev       : {col_std_dev:.3f}",
-                    f"Std Error Mean: {std_err_mean:.3f}",
-                    f"Upper 95% Mean: {upper_95_mean:.3f}",
-                    f"Lower 95% Mean: {lower_95_mean:.3f}",
+                    f"Mean          : {col_mean:.3e}",
+                    f"Std Dev       : {col_std_dev:.3e}",
+                    f"Std Error Mean: {std_err_mean:.3e}",
+                    f"Upper 95% Mean: {upper_95_mean:.3e}",
+                    f"Lower 95% Mean: {lower_95_mean:.3e}",
                     f"N             : {col_data.shape[0]}",
                     f"Outlier       : {outlier_count}"
                 ]

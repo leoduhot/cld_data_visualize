@@ -2,8 +2,8 @@
 from ui_main import *
 import platform
 
-tver = "v0.3.001"
-tag = "2024/12/05 15:30 +0800"
+tver = "v0.3.002"
+tag = "2024/12/12 10:30 +0800"
 
 if __name__ == '__main__':
     log_path = os.path.join(os.path.abspath("."), 'log')

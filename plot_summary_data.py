@@ -121,7 +121,17 @@ class SummaryDataParser:
                 upper_whisker = percentile_75 + 1.5 * (percentile_75 - percentile_25)
                 outliers = col_data[(col_data < lower_whisker) | (col_data > upper_whisker)]
                 outlier_count = len(outliers)
-
+                if 'SN' in self.df_data and outlier_count:
+                    self.logger.warning(f"outliers:")
+                    for i, v in zip(outliers.index, outliers):
+                        self.logger.warning(f"index {i}, {self.df_data['SN'][i]}, {self.channels[k]}, {v}")
+                elif outlier_count:
+                    self.logger.warning(f"outliers:")
+                    for i, v in zip(outliers.index, outliers):
+                        self.logger.warning(f"index {i}, {self.channels[k]}, {v}")
+                #     sn_list = [f"{self.df_data['SN'][i]}: {v}" for i, v in zip(outliers.index, outliers)]
+                # else:
+                #     sn_list = list()
                 text_list = [
                     f"100% (maximum): {col_max:.3e}",
                     f" 75%          : {percentile_75:.3e}",
@@ -136,7 +146,8 @@ class SummaryDataParser:
                     f"Lower 95% Mean: {lower_95_mean:.3e}",
                     f"N             : {col_data.shape[0]}",
                     f"Outlier       : {outlier_count}"
-                ]
+                ] # + sn_list
+
                 ax_label.text(0.0, 0.98, "\n".join(text_list), ha='left', va='top', fontname='monospace')
                 ax_label.axis('off')
                 # r_colors = ['lightgrey', '#eee9e9']

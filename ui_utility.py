@@ -403,23 +403,13 @@ class MessageBox:
 
     def warning(self, title, text):
         msgBox = QMessageBox()
-        # msgBox.setWindowIcon(QIcon())
-        # msgBox.setIcon(QMessageBox.Icon.NoIcon)
-        # msgBox.setWindowTitle(title)
-        # msgBox.setText(text)
-        # msgBox.exec()
         msgBox.warning(self.root, title, text,
                        QMessageBox.StandardButton.NoButton, QMessageBox.StandardButton.NoButton)
 
     def information(self, title, text):
         msgBox = QMessageBox()
-        # msgBox.setWindowIcon(QIcon())
-        # msgBox.setIcon(QMessageBox.Icon.NoIcon)
-        msgBox.setWindowTitle(title)
-        msgBox.setText(text)
-        msgBox.exec()
-        # msgBox.information(self.root, title, text,
-        #                         QMessageBox.StandardButton.NoButton, QMessageBox.StandardButton.NoButton)
+        msgBox.information(self.root, title, text,
+                           QMessageBox.StandardButton.NoButton, QMessageBox.StandardButton.NoButton)
 
 
 class ChannelSelector:

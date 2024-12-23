@@ -91,8 +91,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>765</width>
-         <height>655</height>
+         <width>777</width>
+         <height>667</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -171,6 +171,9 @@
              <property name="acceptDrops">
               <bool>true</bool>
              </property>
+             <property name="toolTip">
+              <string>Drag and drop the sensor data file to tool window or click Browser</string>
+             </property>
              <property name="dragEnabled">
               <bool>true</bool>
              </property>
@@ -218,6 +221,9 @@
            </property>
            <item row="0" column="0">
             <widget class="QCheckBox" name="keepParamCkb">
+             <property name="toolTip">
+              <string>Click me to keep parameters when change data file</string>
+             </property>
              <property name="text">
               <string>Keep Parameters</string>
              </property>
@@ -245,13 +251,13 @@
             <number>12</number>
            </property>
            <property name="topMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <property name="rightMargin">
             <number>12</number>
            </property>
            <property name="bottomMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <item>
             <widget class="QLabel" name="plotNameLab">
@@ -267,7 +273,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="plotNameEntry"/>
+            <widget class="QLineEdit" name="plotNameEntry">
+             <property name="toolTip">
+              <string>Specify a string used as plot image name, default use sensor tpye</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -559,6 +569,11 @@
            </item>
            <item row="1" column="0">
             <widget class="QCheckBox" name="lpfChkb">
+             <property name="toolTip">
+              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;, btype=‘low’)
+new_data = lfilter(b, a, &lt;data&gt;, axis=-1)
+new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
+             </property>
              <property name="text">
               <string>Low Pass Filter</string>
              </property>
@@ -660,6 +675,11 @@
            </item>
            <item row="0" column="0">
             <widget class="QCheckBox" name="hpfChkb">
+             <property name="toolTip">
+              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;, btype='high')
+new_data = lfilter(b, a, &lt;data&gt;, axis=-1)
+new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
+             </property>
              <property name="text">
               <string>High Pass Filter</string>
              </property>
@@ -705,6 +725,10 @@
            </property>
            <item row="0" column="0">
             <widget class="QCheckBox" name="nf1Chkb">
+             <property name="toolTip">
+              <string>b1, a1 = signal.iirnotch(w0=float(&lt;freq&gt;), Q=float(&lt;q value&gt;), fs=&lt;data rate&gt;)
+new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
+             </property>
              <property name="text">
               <string>Notch Filter 1</string>
              </property>
@@ -759,6 +783,10 @@
            </item>
            <item row="1" column="0">
             <widget class="QCheckBox" name="nf2Chkb">
+             <property name="toolTip">
+              <string>b1, a1 = signal.iirnotch(w0=float(&lt;freq&gt;), Q=float(&lt;q value&gt;), fs=&lt;data rate&gt;)
+new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
+             </property>
              <property name="text">
               <string>Notch Filter 2</string>
              </property>
@@ -813,6 +841,10 @@
            </item>
            <item row="2" column="0">
             <widget class="QCheckBox" name="nf3Chkb">
+             <property name="toolTip">
+              <string>b1, a1 = signal.iirnotch(w0=float(&lt;freq&gt;), Q=float(&lt;q value&gt;), fs=&lt;data rate&gt;)
+new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
+             </property>
              <property name="text">
               <string>Notch Filter 3</string>
              </property>
@@ -1026,6 +1058,9 @@
            </property>
            <item row="0" column="0">
             <widget class="QPushButton" name="refreshDataBtn">
+             <property name="toolTip">
+              <string>Click me to refresh the items' checkbox, only available when &quot;Keep Parameters&quot; is checked</string>
+             </property>
              <property name="text">
               <string>Refresh</string>
              </property>

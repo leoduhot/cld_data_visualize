@@ -1,528 +1,593 @@
-# -*- coding: UTF-8 -*-
-# from datetime import datetime
-import unicodedata
-import time
-import sys
-import os
-# import platform
-# import subprocess
-import numpy as np
-# from threading import Thread
-import ttkbootstrap as ttk
-# import windnd
-from ttkbootstrap.style import Bootstyle
-from ttkbootstrap.constants import *
-from ttkbootstrap.toast import ToastNotification
-from ttkbootstrap.dialogs.dialogs import MessageDialog
+from PySide6.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel, QMessageBox,
+                               QFileDialog, QLineEdit, QPushButton, QCheckBox,
+                               QComboBox, QGridLayout, QScrollArea)
+from PySide6.QtCore import QEvent, QObject
 import logging
-import platform
+import numpy as np
+import functools
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import \
+    NavigationToolbar2QT as NavigationToolbar
 
 
-class MyTtkFrame(ttk.Frame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        try:
-            self.logger = kwargs["logger"] if "logger" in kwargs else logging
-            self.localdebug = False
-            self.toast = None
-            # self.ru = ReportUtility(self.logger, self.localdebug)
-        except Exception as e:
-            print(f"Excetpion: {str(e)}:{str(e.__traceback__.tb_lineno)}")
+class EventFilter(QObject):
+    # QEvent.Type.Drop
+    def __init__(self, _object: QObject, _event: QEvent.Type, _func):
+        super().__init__()
+        self.targetOjb = _object
+        self.targetEvent = _event
+        self.targetFunc = _func
 
-    def resource_path(self, _path):
-        if getattr(sys, 'frozen', False):
-            base_path = sys._MEIPASS
-        else:
-            base_path = os.path.abspath(".")
-        self.logger.debug(f"base path:{base_path}")
-        return os.path.join(base_path, _path)
-
-    def message_box(self, typ, txt, d=3000, delay=True):
-        if delay:
-            self.master.after(10, self._message_box, typ, txt, d)
-        else:
-            self._message_box(typ, txt, d)
-
-    def _message_box(self, typ, txt, d=3000):
-        self.master.update_idletasks()
-        d1 = self.master.winfo_width()
-        h = self.master.winfo_height()
-        x = self.winfo_rootx()
-        y = self.winfo_rooty()
-        # self.logger.textLogger.debug(f"toast...{x}, {y}, {d1}, {h}...")
-        self.toast = ToastNotification(
-            title=typ,
-            icon="",
-            message=txt,
-            duration=d,
-            bootstyle="primary",
-            position=(x + d1 // 2, y + h // 2, 'n')
-        )
-        self.toast.show_toast()
-        self.master.update_idletasks()
-        return self.toast
-
-    def close_message_box(self):
-        # this function should be used in a thread
-        timeout_cnt = 0
-        while self.toast is None and timeout_cnt < 100:
-            time.sleep(0.1)
-            timeout_cnt += 1
-        if self.toast is not None:
-            self.toast.hide_toast()
-            self.toast = None
-
-    def message_diag(self, txt):
-        # self.logger.debug("Pause here...")
-        # self.master.update_idletasks()
-        x = self.master.winfo_rootx()
-        y = self.master.winfo_rooty()
-        d = self.master.winfo_width()
-        h = self.master.winfo_height()
-        x0 = (d - x) // 2
-        y0 = (h - y) // 2
-        # self.logger.debug(f"diag...{x}, {y}, {d}, {h}.{x0}, {y0}..")
-        md = MessageDialog(txt, buttons=['Yes'])
-        md.show(
-            position=(x0, y0)
-        )
-
-    @staticmethod
-    def valid_numeric(data):
-        try:
-            float(data)
+    def eventFilter(self, obj, event):
+        # print(f"on event: {event.type()}, target: {self.targetEvent}")
+        if obj == self.targetOjb and event.type() == self.targetEvent:
+            if self.targetFunc:
+                self.targetFunc(event)
             return True
-        except ValueError:
-            pass
-        try:
-            unicodedata.numeric(data)
-            return True
-        except (TypeError, ValueError):
-            pass
-            return False
-
-    @staticmethod
-    def my_linspace(start, stop, num):
-        return [round(i, 9) for i in np.linspace(start, stop, num)]
-
-    @staticmethod
-    def my_arange(start, stop, step):
-        return [round(i, 9) for i in np.arange(start, stop, step)]
+        return False
 
 
-class MyTips(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        # self.widget = widget
-        self.text = kwargs["text"]
-        # self.tooltip = None
-        self.msg = False
+class FileSelector:
+    def __init__(self, root, pathObj: QLineEdit = None, browserObj: QPushButton = None, **kwargs):
+        self.filePathEntry = pathObj
+        self.browseBtn = browserObj
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        # self.click_func = kwargs['func'] if 'func' in kwargs else None
+        self.root = root
 
-    def show(self, event):
-        # print(f"show:{self.text}, event:{event}")
-        # self.tooltip = ttk.Label(self.widget.master, text=self.text)
-        # self.tooltip.place(x=event.x, y=event.y)
-        self.message_box("Info", self.text)
-        self.msg = True
+        if not self.filePathEntry or not self.browseBtn or not self.root:
+            self.logger.error("Invalid arguments!!")
+            return
 
-    def hide(self, event):
-        # print(f"hide:{self.text}")
-        if self.msg:
-            self.close_message_box()
-            self.msg = False
-        # if self.tooltip:
-        #     self.tooltip.destroy()
-        #     self.tooltip = None
-
-
-class FileFrm(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        if "logger" in kwargs:
-            self.logger = kwargs['logger']
-        frm = ttk.Frame(self)
-        frm.pack(fill=X, expand=True, pady=5)
-        _txt = kwargs["text"] if "text" in kwargs else "Undefined"
-        self._func = kwargs["command"] if "command" in kwargs else None
-        self._drop_func = kwargs["drop"] if "drop" in kwargs else None
-        _root = kwargs["root"] if "root" in kwargs else self
-        _lb = ttk.Label(frm, text=_txt)
-        _lb.pack(side=LEFT, padx=5)
-        self.entry = ttk.Entry(frm, bootstyle='primary')
-        self.entry.pack(side=LEFT, expand=True, fill=X, padx=5)
-        self.entry.insert(0, "drap file to the window or click browser button")
-        self.entry.config(foreground='gray')
-        if not (platform.system().lower() == "darwin" and platform.machine().lower().startswith("arm")):
-            if self._drop_func is not None:
-                # windnd.hook_dropfiles(_root, func=self.drop)
-                _root.dnd_bind('<<Drop>>', self.drop)
-        file_btn = ttk.Button(frm, text="Browser", command=self._on_button)
-        file_btn.pack(side=LEFT, padx=5)
-
+        self.browseBtn.clicked.connect(self.on_button_clicked)
+        # self.filePathEntry.dropEvent = self.on_drop_event
+        # self.filePathEntry.dragEnterEvent = self.on_dragEnter
+        self.filePathEntry.editingFinished.connect(self.on_finish_debug)
         self.filepath = None
+        self.extra_finish_func = None
 
-    def _on_button(self):
-        self.entry.delete(0, END)
-        self.entry.config(foreground='')
-        if self._func() is not None:
-            self._func()
-        pass
+    def on_button_clicked(self):
+        self.filepath, _ = QFileDialog.getOpenFileName(self.root, "Select a file", "", "All file (*.*)")
+        if self.filepath:
+            self.filePathEntry.setText(self.filepath)
+            self.logger.info(f"selected file: {self.filepath}")
+            if self.extra_finish_func is not None:
+                self.extra_finish_func()
 
-    def drop(self, event):
-        files = event.data.strip().split()
-        self.logger.info(f"files:<{files}>")
-        self.logger.info(f"file[0]:<{files[0]}>")
-        # msg = '\n'.join((item for item in files))
-        # self.logger.info(f"get data:[{msg}]")
-        self.filepath = os.path.normpath(files[0].strip())
-        self.entry.insert(0, self.filepath)
-        self.entry.config(foreground='')
-        self._drop_func()
+    def on_drop_event(self, event):
+        self.logger.debug("on drop event")
+        mime_data = event.mimeData()
+        if mime_data.hasUrls():
+            url = mime_data.urls()[0]
+            self.filePathEntry.setText(url.toLocalFile())
+            self.filepath = url.toLocalFile()
+        event.acceptProposedAction()
+
+    def on_finish_debug(self):
+        self.logger.debug("finish editing file path")
+        self.filePathEntry.clearFocus()
+        self.filepath = self.filePathEntry.text()
+        if self.extra_finish_func is not None:
+            self.extra_finish_func()
+
+    def add_finish_edit_func(self, func):
+        self.extra_finish_func = func
+        # self.filePathEntry.editingFinished.connect(func)
+
+    def state_configure(self, val):
+        self.filePathEntry.setEnabled(val)
+
+    def get_file_path(self):
+        return self.filePathEntry.text()
+
+
+class ParameterKeeper:
+    def __init__(self, root, chkb_obj: QCheckBox = None, btn_obj: QPushButton = None, **kwargs):
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.click_func = kwargs['func'] if 'func' in kwargs else None
+        self.root = root
+        self.chkb = chkb_obj
+        self.btn = btn_obj
+        self.isChecked = False
+
+        if not self.chkb or not self.btn:
+            self.logger.error("Invalid parameters!!")
+            return
+        self.btn.setEnabled(False)
+        self.chkb.toggled.connect(self.on_check_event)
+        if self.click_func:
+            self.btn.clicked.connect(self.click_func)
+
+    def on_check_event(self, checked: bool):
+        self.logger.debug(f"is checked: {checked}")
+        self.isChecked = checked
+        self.btn.setEnabled(checked)
+
+    def state_configure(self, val):
+        self.chkb.setEnabled(val)
+        if val:
+            self.btn.setEnabled(self.isChecked)
+        else:
+            self.btn.setEnabled(val)
+
+
+class ParameterEntry:
+    def __init__(self, root, _combo: dict, _entry: dict, **kwargs):
+        self.combDict = _combo
+        self.entryDict = _entry
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = root
+
+        if not self.combDict and not self.entryDict:
+            self.logger.error("Invalid arguments!!")
+            return
+
+    def set(self, _combIndex: dict = None, _entry: dict = None):
+        if _entry and self.entryDict:
+            for key in _entry:
+                if key in self.entryDict:
+                    self.entryDict[key].setText(str(_entry[key]))
+                else:
+                    self.logger.error(f"entry {key} is not found")
+        if _combIndex and self.combDict:
+            for key in _combIndex:
+                if key in self.combDict:
+                    self.combDict[key].setCurrentIndex(int(_combIndex[key]))
+                else:
+                    self.logger.error(f"entry {key} is not found")
+
+    def get(self, _comb=None, _entry=None):
+        if _entry and self.entryDict:
+            if _entry in self.entryDict:
+                return self.entryDict[_entry].text()
+            else:
+                self.logger.error(f"entry {_entry} is not found")
+                return None
+
+        if _comb and self.combDict:
+            if _comb in self.combDict:
+                return self.combDict[_comb].currentText()
+            else:
+                self.logger.error(f"combobox {_entry} is not found")
+                return None
+
+    def state_configure(self, _comb: dict = None, _entry: dict = None):
+        if _entry and self.entryDict:
+            for key in _entry:
+                if key in self.entryDict:
+                    self.entryDict[key].setEnabled(_entry[key])
+        if _comb and self.combDict:
+            for key in _comb:
+                if key in self.combDict:
+                    self.combDict[key].setEnabled(_comb[key])
+
+    def clear(self):
+        for key in self.combDict:
+            self.combDict[key].setCurrentIndex(-1)
+        for key in self.entryDict:
+            self.entryDict[key].setText("")
+
+
+class FilterEntry:
+    def __init__(self, checkbox_obj: QCheckBox, combobox_objs: dict[str, QComboBox] = None,
+                 edit_objs: dict[str, QLineEdit] = None, label_objs: list[QLabel] = None, **kwargs):
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.checkbox_obj = checkbox_obj
+        self.comb_dict = combobox_objs if combobox_objs is not None else dict()
+        self.edit_dict = edit_objs if edit_objs is not None else dict()
+        self.label_list = label_objs if label_objs is not None else list()
+        self.isChecked = False
+        self.name = self.checkbox_obj.text()
+
+        if self.checkbox_obj is None:
+            self.logger.error("checkbox obj is None!!")
+            return
+
+        self.checkbox_obj.toggled.connect(self.on_check_event)
+
+    def set_checked(self, checked: bool):
+        self.checkbox_obj.setChecked(checked)
+
+    def set_enabled(self, enabled: bool):
+        self.checkbox_obj.setEnabled(enabled)
+
+    def set(self, comb: dict[str, int] = None, edit: dict = None):
+        if comb is not None:
+            for key in comb:
+                if key in self.comb_dict:
+                    self.comb_dict[key].setCurrentIndex(int(comb[key]))
+        if edit is not None:
+            for key in edit:
+                if key in self.edit_dict:
+                    self.edit_dict[key].setText(str(edit[key]))
+
+    def get(self, names: list[str] = None):
+        comb = dict()
+        edit = dict()
+        if names is not None:
+            for n in names:
+                if n in self.comb_dict:
+                    comb[n] = self.comb_dict[n].currentText()
+                if n in self.edit_dict:
+                    edit[n] = self.edit_dict[n].text()
+        else:
+            for n in self.comb_dict:
+                comb[n] = self.comb_dict[n].currentText()
+            for n in self.edit_dict:
+                edit[n] = self.edit_dict[n].text()
+        self.logger.debug(f"{self.name} get values: {comb}, {edit}")
+        return {**comb, **edit}
+
+    def state_configure(self, val):
+        for key in self.comb_dict:
+            self.comb_dict[key].setEnabled(val)
+        for key in self.edit_dict:
+            self.edit_dict[key].setEnabled(val)
+        for i in range(len(self.label_list)):
+            self.label_list[i].setEnabled(val)
+
+    def on_check_event(self, checked: bool):
+        self.logger.debug(f"{self.name} is checked: {checked}")
+        self.isChecked = checked
+        self.state_configure(checked)
+
+
+class PassFilter:
+    def __init__(self, filter_obj: QCheckBox = None, type_obj: QComboBox = None,
+                 order_obj: QLineEdit = None, freq_obj: QLineEdit = None, label_objs: list[QLabel] = None,
+                 **kwargs):
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.filterCkb = filter_obj
+        self.typeComb = type_obj
+        self.orderEntry = order_obj
+        self.freqEntry = freq_obj
+        self.labels = label_objs
+        self.isChecked = False
+
+        if not self.filterCkb or not self.typeComb or not self.orderEntry or not self.freqEntry:
+            self.logger.error("Invalid parameters!!")
+            return
+
+        self.filterCkb.toggled.connect(self.on_check_event)
+
+    def set_checked(self, checked: bool):
+        self.filterCkb.setChecked(checked)
+
+    def get_parameters(self):
+        return {"type": self.get_type(),
+                "order": self.get_order(),
+                "freq": self.get_freq()}
+
+    def set_type(self, idx):
+        self.typeComb.setCurrentIndex(int(idx))
+
+    def get_type(self):
+        val = self.typeComb.currentText()
+        return val if val is not None and len(val) else ""
+
+    def set_order(self, value):
+        self.orderEntry.setText(str(value))
+
+    def get_order(self):
+        val = self.orderEntry.text()
+        return float(val) if len(val) else 0
+
+    def set_freq(self, value):
+        self.freqEntry.setText(str(value))
+
+    def get_freq(self):
+        val = self.freqEntry.text()
+        return float(val) if len(val) else 0
+
+    def state_configure(self, val):
+        self.typeComb.setEnabled(val)
+        self.orderEntry.setEnabled(val)
+        self.freqEntry.setEnabled(val)
+        if self.labels:
+            for lab in self.labels:
+                lab.setEnabled(val)
+
+    def on_check_event(self, checked: bool):
+        self.logger.debug(f"is checked: {checked}")
+        self.isChecked = checked
+        self.state_configure(checked)
+
+
+class NotchFilter:
+    def __init__(self, filter_obj: QCheckBox = None, qvalue_obj: QLineEdit = None,
+                 freq_obj: QLineEdit = None, label_objs: list[QLabel] = None,
+                 **kwargs):
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.filterCkb = filter_obj
+        self.qvalueEntry = qvalue_obj
+        self.freqEntry = freq_obj
+        self.labels = label_objs
+        self.isChecked = False
+
+        if not self.filterCkb or not self.qvalueEntry or not self.freqEntry:
+            self.logger.error("Invalid parameters!!")
+            return
+        self.filterCkb.toggled.connect(self.on_check_event)
+
+    def set_checked(self, checked: bool):
+        self.filterCkb.setChecked(checked)
+
+    def get_parameters(self):
+        return [self.get_freq(), self.get_qvalue()]
+
+    def set_qvalue(self, value):
+        self.qvalueEntry.setText(str(value))
+
+    def get_qvalue(self):
+        val = self.qvalueEntry.text()
+        return float(val) if len(val) else None
+
+    def set_freq(self, value):
+        self.freqEntry.setText(str(value))
+
+    def get_freq(self):
+        val = self.freqEntry.text()
+        return float(val) if len(val) else None
+
+    def state_configure(self, val):
+        self.qvalueEntry.setEnabled(val)
+        self.freqEntry.setEnabled(val)
+        if self.labels:
+            for lab in self.labels:
+                lab.setEnabled(val)
+
+    def on_check_event(self, checked: bool):
+        self.logger.debug(f"is checked: {checked}")
+        self.isChecked = checked
+        self.state_configure(checked)
+
+
+class FFTScaler:
+    def __init__(self, filter_obj: QCheckBox = None, start_obj: QLineEdit = None,
+                 end_obj: QLineEdit = None, label_objs: list[QLabel] = None,
+                 **kwargs):
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.filterCkb = filter_obj
+        self.startEntry = start_obj
+        self.endEntry = end_obj
+        self.labels = label_objs
+        self.isChecked = False
+
+        if not self.filterCkb or not self.startEntry or not self.endEntry:
+            self.logger.error("Invalid parameters!!")
+            return
+        self.filterCkb.toggled.connect(self.on_check_event)
+
+    def set_checked(self, checked: bool):
+        self.filterCkb.setChecked(checked)
+
+    def get_parameters(self):
+        return [self.get_start(), self.get_end()]
+
+    def set_start(self, value):
+        self.startEntry.setText(str(value))
+
+    def get_start(self):
+        val = self.startEntry.text()
+        return float(val) if len(val) else None
+
+    def set_end(self, value):
+        self.endEntry.setText(str(value))
+
+    def get_end(self):
+        val = self.endEntry.text()
+        return float(val) if len(val) else None
+
+    def state_configure(self, val):
+        self.startEntry.setEnabled(val)
+        self.endEntry.setEnabled(val)
+        if self.labels:
+            for lab in self.labels:
+                lab.setEnabled(val)
+
+    def on_check_event(self, checked: bool):
+        self.logger.debug(f"is checked: {checked}")
+        self.isChecked = checked
+        self.state_configure(checked)
+
+
+class MessageBox:
+    def __init__(self, root, logger):
+        self.root = root
+        self.logger = logger
+        # QMessageBox.setStandardIcon(QMessageBox.Icon.NoIcon)
+
+    def warning(self, title, text):
+        msgBox = QMessageBox()
+        # msgBox.setWindowIcon(QIcon())
+        # msgBox.setIcon(QMessageBox.Icon.NoIcon)
+        # msgBox.setWindowTitle(title)
+        # msgBox.setText(text)
+        # msgBox.exec()
+        msgBox.warning(self.root, title, text,
+                       QMessageBox.StandardButton.NoButton, QMessageBox.StandardButton.NoButton)
+
+    def information(self, title, text):
+        msgBox = QMessageBox()
+        # msgBox.setWindowIcon(QIcon())
+        # msgBox.setIcon(QMessageBox.Icon.NoIcon)
+        msgBox.setWindowTitle(title)
+        msgBox.setText(text)
+        msgBox.exec()
+        # msgBox.information(self.root, title, text,
+        #                         QMessageBox.StandardButton.NoButton, QMessageBox.StandardButton.NoButton)
+
+
+class ChannelSelector:
+    def __init__(self, containObj = None, **kwargs):
+        self.frm = containObj
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.type = None
+        self.channel_list = list()
+        self.cols = self.rows = 0
+        self.check_boxes = dict()
+        self.chkb_all = None
+        self.selected_list = list()
+        self.selected_count = 0
+
+        self.grid_layout = QGridLayout()
+        self.frm.setLayout(self.grid_layout)
+
+    def show_channels(self, channels: list[str] = None, data_type: str = None):
+        # delete old data:
+        if self.chkb_all is not None:
+            self.chkb_all.deleteLater()
+            self.chkb_all = None
+        if len(self.check_boxes):
+            for ch in self.check_boxes:
+                self.check_boxes[ch].deleteLater()
+        self.check_boxes = dict()
+        self.selected_count = 0
+        self.type = data_type
+        self.channel_list = channels
+        if self.channel_list is None or not len(self.channel_list):
+            self.logger.error("channels list is empty!!")
+            return
+        if self.type.lower() == "summary data":
+            self.cols = 4
+        else:
+            self.cols = 3
+        self.rows = np.ceil(len(self.channel_list) / 4) + 1
+
+        # delete old data:
+        if self.chkb_all is not None:
+            self.chkb_all.deleteLater()
+            self.chkb_all = None
+        if len(self.check_boxes):
+            for ch in self.check_boxes:
+                self.check_boxes[ch].deleteLater()
+        self.check_boxes = dict()
+        row = 1
+        col = 0
+        self.chkb_all = QCheckBox("All")
+        self.chkb_all.clicked.connect(self.on_all_clicked)
+        self.grid_layout.addWidget(self.chkb_all, 0, 0)
+        for ch in self.channel_list:
+            self.check_boxes[ch] = QCheckBox(ch)
+            self.check_boxes[ch].stateChanged.connect(functools.partial(self.on_check_box_state_changed, self.check_boxes[ch]))
+            self.grid_layout.addWidget(self.check_boxes[ch], row, col)
+            row = row + 1 if col == self.cols - 1 else row
+            col = 0 if col == self.cols - 1 else col + 1
+
+    def on_all_clicked(self, clicked):
+        for ch in self.check_boxes:
+            self.check_boxes[ch].setChecked(clicked)
+
+    def on_check_box_state_changed(self, ckb, state):
+        if state == 2:
+            self.logger.info(f"selected [{ckb.text()}]")
+            self.selected_count += 1
+            if self.selected_count == len(self.channel_list):
+                self.chkb_all.setChecked(True)
+        else:
+            self.logger.info(f"unselected [{ckb.text()}]")
+            self.selected_count -= 1
+            self.chkb_all.setChecked(False)
+
+    def get_checked_list(self):
+        if self.chkb_all is None:
+            self.logger.debug(f"No check box available")
+            return
+        if self.chkb_all.isChecked():
+            return self.channel_list
+        else:
+            _channel_list = list()
+            for ch in self.check_boxes:
+                if self.check_boxes[ch].isChecked():
+                    _channel_list.append(ch)
+            return _channel_list
+
+
+class SingleButton:
+    def __init__(self, btnObj: QPushButton = None, command = None, **kwargs):
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+
+        self.btnObj = btnObj
+        self.click_command = command
+        self.btnObj.clicked.connect(self.on_button_clicked)
+
+    def state_configure(self, val):
+        self.btnObj.setEnabled(val)
+
+    def on_button_clicked(self):
+        self.logger.debug("button clicked")
+        if self.click_command is not None:
+            self.click_command()
+
+
+class LabelEntry:
+    def __init__(self, labObj: QLabel = None, entryObj: QLineEdit = None, **kwargs):
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.labObj = labObj
+        self.entryObj = entryObj
+
+        if self.labObj is None or self.entryObj is None:
+            self.logger.error(f"Parameter invalid!!")
 
     def set(self, value):
-        self.entry.delete(0, END)
-        self.entry.insert(0, value)
-        pass
+        self.entryObj.setText(str(value))
 
     def get(self):
-        return self.entry.get()
+        return self.entryObj.text()
 
-    def get_filepath(self):
-        return self.filepath
-
-
-class ComboboxWithLabel(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self.logger = kwargs['logger'] if "logger" in kwargs else logging
-        _txt = kwargs['text'] if "text" in kwargs else "Undefined"
-        _func = kwargs['command'] if "command" in kwargs else self._on_selected
-        _values = kwargs['values'] if "values" in kwargs else []
-        _width = kwargs['width'] if "width" in kwargs else [10, 10]
-        _default = kwargs['default'] if "default" in kwargs else 0
-        _side = kwargs['side'] if "side" in kwargs else ttk.LEFT
-
-        frm = ttk.Frame(self)
-        frm.pack(fill=ttk.X, pady=5)
-        self._lb = ttk.Label(frm, text=f"{_txt:<10}", width=_width[0])
-        self._lb.pack(side=ttk.LEFT, padx=5)
-        self._comb = ttk.Combobox(frm, bootstyle='primary', values=_values, width=_width[1])
-        self._comb.set(_default)
-        self._comb.bind("<<ComboboxSelected>>", _func)
-        self._comb.pack(side=ttk.LEFT, padx=5)
-
-    def _on_selected(self, event):
-        pass
-
-    def get(self):
-        # self.logger.debug(f"get return:{self._comb.get()}")
-        return self._comb.get()
-
-    def set(self, val):
-        self._comb.set(val)
-
-    def configure(self, *args, **kwargs):
-        if "state" in kwargs:
-            self._comb.configure(state=kwargs["state"])
-        if "bootstyle" in kwargs:
-            self._comb.configure(bootstyle=kwargs["bootstyle"])
-            self._lb.configure(bootstyle=kwargs["bootstyle"])
+    def state_configure(self, val):
+        self.entryObj.setEnabled(val)
+        self.labObj.setEnabled(val)
 
 
-class EntryWithLabel(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self.logger = kwargs['logger'] if "logger" in kwargs else logging
-        _txt = kwargs['text'] if "text" in kwargs else "Undefined"
-        _func = kwargs['command'] if "command" in kwargs else self._on_selected
-        _value = kwargs['value'] if "value" in kwargs else ""
-        _width = kwargs['width'] if "width" in kwargs else [10, 10]
-        _default = kwargs['default'] if "default" in kwargs else 0
-        _tips = kwargs["tips"] if "tips" in kwargs else ""
-        frm = ttk.Frame(self)
-        frm.pack(fill=ttk.X, pady=5)
-        self._lb = ttk.Label(frm, text=f"{_txt:<10}", width=_width[0])
-        self._lb.pack(side=ttk.LEFT, padx=5)
-        self._entry = ttk.Entry(frm, bootstyle='primary', width=_width[1])
-        self._entry.pack(side=ttk.LEFT, padx=5)
-        self._entry.insert(0, _default)
-        if len(_tips):
-            self.logger.debug(f"tips: {_tips}")
-            self.tips = MyTips(text=_tips)
-            self._entry.bind("<FocusIn>", self.tips.show)
-            self._entry.bind("<FocusOut>", self.tips.hide)
+class PlotCanvas:
+    def __init__(self, **kwargs):
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.logger = kwargs['logger'] if 'logger' in kwargs else None
+        self.canvas_window = QMainWindow()
+        self.canvas_window.setContentsMargins(1, 1, 1, 1)
+        self.fig = None
+        self.canvas = None
+        self.navBar = None
 
-    def _on_selected(self):
-        pass
+    def create_canvas(self, fig):
+        self.fig = fig
+        self.canvas = FigureCanvas(fig)
 
-    def get(self):
-        return self._entry.get()
+    def show_plot(self):
+        # width, height = fig.get_size_inches() * fig.dpi
+        # self.canvas.setFixedSize(int(width), int(height))
+        self.navBar = NavigationToolbar(self.canvas, self.canvas_window)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.navBar)
+        layout.addWidget(self.canvas)
 
-    def set(self, val):
-        self._entry.delete(0, END)
-        self._entry.insert(0, val)
+        widget = QWidget()
+        widget.setLayout(layout)
 
-    def configure(self, *args, **kwargs):
-        if "state" in kwargs:
-            self._entry.configure(state=kwargs["state"])
-        if "bootstyle" in kwargs:
-            self._entry.configure(bootstyle=kwargs["bootstyle"])
-            self._lb.configure(bootstyle=kwargs["bootstyle"])
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(widget)
+        scroll_area.setWidgetResizable(True)
 
+        self.canvas_window.setCentralWidget(scroll_area)
 
-class ParameterFrm(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        try:
-            if "logger" in kwargs:
-                self.logger = kwargs['logger']
-            frm = ttk.Frame(self)
-            frm.pack(fill=ttk.X, pady=5)
-            self.obj = {}
-            self.entry = {}
-            self.combbox = {}
-            if "_combobox" in kwargs:
-                for val in kwargs["_combobox"]:
-                    _txt, _values, _func, _width, _default = val
-                    self.combbox[_txt] = ComboboxWithLabel(frm, text=_txt, values=_values,
-                                                           command=_func, width=_width, default=_default)
-                    self.obj[_txt] = self.combbox[_txt]
-            if "_entry" in kwargs:
-                for val in kwargs["_entry"]:
-                    _txt, _width, _default, _tips = val
-                    self.entry[_txt] = EntryWithLabel(frm, text=_txt, width=_width, default=_default, tips=_tips)
-                    self.obj[_txt] = self.entry[_txt]
-            if "columns" in kwargs:
-                _columns = kwargs['columns']
-                row_inx = col_inx = 0
-                for key in self.obj:
-                    self.obj[key].grid(row=row_inx, column=col_inx, padx=5, pady=5, sticky=EW)
-                    row_inx = row_inx + 1 if col_inx == _columns - 1 else row_inx
-                    col_inx = 0 if col_inx == _columns - 1 else col_inx + 1
-            else:
-                for key in self.obj:
-                    self.obj[key].pack(side=ttk.LEFT, padx=5)
+        # self.canvas_window.show()
+        self.canvas_window.showMaximized()
+        # self.canvas_window.resizeEvent = self.resize_canvas
 
-        except Exception as exp:
-            print(f"Excetpion: {str(exp)}:{str(exp.__traceback__.tb_lineno)}")
-
-    def get(self, name):
-        return self.obj[name].get()
-
-    def set(self, name, val):
-        self.obj[name].set(val)
-
-    def state_config(self, s):
-        _s = ["disabled", "enable"]
-        _st = ['secondary', 'primary']
-        for n in self.obj:
-            self.obj[n].configure(state=_s[s], bootstyle=_st[s])
-
-
-class FilterFrm(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        try:
-            super().__init__(*args)
-            self.logger = kwargs['logger'] if "logger" in kwargs else logging
-
-            frm = ttk.Frame(self)
-            frm.pack(fill=ttk.X)
-            self.obj = {}
-            self.filter_var = {}
-            self.filter_ckb = {}
-
-            if "parameters" in kwargs:
-                for key in kwargs["parameters"]:
-                    _param = {}
-                    frm = ttk.Frame(self)
-                    frm.pack(fill=ttk.X)
-                    self.filter_var[key] = ttk.BooleanVar()
-                    self.filter_ckb[key] = ttk.Checkbutton(frm, text=f"{key:<30}", variable=self.filter_var[key],
-                                                           command=self._on_check)
-                    self.filter_ckb[key].pack(side=ttk.LEFT, padx=5)
-                    for _type, _txt, _width, _default, _tips_or_values in kwargs["parameters"][key]:
-                        if _type == "combobox":
-                            _param[_txt] = ComboboxWithLabel(frm, text=_txt, values=_tips_or_values,
-                                                             width=_width, default=_default, side=ttk.RIGHT)
-                            _param[_txt].pack(side=ttk.LEFT, padx=5)
-                            pass
-                        elif _type == "entry":
-                            _param[_txt] = EntryWithLabel(frm, text=_txt, width=_width,
-                                                          default=_default, tips=_tips_or_values, side=ttk.RIGHT)
-                            _param[_txt].pack(side=ttk.LEFT, padx=5)
-                            pass
-                        else:
-                            pass
-                    self.obj[key] = _param
-        except Exception as exp:
-            print(f"Excetpion: {str(exp)}:{str(exp.__traceback__.tb_lineno)}")
-
-    def _on_check(self):
-        _s = ["disabled", "enable"]
-        _st = ['secondary', 'primary']
-
-        for name in self.filter_var:
-            s = int(self.filter_var[name].get())
-            self.logger.info(f"filter check: {name}, {s}")
-            for _obj in self.obj[name]:
-                self.obj[name][_obj].configure(state=_s[s], bootstyle=_st[s])
-
-    def get(self, name):
-        checked = self.filter_var[name].get()
-        self.logger.debug(f"get {name}: {checked}")
-        return checked
-
-    def set(self, name, val):
-        self.filter_var[name].set(val)
-        self._parameters_state_update(name)
-
-    def get_parameters(self, name):
-        param = {}
-        for key in self.obj[name]:
-            param[key] = self.obj[name][key].get()
-        return param
-
-    def set_parameters(self, name, val):
-        for key in val:
-            self.obj[name][key].set(val[key])
-
-    def _parameters_state_update(self, key):
-        _s = ["disabled", "enable"]
-        _st = ['secondary', 'primary']
-        s1 = int(self.filter_var[key].get())
-        for _obj in self.obj[key]:
-            self.obj[key][_obj].configure(state=_s[s1], bootstyle=_st[s1])
-
-    def state_config(self, s):
-        _s = ["disabled", "enable"]
-        _st = ['secondary', 'primary']
-        for key in self.filter_ckb:
-            self.filter_ckb[key].configure(state=_s[s])
-            self._parameters_state_update(key)
-
-
-class __FilterFrm(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self.logger = kwargs['logger'] if "logger" in kwargs else logging
-        frm = ttk.Frame(self)
-        frm.pack(fill=ttk.X, pady=5)
-        self.filters_var = {}
-        self.filters_ckb = {}
-        if "filters" in kwargs and "func" in kwargs and "columns" in kwargs:
-            row_inx = col_inx = 0
-            _columns = kwargs["columns"]
-            for _filter, _func in zip(kwargs["filters"], kwargs["func"]):
-                self.filters_var[_filter] = ttk.IntVar()
-                self.filters_ckb[_filter] = ttk.Checkbutton(frm, text=_filter,
-                                                            command=_func,
-                                                            variable=self.filters_var[_filter], onvalue=1, offvalue=0)
-                # self.filters_ckb[_filter].pack(side=ttk.LEFT, padx=5)
-                self.filters_ckb[_filter].grid(row=row_inx, column=col_inx, padx=5, pady=5, sticky=EW)
-                row_inx = row_inx + 1 if col_inx == _columns - 1 else row_inx
-                col_inx = 0 if col_inx == _columns - 1 else col_inx + 1
-
-    def get(self, _filter):
-        val = self.filters_var[_filter].get()
-        self.logger.debug(f"{_filter} get: {val}")
-        return val
-
-    def set(self, _filter, val):
-        self.filters_var[_filter].set(val)
-
-    def state_config(self, _filter):
-        pass
-
-
-class ChannelFrm(MyTtkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        if "logger" in kwargs:
-            self.logger = kwargs['logger']
-        _count = kwargs["count"] if "count" in kwargs else 40
-
-        self.frm = ttk.Frame(self)
-        self.frm.pack(fill=ttk.X, pady=5)
-        self.channels = [val for val in range(_count)]
-        self.available_channels = []
-
-        if "command" in kwargs:
-            self.command = kwargs["command"]
-        else:
-            self.command = self._on_check
-        self.channel_var = {}
-        self.channel_ckb = {}
-        self.text_var = {}
-        row_inx = col_inx = 0
-        for ch in self.channels:
-            self.channel_var[ch] = ttk.BooleanVar()
-            # self.channel_var[count].set(True)
-            self.channel_ckb[ch] = ttk.Checkbutton(self.frm, text=ch,
-                                                      command=self.command,
-                                                      variable=self.channel_var[ch])
-            # self.channel_ckb[ch].grid(row=row_inx, column=col_inx, padx=5, pady=5)
-            # col_inx = 0 if col_inx == 4 else col_inx+1
-            # row_inx = row_inx+1 if col_inx == 4 else row_inx
-        self.channel_ckb[0].configure(command=self._on_all_check)
-
-    def show_channels(self, channel_list, columns):
-        if not len(channel_list):
-            return
-        default = len(self.channels)
-        if default-1 < len(channel_list):
-            diff = len(channel_list) - default+1
-            self.logger.info(f"channel len: {default}, {len(channel_list)}")
-            for ch in [val+default for val in range(diff)]:
-                self.channels.append(ch)
-                self.channel_var[ch] = ttk.BooleanVar()
-                # self.channel_var[count].set(True)
-                self.channel_ckb[ch] = ttk.Checkbutton(self.frm, text=ch,
-                                                          command=self.command,
-                                                          variable=self.channel_var[ch])
-            # self.channel_ckb[0].configure(command=self._on_all_check)
-
-        self.available_channels = channel_list
-        for ch in self.channels:
-            self.channel_var[ch].set(False)
-            self.channel_ckb[ch].grid_forget()
-
-        # if not len(channel_list):
-        #     return
-
-        self.channel_var[0].set(True)
-        self.channel_ckb[0].configure(text="ALL")
-        self.channel_ckb[0].grid(row=0, column=0, padx=5, pady=5, sticky=EW)
-        row_inx = count = 1
-        col_inx = 0
-        for ch in channel_list:
-            if count < len(self.channels):
-                self.channel_var[count].set(True)
-                self.channel_ckb[count].configure(text=ch)
-                self.channel_ckb[count].grid(row=row_inx, column=col_inx, padx=5, pady=5, sticky=EW)
-                row_inx = row_inx + 1 if col_inx == columns-1 else row_inx
-                col_inx = 0 if col_inx == columns-1 else col_inx+1
-                count += 1
-            else:
-                break
-
-    def get_channels(self):
-        _list = []
-        for ch in range(len(self.channels)):
-            if ch == 0:
-                continue
-            if self.channel_var[ch].get():
-                # self.logger.info(f"{ch}")
-                if self.channel_ckb[ch].cget("text") != "ALL":
-                    _list.append(self.channel_ckb[ch].cget("text"))
-        return _list
-
-    def _on_check(self):
-        pass
-
-    def _on_all_check(self):
-        self.logger.info(f"all checked {self.channel_var[0].get()}")
-        for ch in range(len(self.available_channels)+1):
-            if ch == 0:
-                continue
-            self.channel_var[ch].set(self.channel_var[0].get())
-
+    def resize_canvas(self, event):
+        width = event.size().width()
+        height = event.size().height()
+        fig_width, fig_height = self.fig.get_size_inches() * self.fig.dpi
+        scale = min(width / fig_width, height / fig_height)
+        self.canvas.setFixedSize(int(fig_width * scale), int(fig_height * scale))
+        super().resizeEvent(event)

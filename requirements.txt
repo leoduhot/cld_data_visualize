@@ -1,8 +1,6 @@
 PyQt5
-PySide2
 numpy
 pandas
 matplotlib
-ttkbootstrap
 scipy
-tkinterdnd2
+pyside6

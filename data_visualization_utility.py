@@ -6,11 +6,12 @@ from scipy import signal
 from scipy.signal import butter, lfilter, filtfilt
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.table import Table
 from matplotlib.widgets import CheckButtons
-matplotlib.use('TkAgg')
 import math
 import logging
 from enum import IntEnum
+import time
 
 
 class ErrorCode(IntEnum):
@@ -24,7 +25,8 @@ class ErrorCode(IntEnum):
 
 class DataVisualization:
     def __init__(self, *args, **kwargs):
-        self.logger = kwargs["logger"] if 'logger' in kwargs else logging
+        self.logger = kwargs["logger"] if 'logger' in kwargs else logging.getLogger()
+        self.figure_canvas = kwargs['canvas'] if 'canvas' in kwargs else None
         self.list = []   # column name
         self.bad_channel = []
         self.sensor = None
@@ -39,6 +41,9 @@ class DataVisualization:
         self.fft_scale = [[], []]
         self.markers = list()
         self.fig = None
+        self.plot_name = None
+        self.figsize = None
+        self.txt_fontsize = 10
         self.channel_lines = dict()  #save {ax:[lines]) for click event
 
         self.process_func = {
@@ -62,9 +67,16 @@ class DataVisualization:
         self.low_pass_filter = kwargs["lowpassfilter"] if "lowpassfilter" in kwargs else {"type": '', "order": 0, "freq": 0}
         self.notch_filter = kwargs["notchfilter"] if "notchfilter" in kwargs else [[0,0], [0,0], [0,0]]
         self.fft_scale = kwargs["fftscale"] if "fftscale" in kwargs else [[], []]
+        self.plot_name = kwargs["name"] if "name" in kwargs else self.sensor
         self.markers = []
+        if self.fig is not None:
+            for ax in self.fig.axes:
+                ax.cla()
         self.fig = None
         self.channel_lines = {}
+
+        if self.plot_name is None or not len(self.plot_name.strip()):
+            self.plot_name = self.sensor
 
         if self.data_file is not None:
             try:
@@ -94,10 +106,13 @@ class DataVisualization:
 
     def do_notch_filter(self, _sig):
         try:
+            if self.notch_filter is None or not len(self.notch_filter):
+                self.logger.info(f"notch filer parameter is empty, do nothing")
+                return
             self.logger.info(f"do_notch_filter")
             _new_sig = _sig
             for f in self.notch_filter:
-                if f != [0, 0] and f != []:
+                if f is not None and f != [0, 0] and f != []:
                     self.logger.info(f"notch parameters: {f}")
                     try:
                         b1, a1 = signal.iirnotch(w0=float(f[0]), Q=float(f[1]), fs=self.sample_rate)
@@ -132,7 +147,7 @@ class DataVisualization:
     def do_high_pass_filter(self, sig_list, axis=-1):
         try:
             self.logger.info(f"do_high_pass_filter ...")
-            if self.high_pass_filter["type"] == "":
+            if self.high_pass_filter is None or self.high_pass_filter["type"] == "":
                 self.logger.info(f"bad high pass filter parameters, do nothing!")
                 return ErrorCode.ERR_NO_ERROR, sig_list
             order = int(self.high_pass_filter["order"])
@@ -159,7 +174,7 @@ class DataVisualization:
     def do_low_pass_filter(self, sig_list, axis=-1):
         try:
             self.logger.info(f"do_low_pass_filter ...")
-            if self.low_pass_filter["type"] == "":
+            if self.low_pass_filter is None or self.low_pass_filter["type"] == "":
                 self.logger.info(f"bad low pass filter parameters, do nothing!")
                 return ErrorCode.ERR_NO_ERROR, sig_list
             order = int(self.low_pass_filter["order"])
@@ -284,8 +299,10 @@ class DataVisualization:
         return
 
     def draw_checkbutton(self, _plt, _lines, _colors):
-        _h = 0.03*len(self.list)
-        rax = _plt.axes((0.91, 0.88-_h, 0.07, _h))
+        _h = 0.025*len(self.list)
+        # _w = len(max(self.list, key=len))
+        # 0.62*_w/self.fig.dpi
+        rax = _plt.axes((0.91, 0.88-_h, 0.08, _h))
         self.check_btn = CheckButtons(
             ax=rax,
             labels=self.list,
@@ -299,37 +316,44 @@ class DataVisualization:
             for line in _lines[label]:
                 line.set_visible(not line.get_visible())
                 line.figure.canvas.draw_idle()
+            if self.figure_canvas is not None:
+                self.figure_canvas.canvas.draw_idle()
         self.check_btn.on_clicked(callback)
 
     def _draw_table(self, _plt, _table_data):
         try:
             self.logger.info(f"_draw_table..")
-            # _plt.rcParams.update({'font.size': 10})
-            # table = _plt.table(cellText=_table_data, cellLoc='center', loc='center')
-            table = _plt.table(cellText=_table_data, cellLoc='center', bbox=[0, 0, 1, 1])
-            table.auto_set_font_size(True)
-            # table.scale(1, 2.5)
+            _plt.axis('off')
+            table = Table(_plt, bbox=[0, 0, 1, 1])
+            table.set_fontsize(8)
+            nrow = len(_table_data)
+            ncol = len(_table_data[0])
+            for i in range(nrow):
+                for j in range(ncol):
+                    table.add_cell(i, j, 1, 1, text=str(_table_data[i, j]), loc='center')
             colors = ["#f8f8ff", "#f5f5f5"]
             for (row, col), cell in table.get_celld().items():
-                # self.logger.info(f"{row}, {col}")
+                self.logger.debug(f"{row}, {col}")
                 cell.set_linewidth(0.3)
                 cell.set_text_props(fontsize=8)
                 cell.set_edgecolor("white")
-                # cell.set_width(0.3)
-                # cell.set_height(0.03)
                 if row == 0:
                     cell.set_facecolor("#e6e6fa")
                 else:
                     cell.set_facecolor(colors[row%2])
-            _plt.axis('off')
+            _plt.add_table(table)
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
-            _plt.axis("off")
 
     def do_plot_list(self, data):
         self.logger.info(f"do_plot_list..")
+        plt.clf()
+        plt.close("all")
         _nrows = len(self.list) + 1
-        self.fig = plt.figure(self.sensor, figsize=(20, 10))
+        self.fig = plt.figure(self.plot_name, figsize=(20, 10))
+        self.figsize = self.fig.get_size_inches()
+        if self.figure_canvas is not None:
+            self.figure_canvas.create_canvas(self.fig)
         self.fig.subplots(_nrows, 2)
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         # plt.subplots(_nrows, 2, figsize=(20, 20))
@@ -378,7 +402,7 @@ class DataVisualization:
                     _start, _end = list(self.fft_scale[1])
                     plt.ylim([_start, _end])
                 # plt.xlim([0.1, fs / 2])
-                plt.xlabel('frequency [Hz]')
+                plt.xlabel('Frequency [Hz]')
                 plt.xticks(fontsize=8)
                 plt.yticks(fontsize=8)
                 # plt.ylabel('{}\n[unit/sqrt(Hz)]'.format(self.list[i]), fontsize=10, rotation=0, loc="top")
@@ -389,27 +413,25 @@ class DataVisualization:
                 continue
 
         # statistics table
-        plt.subplot(_nrows, 2, (_nrows-1) * 2 + 1)
+        table_ax = plt.subplot(_nrows, 2, (_nrows-1) * 2 + 1)
 
         # plt.rcParams.update({'font.size': 10})
         table_data = np.array(
-            [["signal"] + self.list,
-             ["average"] + ["{:.8f}".format(val) for val in data["avg"]],
-             ["noise"] + ["{:.8f}".format(val) for val in data["noise"]]
+            [["Signal"] + self.list,
+             ["Average"] + ["{:.8f}".format(val) for val in data["avg"]],
+             ["Noise"] + ["{:.8f}".format(val) for val in data["noise"]]
              ]).T
-        self._draw_table(plt, table_data)
-        # table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10, 10, 10])
-        # # table.auto_set_font_size(False)
-        # # table.scale(1, 2.5)
-        # for (row, col), cell in table.get_celld().items():
-        #     cell.set_linewidth(0.3)
-        # plt.axis('off')
+        self._draw_table(table_ax, table_data)
+
         plt.subplot(_nrows, 2, (_nrows-1) * 2 + 2)
         plt.axis("off")
 
-        plt.show()
-        plt.clf()
-        plt.close("all")
+        self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
+        _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        _png_file = f"{self.plot_name}_{_postfix}.png"
+        plt.savefig(_png_file)
+        if self.figure_canvas is not None and len(self.list):
+            self.figure_canvas.show_plot()
         return ErrorCode.ERR_NO_ERROR
 
     def do_plot_together(self, time_data, freq_data, statistics_data):
@@ -503,103 +525,15 @@ class DataVisualization:
 
     def emg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
-        # list_time = []
-        # list_ac_signal = []
-        # list_rms_val = []
-        # list_avg_peak_to_peak_val = []
-        # list_num_cycles = []
-        # list_cycle_time = []
-        # list_max_vals = []
-        # list_min_vals = []
-        # list_fft_freq = []
-        # list_ac_peak_freq = []
-        # list_fft_dbv = []
-        # list_ac_peak_dbv = []
-        # list_dc_bias = []
-        # self.bad_channel = []
-        # # time,ac_signal,rms_val,avg_peak_to_peak_val,num_cycles,cycle_time,max_vals,min_vals,fft_freq,ac_peak_freq,fft_dbv,ac_peak_dbv
-        # for channel in self.list:
-        #     if int(self.data_drop[1]) > 0:
-        #         voltage = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
-        #     else:
-        #         voltage = self.df_data[channel].iloc[int(self.data_drop[0]):]
-        #     # voltage = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
-        #     # Calculate DC bias
-        #     # self.logger.debug(f"voltage[0]: {voltage[0]} {+len(voltage)}")
-        #     # self.logger.debug(f"voltage:\n{voltage}")
-        #     # return
-        #     dc_bias = np.mean(voltage)
-        #     # Remove DC bias from waveform
-        #     ac_signal = voltage - dc_bias
-        #     _err_code, ac_signal = self.do_high_pass_filter(ac_signal)
-        #     if _err_code != ErrorCode.ERR_NO_ERROR:
-        #         return _err_code
-        #     _err_code, ac_signal = self.do_low_pass_filter(ac_signal)
-        #     if _err_code != ErrorCode.ERR_NO_ERROR:
-        #         return _err_code
-        #     _err_code, ac_signal = self.do_notch_filter(ac_signal)
-        #     if _err_code != ErrorCode.ERR_NO_ERROR:
-        #         return _err_code
-        #     # Create time axis
-        #     time = np.arange(len(voltage)) / self.sample_rate
-        #     # Calculate FFT of AC signal
-        #     if len(ac_signal) == 0:
-        #         self.logger.error(f"bad channel data: {channel}")
-        #         self.bad_channel.append(channel)
-        #         continue
-        #     else:
-        #         fft_size = 2 ** int(np.ceil(np.log2(len(ac_signal))))
-        #         fft_freq = np.fft.rfftfreq(fft_size, d=1/self.sample_rate)
-        #         fft_amplitude = np.abs(np.fft.rfft(ac_signal, fft_size))
-        #         fft_dbv = 20 * np.log10(fft_amplitude / 1) # Convert to dBV
-        #
-        #     # Find peak value of AC signal in FFT plot
-        #     # print(str(fft_amplitude))
-        #     ac_peak_index = np.argmax(fft_amplitude)
-        #     # print(str(ac_peak_index))
-        #     ac_peak_freq = fft_freq[ac_peak_index]
-        #     ac_peak_dbv = fft_dbv[ac_peak_index]
-        #     ac_peak_coord = (ac_peak_freq, ac_peak_dbv)
-        #     self.logger.info(f"peak:{ac_peak_freq},{ac_peak_dbv}")
-        #     # Find cycle time and max/min values in each cycle
-        #     cycle_time = 1 / ac_peak_freq
-        #     num_cycles = int(len(ac_signal) / (cycle_time * self.sample_rate))
-        #     max_vals = np.zeros(num_cycles)
-        #     min_vals = np.zeros(num_cycles)
-        #     for i in range(num_cycles):
-        #         cycle_start = int(i * cycle_time * self.sample_rate)
-        #         cycle_end = int((i+1) * cycle_time * self.sample_rate)
-        #         cycle_vals = ac_signal[cycle_start:cycle_end]
-        #         max_val = np.max(cycle_vals)
-        #         min_val = np.min(cycle_vals)
-        #         max_vals[i] = max_val
-        #         min_vals[i] = min_val
-        #
-        #     # Calculate peak-to-peak value for each cycle
-        #     peak_to_peak_vals = max_vals - min_vals
-        #
-        #     # Compute average peak-to-peak value
-        #     avg_peak_to_peak_val = np.mean(peak_to_peak_vals)
-        #
-        #     # Calculate RMS level value
-        #     rms_val = np.sqrt(np.mean(np.array(ac_signal) ** 2))
-        #     list_time.append(time)
-        #     list_ac_signal.append(ac_signal)
-        #     list_rms_val.append(rms_val)
-        #     list_avg_peak_to_peak_val.append(avg_peak_to_peak_val)
-        #     list_num_cycles.append(num_cycles)
-        #     list_cycle_time.append(cycle_time)
-        #     list_max_vals.append(max_vals)
-        #     list_min_vals.append(min_vals)
-        #     list_fft_freq.append(fft_freq)
-        #     list_ac_peak_freq.append(ac_peak_freq)
-        #     list_fft_dbv.append(fft_dbv)
-        #     list_ac_peak_dbv.append(ac_peak_dbv)
-        #     list_dc_bias.append(dc_bias)
         _err_code, _data = self.do_data_conversion(_sensor="emg")
         if _err_code != ErrorCode.ERR_NO_ERROR:
             return _err_code
+        plt.clf()
+        plt.close("all")
         self.fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
+        self.figsize = self.fig.get_size_inches()
+        if self.figure_canvas is not None:
+            self.figure_canvas.create_canvas(self.fig)
         plt.subplots_adjust(hspace=0.6)
         self.fig.subplots(2, 2)
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
@@ -628,12 +562,12 @@ class DataVisualization:
         ax.set_yticklabels(self.list)
         # ax.legend()
 
-        plt.subplot(2, 2, 3)
+        table_ax = plt.subplot(2, 2, 3)
         # plt.rcParams.update({'font.size': 10})
         table_data = np.array([["Signal"]+self.list, ["RMS Level(V)"]+["{:.8f}".format(val) for val in _data["rms"]],
                     ["Average Peak-to-Peak"]+["{:.8f}".format(val) for val in _data["avg_p2p"]],
                     ["DC bias"]+["{:.8f}".format(val) for val in _data["bias"]]]).T
-        self._draw_table(plt, table_data)
+        self._draw_table(table_ax, table_data)
         # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
         # for (row, col), cell in _table.get_celld().items():
         #     cell.set_linewidth(0.3)
@@ -690,7 +624,7 @@ class DataVisualization:
         if len(self.fft_scale[1]):
             _start, _end = list(self.fft_scale[1])
             plt.ylim(_start, _end)
-        plt.subplot(2, 2, 4)
+        table_ax = plt.subplot(2, 2, 4)
         # plt.rcParams.update({'font.size': 10})
         table_data = np.array([["Signal"]+self.list,
                                ["Peak"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
@@ -704,7 +638,7 @@ class DataVisualization:
                                ["Harmonic 5"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
                                                  harmonic_data[3]],
                                ]).T
-        self._draw_table(plt, table_data)
+        self._draw_table(table_ax, table_data)
         # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
         # for (row, col), cell in _table.get_celld().items():
         #     cell.set_linewidth(0.3)
@@ -713,11 +647,17 @@ class DataVisualization:
         self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
-        if len(self.list):
-            plt.show()
-        #plt.cla()
-        plt.clf()
-        plt.close("all")
+        self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
+        _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        _png_file = f"{self.plot_name}_{_postfix}.png"
+        plt.savefig(_png_file)
+        if self.figure_canvas is not None and len(self.list):
+            self.figure_canvas.show_plot()
+        # if len(self.list):
+        #     plt.show()
+        # #plt.cla()
+        # plt.clf()
+        # plt.close("all")
         self.logger.info(f"finish: {self.sensor}")
         return ErrorCode.ERR_NO_ERROR
 
@@ -751,7 +691,7 @@ class DataVisualization:
                 _noise = np.std(_sig_ac)
                 _snr = 20 * math.log10(_avg / _noise)
 
-                self.logger.debug(_avg, _noise, _snr)
+                self.logger.debug(f"{_avg}, {_noise}, {_snr}")
 
                 timex = np.linspace(0, len(_sig_ac) / fs, len(_sig_ac))
                 sum_vector = np.array(_sig_ac)
@@ -771,59 +711,15 @@ class DataVisualization:
 
     def ppg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
-
-        # list_avg = []
-        # list_timex = []
-        # list_hp_data = []
-        # list_sum_vector = []
-        # list_hp_noise = []
-        # list_hp_snr = []
-        # list_sum_vector = []
-        #
-        # data = self.df_data
-        # self.bad_channel = []
-        # fs = self.sample_rate
-        # start = int(self.data_drop[0])
-        # end = int(self.data_drop[1])
-        # for channel in self.list:
-        #     try:
-        #         if end > 0:
-        #             _sig = data[channel].iloc[start:end]
-        #         else:
-        #             _sig = data[channel].iloc[start:]
-        #         _avg = abs(np.mean(_sig))
-        #         _sig_ac = _sig - _avg
-        #         _err_code, _sig_ac = self.do_high_pass_filter(_sig_ac)
-        #         if _err_code != ErrorCode.ERR_NO_ERROR:
-        #             return _err_code
-        #         _err_code, _sig_ac = self.do_low_pass_filter(_sig_ac)
-        #         if _err_code != ErrorCode.ERR_NO_ERROR:
-        #             return _err_code
-        #         _err_code, _sig_ac = self.do_high_pass_filter(_sig_ac, axis=-1)
-        #         if _err_code != ErrorCode.ERR_NO_ERROR:
-        #             return _err_code
-        #         _noise = np.std(_sig_ac)
-        #         _snr = 20 * math.log10(_avg / _noise)
-        #
-        #         self.logger.debug(_avg, _noise, _snr)
-        #
-        #         timex = np.linspace(0, len(_sig_ac) / fs, len(_sig_ac))
-        #         sum_vector = np.array(_sig_ac)
-        #         list_avg.append(_avg)
-        #         list_timex.append(timex)
-        #         list_hp_data.append(_sig_ac)
-        #         list_sum_vector.append(sum_vector)
-        #         list_hp_noise.append(_noise)
-        #         list_hp_snr.append(_snr)
-        #     except Exception as ex:
-        #         self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
-        #         self.logger.error("this channel have problem:" + channel)
-        #         self.bad_channel.append(channel)
-        #         continue
         _err_code, _data = self.do_data_conversion(_sensor="ppg")
         if _err_code != ErrorCode.ERR_NO_ERROR:
             return _err_code
-        self.fig = plt.figure(f"{self.sensor}", figsize=(20, 20))
+        plt.clf()
+        plt.close("all")
+        self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
+        self.figsize = self.fig.get_size_inches()
+        if self.figure_canvas is not None:
+            self.figure_canvas.create_canvas(self.fig)
         # plt.subplots_adjust(hspace=0.6)
         plt.rcParams.update({'font.size': 10})
         self.fig.subplots(2, 2)
@@ -889,7 +785,7 @@ class DataVisualization:
         # plt.ylabel('FFT[cnt/sqrt(Hz)]', fontsize=10)
         plt.text(-0.05, 1.05, f"FFT[cnt/sqrt(Hz)]",
                  fontsize=10, transform=plt.gca().transAxes)
-        plt.xlabel('frequency [Hz]', fontsize=10)
+        plt.xlabel('Frequency [Hz]', fontsize=10)
         if len(self.fft_scale[0]):
             _x_start, _x_end = list(self.fft_scale[0])
             _x_end = self.sample_rate / 2 if _x_end == -1 else _x_end
@@ -901,15 +797,15 @@ class DataVisualization:
         # plt.xlim([0.1, fs / 2])
         # plt.ylim([-0.1, 5])
 
-        plt.subplot(2, 2, 3)
+        table_ax = plt.subplot(2, 2, 3)
         # plt.rcParams.update({'font.size': 10})
         table_data = np.array(
-            [["signal"] + self.list,
-             ["avg."] + ["{:.8f}".format(val) for val in _data["avg"]],
-             ["noise"] + ["{:.8f}".format(val) for val in _data["noise"]],
-             ["snr"] + ["{:.8f}".format(val) for val in _data["snr"]]
+            [["Signal"] + self.list,
+             ["Average"] + ["{:.8f}".format(val) for val in _data["avg"]],
+             ["Noise"] + ["{:.8f}".format(val) for val in _data["noise"]],
+             ["SNR"] + ["{:.8f}".format(val) for val in _data["snr"]]
              ]).T
-        self._draw_table(plt, table_data)
+        self._draw_table(table_ax, table_data)
         # table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
         # # table.auto_set_font_size(False)
         # table.scale(1, 2.5)
@@ -920,11 +816,17 @@ class DataVisualization:
         plt.subplot(2, 2, 4)
         plt.axis('off')
         self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
-
-        plt.show()
-        # plt.cla()
-        plt.clf()
-        plt.close("all")
+        self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
+        _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        _png_file = f"{self.plot_name}_{_postfix}.png"
+        # plt.tight_layout(rect=[0, 0, 1, 1])
+        plt.savefig(_png_file)
+        if self.figure_canvas is not None and len(self.list):
+            self.figure_canvas.show_plot()
+        # plt.show()
+        # # plt.cla()
+        # plt.clf()
+        # plt.close("all")
         self.logger.info(f"finish: {self.sensor}")
         return ErrorCode.ERR_NO_ERROR
 
@@ -979,3 +881,20 @@ class DataVisualization:
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN
+
+    def update_text_size(self, event):
+        newsize = self.fig.get_size_inches()
+        rate = min(newsize[0]/self.figsize[0], newsize[1]/self.figsize[1])
+        self.logger.debug(f"fig size, now: {newsize}, old: {self.figsize}")
+        for ax in self.fig.axes:
+            for text in ax.texts:
+                # fontsize = text.get_fontsize()
+                text.set_fontsize(10*rate)
+            for child in ax.get_children():
+                if isinstance(child, matplotlib.table.Table):
+                    child.set_fontsize(8*rate)
+            ax.xaxis.label.set_fontsize(10*rate)
+            ax.yaxis.label.set_fontsize(10 * rate)
+            ax.tick_params(axis='x', labelsize=8*rate)
+            ax.tick_params(axis='y', labelsize=8*rate)
+        self.fig.canvas.draw()

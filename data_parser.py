@@ -17,6 +17,15 @@ class ErrorCode(IntEnum):
     ERR_BAD_UNKNOWN = -255,
 
 
+ErrorMsg = {
+    f"{ErrorCode.ERR_BAD_FILE}": "ErrorCode.ERR_BAD_FILE",
+    f"{ErrorCode.ERR_BAD_DATA}": "ErrorCode.ERR_BAD_DATA",
+    f"{ErrorCode.ERR_BAD_TYPE}": "ErrorCode.ERR_BAD_DATA",
+    f"{ErrorCode.ERR_BAD_ARGS}": "ErrorCode.ERR_BAD_ARGS",
+    f"{ErrorCode.ERR_BAD_UNKNOWN}": "ErrorCode.ERR_BAD_UNKNOWN",
+}
+
+
 class RawDataParser:
     ref_key_names = {
         "emg":  ["CH03", "CH05", "CH07", "CH08", "CH10", "CH12", "CH13", "CH15"],
@@ -29,13 +38,13 @@ class RawDataParser:
     }
     sensor_pattern = {
         "emg": ["sending cmd: ad469x dump_last_stream emg_adc0@0"],
-        "ppg": ["FT> {", "ppg print_samples"],
-        "imu": ["FT> {", "imu get_samples"],
-        "alt": ["FT> {", "press get_samples"],
-        "mag": ["FT> {", "mag print_samples"],
-        "bti": ["FT> {", "bti print_samples"],
+        "ppg": [r'\{(?:[^{}]*?"data": \[)', "FT> {", "ppg print_samples"],
+        "imu": [r'\{(?:[^{}]*?"data": \[)', "FT> {", "imu get_samples"],
+        "alt": [r'\{(?:[^{}]*?"data": \[)', "FT> {", "press get_samples"],
+        "mag": [r'\{(?:[^{}]*?"data": \[)', "FT> {", "mag print_samples"],
+        "bti": [r'\{(?:[^{}]*?"data": \[)', "FT> {", "bti print_samples"],
         "als": ["Reading samples", "millilux, timestamp"],
-        "def": ["FT> {"],
+        "def": [r'\{(?:[^{}]*?"data": \[)', "FT> {"],
     }
 
     def __init__(self, *args, **kwargs):
@@ -55,10 +64,20 @@ class RawDataParser:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_DATA, ErrorCode.ERR_BAD_UNKNOWN
 
-    def extract_sensor_data(self, _file, _sensor):
+    def extract_sensor_data(self, _file=None, _data=None, _sensor=None):
         try:
-            _fh = open(_file, 'r')
-            _fd = _fh.read()
+            if _file is not None:
+                _fh = open(_file, 'r')
+                _fd = _fh.read()
+            elif _data is not None:
+                _fd = _data
+            else:
+                return ErrorCode.ERR_BAD_ARGS, None
+            if _sensor is None:
+                return ErrorCode.ERR_BAD_ARGS, None
+            _sensor = _sensor.lower()[0:3]   # get first 3 char, in case als100, als10, imu_120, ...
+            if _sensor not in self.sensor_pattern:
+                return ErrorCode.ERR_BAD_ARGS, None
             if _sensor == "emg":
                 return self.extract_emg_data(_fd)
             else:
@@ -87,12 +106,8 @@ class RawDataParser:
             # col_line = col_line.replace(":", "")
             # col = [val.strip().upper() for val in col_line.strip().split()]
             # self.logger.info(f"col:{col}")
-            _find = False
             for line in _data_lines:
-                # if _find and "CMD_CMPT" == line[0:8]:
-                #     break
                 if re.match(r'^(\d\.\d{6}\t){8}$', line):
-                    _find = True
                     _row = [float(val) for val in line.strip().split()]
                     values.append(_row)
             
@@ -105,24 +120,25 @@ class RawDataParser:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_DATA, None
 
-    def extract_json_data(self, _data, _reg):
+    def extract_json_data(self, _data, _reg=None):
         try:
             is_json = False
             json_obj = list()
             json_decoded = list()
-            _data_lines = _data.splitlines()
-            _reg_index = 0
+            start_index = 0
             if _reg is not None:
-                for item in _reg:
-                    if item in _data_lines:
-                        _reg_index = _data_lines.index(item)
-                        self.logger.info(f"find [{item}] in line:{_reg_index}")
+                for reg in _reg:
+                    matches = re.search(reg, _data, re.MULTILINE)
+                    if matches:
+                        self.logger.info(f"find {matches}")
+                        start_index = matches.end()
                         break
-            for line in _data_lines[_reg_index:]:
+            _data_lines = _data[start_index:].splitlines()
+            for line in _data_lines:
                 if line.startswith("      {"):
                     is_json = True
                     json_obj = list()
-                elif line.startswith("      },"):
+                elif is_json and line.startswith("      },"):  # ignore "}," if previous "{" is not found
                     is_json = False
                     json_obj.append("      }")
                     _json_data = json.loads("\n".join(json_obj))

@@ -1,0 +1,45 @@
+v0.4.000
+1. change UI module from tkinter to QT (support drag and drop feature for both MacOS and Windows)
+2. add checkbox for keeping parameters
+3. add button for refreshing data columns
+4. filter data columns for summary data by sensor type
+5. auto resize plot texts according to window size
+6. update raw data parser to support more un-consistency data format
+
+v0.3.002:
+1. Print outliers details(index, SN, test item, value) in log
+
+v0.3.001:
+1. Use scientific number for summary statistics info
+
+v0.3.000:
+1. Support P2 sensor raw data format
+2. When parse raw data, generate css data file by default after select the "Raw Data" type
+
+v0.2.021
+1. fix parameter doesn't update when select MAG
+2. [sensor summary data]compatible all other sensors
+3. disable DND feature for Arm64 MacOS
+
+v0.2.000 (only for Windows)
+1. support raw sensor data(command output data)
+2. add drag and drop feature for filepath
+3. change APP icon
+4. dynamic change checkbox height according to signal numbers
+5. support tester data which don't have columns name(e.g.: emg single channel csv)
+
+
+v0.1.003
+1. add low pass filter implementation;
+2. update UI layout to compatible with Windows PC;
+3. fix callback args error
+
+v0.1.002
+1. apply filters to all sensors;
+2. add error message box for errors
+
+v0.1.001
+1. use interactive backend: FigureCanvasTkAgg
+
+v0.1.000
+1. initialize

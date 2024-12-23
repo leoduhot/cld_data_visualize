@@ -564,6 +564,7 @@ class PlotCanvas:
     def show_plot(self):
         # width, height = fig.get_size_inches() * fig.dpi
         # self.canvas.setFixedSize(int(width), int(height))
+        self.canvas_window.setWindowTitle(f"{self.fig.get_suptitle()}")
         self.navBar = NavigationToolbar(self.canvas, self.canvas_window)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

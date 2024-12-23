@@ -19,6 +19,9 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">Fusion</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -37,7 +40,7 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <property name="spacing">
-     <number>-1</number>
+     <number>6</number>
     </property>
     <property name="leftMargin">
      <number>1</number>
@@ -66,7 +69,10 @@
        <bool>true</bool>
       </property>
       <property name="frameShape">
-       <enum>QFrame::Shape::NoFrame</enum>
+       <enum>QFrame::Shape::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Shadow::Raised</enum>
       </property>
       <property name="verticalScrollBarPolicy">
        <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOn</enum>
@@ -85,8 +91,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>779</width>
-         <height>674</height>
+         <width>765</width>
+         <height>655</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -129,7 +135,7 @@
            <bool>true</bool>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Shape::Box</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Shadow::Sunken</enum>
@@ -139,16 +145,16 @@
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0">
            <property name="spacing">
-            <number>-1</number>
+            <number>6</number>
            </property>
            <property name="sizeConstraint">
             <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
            </property>
            <property name="topMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <property name="bottomMargin">
-            <number>0</number>
+            <number>6</number>
            </property>
            <item>
             <widget class="QLabel" name="filaPathLab">
@@ -176,7 +182,7 @@
               <enum>Qt::FocusPolicy::NoFocus</enum>
              </property>
              <property name="autoFillBackground">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="text">
               <string>Browser</string>
@@ -229,7 +235,7 @@
            </sizepolicy>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Shape::Box</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Shadow::Sunken</enum>
@@ -278,17 +284,17 @@
            </sizepolicy>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Shape::Box</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Shadow::Sunken</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout">
            <property name="topMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <property name="bottomMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <item row="1" column="5">
             <widget class="QLineEdit" name="dataRateEntry">
@@ -474,17 +480,17 @@
            </sizepolicy>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Shape::Box</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Shadow::Sunken</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
            <property name="topMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <property name="bottomMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <item row="0" column="4">
             <widget class="QLabel" name="hpfOrdLab">
@@ -685,17 +691,17 @@
            </sizepolicy>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Shape::Box</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Shadow::Sunken</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout_6">
            <property name="topMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <property name="bottomMargin">
-            <number>5</number>
+            <number>6</number>
            </property>
            <item row="0" column="0">
             <widget class="QCheckBox" name="nf1Chkb">
@@ -871,12 +877,18 @@
            </sizepolicy>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Shape::Box</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Shadow::Sunken</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
+           <property name="topMargin">
+            <number>6</number>
+           </property>
+           <property name="bottomMargin">
+            <number>6</number>
+           </property>
            <item row="0" column="0">
             <widget class="QCheckBox" name="fftScaleXChkb">
              <property name="text">
@@ -1031,10 +1043,10 @@
            </sizepolicy>
           </property>
           <property name="frameShape">
-           <enum>QFrame::Shape::Box</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="frameShadow">
-           <enum>QFrame::Shadow::Sunken</enum>
+           <enum>QFrame::Shadow::Raised</enum>
           </property>
          </widget>
         </item>

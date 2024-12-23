@@ -351,6 +351,7 @@ class DataVisualization:
         plt.close("all")
         _nrows = len(self.list) + 1
         self.fig = plt.figure(self.plot_name, figsize=(20, 10))
+        self.fig.suptitle(self.sensor, fontsize=16)
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None:
             self.figure_canvas.create_canvas(self.fig)
@@ -531,6 +532,7 @@ class DataVisualization:
         plt.clf()
         plt.close("all")
         self.fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
+        self.fig.suptitle(self.sensor, fontsize=16)
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None:
             self.figure_canvas.create_canvas(self.fig)
@@ -717,6 +719,7 @@ class DataVisualization:
         plt.clf()
         plt.close("all")
         self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
+        self.fig.suptitle(self.sensor, fontsize=16)
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None:
             self.figure_canvas.create_canvas(self.fig)

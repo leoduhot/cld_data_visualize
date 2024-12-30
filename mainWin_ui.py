@@ -748,7 +748,7 @@ class Ui_MainWindow(object):
 
         self.hpfFreqLab.setText(QCoreApplication.translate("MainWindow", u"Freq", None))
 #if QT_CONFIG(tooltip)
-        self.lpfChkb.setToolTip(QCoreApplication.translate("MainWindow", u"b, a = butter(<order>, <freq>/(0.5x<data rate>, btype=\u2018low\u2019)\n"
+        self.lpfChkb.setToolTip(QCoreApplication.translate("MainWindow", u"b, a = butter(<order>, <freq>/(0.5x<data rate>), btype=\u2018low\u2019)\n"
 "new_data = lfilter(b, a, <data>, axis=-1)\n"
 "new_data = filtfilt(b, a, <data>, axis=-1)", None))
 #endif // QT_CONFIG(tooltip)
@@ -761,7 +761,7 @@ class Ui_MainWindow(object):
         self.lpfTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"filtfilt", None))
 
 #if QT_CONFIG(tooltip)
-        self.hpfChkb.setToolTip(QCoreApplication.translate("MainWindow", u"b, a = butter(<order>, <freq>/(0.5x<data rate>, btype='high')\n"
+        self.hpfChkb.setToolTip(QCoreApplication.translate("MainWindow", u"b, a = butter(<order>, <freq>/(0.5x<data rate>), btype='high')\n"
 "new_data = lfilter(b, a, <data>, axis=-1)\n"
 "new_data = filtfilt(b, a, <data>, axis=-1)", None))
 #endif // QT_CONFIG(tooltip)

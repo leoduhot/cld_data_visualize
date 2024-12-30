@@ -148,6 +148,10 @@ class FlowControl:
     def set_default_values(self, sensor):
         if not len(sensor):
             self.logger.debug(f"sensor type is empty, do nothing!!")
+            self.paramEntry.set(_entry={"data_rate": 1,
+                                        "data_drop_start": 0,
+                                        "data_drop_end": -1})
+            self.highPassFilter.set_checked(False)
             return
         settings = defaultSettings[sensor[:3].lower()]
         self.paramEntry.set(_entry={"data_rate": settings[0],
@@ -273,8 +277,10 @@ class FlowControl:
                 return
         data_rate = self.paramEntry.get(_entry='data_rate')
         self.logger.debug(f"data rate: {data_rate}")
-        self.data_drops[0] = int(self.paramEntry.get(_entry='data_drop_start'))
-        self.data_drops[1] = int(self.paramEntry.get(_entry='data_drop_end'))
+        val = self.paramEntry.get(_entry='data_drop_start')
+        self.data_drops[0] = int(val) if val is not None and len(val) else 0
+        val = self.paramEntry.get(_entry='data_drop_end')
+        self.data_drops[1] = int(val) if val is not None and len(val) else -1
         self.logger.debug(f"data drops: {self.data_drops}")
         self.plot_name = self.plotName.get()
         self.logger.debug(f"plot name: {self.plot_name}")
@@ -316,5 +322,6 @@ class FlowControl:
         self.logger.debug(f"refresh: [{self.sensor_type}], [{self.data_type}]")
         columns = self.df_data.columns.dropna().tolist()
         if self.sensor_type is not None and len(self.sensor_type.strip()) and self.data_type.lower() == "summary data":
-            columns = [val for val in columns if val.startswith(self.sensor_type)]
+            new_col = [val for val in columns if val.startswith(self.sensor_type)]
+            columns = new_col if len(new_col) else columns
         self.channelsSelector.show_channels(columns, self.data_type)

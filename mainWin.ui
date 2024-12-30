@@ -570,7 +570,7 @@
            <item row="1" column="0">
             <widget class="QCheckBox" name="lpfChkb">
              <property name="toolTip">
-              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;, btype=‘low’)
+              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;), btype=‘low’)
 new_data = lfilter(b, a, &lt;data&gt;, axis=-1)
 new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
              </property>
@@ -676,7 +676,7 @@ new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
            <item row="0" column="0">
             <widget class="QCheckBox" name="hpfChkb">
              <property name="toolTip">
-              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;, btype='high')
+              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;), btype='high')
 new_data = lfilter(b, a, &lt;data&gt;, axis=-1)
 new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
              </property>

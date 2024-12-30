@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 import csv
 import os
+import sys
 
 
 class MyLogger:
@@ -39,6 +40,7 @@ class MyLogger:
 
         self.data_files = dict()
         self.file_writers = dict()
+        self.resource_path = self.get_resource_path("resource")
 
     @staticmethod
     def get_log_level(level):
@@ -77,3 +79,11 @@ class MyLogger:
         #     self.logger.debug(f"save to: {_path}")
         #     self.logger.debug(f"{[kwargs[key] for key in kwargs]}")
         #     self.file_writers[filename].writerow([kwargs[key] for key in kwargs])
+
+    def get_resource_path(self, folder):
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.abspath(".")
+        self.logger.debug(f"base path: {base_path}")
+        return os.path.join(base_path, folder)

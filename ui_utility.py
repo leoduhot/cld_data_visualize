@@ -1,13 +1,20 @@
 from PySide6.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel, QMessageBox,
                                QFileDialog, QLineEdit, QPushButton, QCheckBox,
                                QComboBox, QGridLayout, QScrollArea)
-from PySide6.QtCore import QEvent, QObject
+from PySide6.QtCore import QEvent, QObject, QTimer, Signal, Qt
 import logging
 import numpy as np
 import functools
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import \
     NavigationToolbar2QT as NavigationToolbar
+
+
+class ProcessSignal(QObject):
+    dataReady = Signal(list)
+    stateChanged = Signal(int)
+    logReady = Signal(list)
+    threadStateChanged = Signal(list)
 
 
 class EventFilter(QObject):
@@ -47,21 +54,23 @@ class FileSelector:
         self.extra_finish_func = None
 
     def on_button_clicked(self):
-        self.filepath, _ = QFileDialog.getOpenFileName(self.root, "Select a file", "", "All file (*.*)")
+        self.filepath, _ = QFileDialog.getOpenFileNames(self.root,
+                                                       "Select files", "", "All file (*.*)")
         if self.filepath:
-            self.filePathEntry.setText(self.filepath)
+            self.filePathEntry.setText(";".join(self.filepath))
             self.logger.info(f"selected file: {self.filepath}")
             if self.extra_finish_func is not None:
                 self.extra_finish_func()
 
     def on_drop_event(self, event):
-        self.logger.debug("on drop event")
+        self.logger.debug(f"on drop event")
         mime_data = event.mimeData()
         if mime_data.hasUrls():
-            url = mime_data.urls()[0]
-            self.filePathEntry.setText(url.toLocalFile())
-            self.filepath = url.toLocalFile()
-        event.acceptProposedAction()
+            self.filepath = list()
+            for url in mime_data.urls():
+                self.filepath.append(url.toLocalFile())
+            self.filePathEntry.setText(";".join(self.filepath))
+        event.accept()
 
     def on_finish_debug(self):
         self.logger.debug("finish editing file path")
@@ -78,7 +87,9 @@ class FileSelector:
         self.filePathEntry.setEnabled(val)
 
     def get_file_path(self):
-        return self.filePathEntry.text()
+        val = self.filePathEntry.text()
+        return val.split(";")
+        # return self.filePathEntry.text()
 
 
 class ParameterKeeper:
@@ -410,6 +421,38 @@ class MessageBox:
         msgBox = QMessageBox()
         msgBox.information(self.root, title, text,
                            QMessageBox.StandardButton.NoButton, QMessageBox.StandardButton.NoButton)
+
+    def query(self, title, text):
+        msgBox = QMessageBox()
+        reply = msgBox.question(self.root, title, text+"\n\nContinue?",
+                           QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+        self.logger.debug(f"got reply: {reply}")
+        return True if reply == QMessageBox.Yes else False
+
+
+class Popup(QMainWindow):
+    def __init__(self, msg: str, duration: int = -1, show: bool = True, parent=None):
+        super(Popup, self).__init__(parent=parent)
+        self.setWindowFlags(Qt.WindowType.Popup)
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        # self.setStyleSheet(u"background-color: #c0d0d0;")
+        self.setStyleSheet(u"background-color: #F0FFF0;")
+        self.label = QLabel(f"{msg}", parent=self.central_widget)
+        layout = QVBoxLayout()
+        layout.addWidget(self.label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.central_widget.setLayout(layout)
+        self.move(int(parent.x() + (parent.width() / 2 - self.width() / 2)),
+                  int(parent.y() + (parent.height() / 2 - self.height())))
+        self.timer = QTimer()
+        if show:
+            self.show_popup(duration)
+
+    def show_popup(self, duration):
+        if duration > 0:
+            self.timer.timeout.connect(self.close)
+            self.timer.start(duration*1000)
+        self.show()
 
 
 class ChannelSelector:

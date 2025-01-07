@@ -1,3 +1,9 @@
+v0.4.100
+1. add feature to support selecting multiple files
+2. add feature to support drag and drop folders and files
+3. add feature to plot pictures for multiple files
+4. fix error when sensor type is NULL
+
 v0.4.000
 1. change UI module from tkinter to QT (support drag and drop feature for both MacOS and Windows)
 2. add checkbox for keeping parameters

@@ -6,8 +6,8 @@ from my_logger import *
 import sys
 import os
 
-VERSION = "v0.4.000"
-tag = "2024/12/23 10:00"
+VERSION = "v0.4.100"
+tag = "2025/01/08 10:00"
 
 
 class MyApp(QMainWindow):
@@ -25,7 +25,7 @@ class MyApp(QMainWindow):
 if __name__ == "__main__":
     app = QApplication([])
     app.setStyle("Fusion")
-    logger = MyLogger(level='info', save=False)
+    logger = MyLogger(level='debug', save=True)
     window = MyApp(logger=logger)
     icon = QIcon(os.path.join(logger.resource_path, "icon.ico"))
     app.setWindowIcon(icon)

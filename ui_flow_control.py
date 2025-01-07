@@ -5,6 +5,7 @@ from data_visualization_utility import DataVisualization
 from plot_summary_data import *
 from data_parser import *
 import time
+from threading import Thread
 
 
 # data rate and data drops default settings
@@ -24,6 +25,7 @@ class FlowControl:
         self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
 
         self.messagebox = MessageBox(self.root, self.logger)
+        self.signal = ProcessSignal()
         self.fileSelector = FileSelector(pathObj=self.ui.fileEntry, browserObj=self.ui.browserBtn,
                                          root=self.root, logger=self.logger)
         self.fileSelector.add_finish_edit_func(self.on_finish_path_edit)
@@ -94,12 +96,16 @@ class FlowControl:
         self.rdp = RawDataParser(logger=self.logger)
         self.dv = DataVisualization(logger=self.logger, canvas=self.plotCanvas)
         self.sdp = SummaryDataParser(root=self.root, logger=self.logger, canvas=self.plotCanvas)
-        self.file_path = None
+        self.file_path = list()
         self.sensor_type = None
         self.data_type = None
-        self.df_data = None
+        self.df_data = dict()
         self.plot_name = None
         self.data_drops = [0, -1]
+        self.data_rate = 1
+        self.popup = None
+
+        self.signal.threadStateChanged.connect(self.on_thread_state_changed)
 
     def _drop_event(self, event):
         self.fileSelector.on_drop_event(event)
@@ -113,14 +119,14 @@ class FlowControl:
         self.logger.debug("finished editing extra process ...")
         self.paramKeeper.state_configure(1)
         self.plotName.state_configure(1)
-        val = self.fileSelector.get_file_path()
-        if val is not None and not os.path.exists(val):
+        _file_path = self.get_file_paths()
+        if not len(_file_path):
             self.messagebox.warning("Error", "File is not exist!!")
             return
 
         if not self.paramKeeper.isChecked:
             self.logger.debug("Keeper is not checked, clear parameters")
-            self.file_path = val
+            self.file_path = _file_path
             self.paramEntry.clear()
             self.sensor_type = None
             self.data_type = None
@@ -129,14 +135,39 @@ class FlowControl:
             self.toggle_parameters_chkb(False)
             self.paramEntry.state_configure(_comb={"sensor_type": 1, "data_type": 0},
                                             _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
-            self.channelsSelector.show_channels()
-        elif val != self.file_path and self.data_type and self.sensor_type:
+            self.refresh_data_channels(False)
+        elif _file_path != self.file_path and self.data_type and self.sensor_type:
             self.logger.debug(f"file changed, update df_data, [{self.sensor_type}], [{self.data_type}]")
-            self.file_path = val
+            self.file_path = _file_path
             if self.data_type.lower() == 'raw data':
                 self.convert_raw_data_to_csv()
             else:
                 self.get_df_data()
+            self.refresh_data_channels(True)
+
+    def get_file_paths(self) -> list:
+        path_list = self.fileSelector.get_file_path()
+        _file_path = list()
+        result = list()
+        if path_list is not None and len(path_list):
+            for val in path_list:
+                if os.path.isdir(val):
+                    files = os.listdir(val)
+                    _file_path = [os.path.join(val, file) for file in files if file.lower().endswith('.csv')
+                                  or file.lower().endswith('.txt') or file.lower().endswith('.log')]
+                else:
+                    _file_path.append(val)
+            for val in _file_path:
+                if not os.path.exists(val):
+                    self.logger.error(f"[{val}] is not exist!!")
+                else:
+                    result.append(val)
+            if not len(result):
+                self.logger.error(f"Files are not exist!!")
+            return sorted(result)
+        else:
+            self.logger.error(f"Files are not exist!!")
+            return sorted(result)
 
     def toggle_parameters_chkb(self, checked: bool):
         self.highPassFilter.set_checked(checked)
@@ -177,7 +208,8 @@ class FlowControl:
             self.set_default_values(self.sensor_type.strip())
             self.paramEntry.state_configure(_comb={"sensor_type": 1, "data_type": 1},
                                             _entry={"data_rate": 1, "data_drop_start": 1, "data_drop_end": 1})
-        if self.data_type is not None and self.data_type.lower() == "summary data":
+        # if self.data_type is not None and self.data_type.lower() == "summary data":
+        if self.data_type is not None:
             self.refresh_data_channels()
 
     def on_data_type_changed(self, index):
@@ -186,39 +218,50 @@ class FlowControl:
         if self.data_type is None or not len(self.data_type.strip()):
             self.logger.error("Invalid data type!! do nothing")
             return
-        ret = False
         if self.data_type.lower() == 'raw data':
             ret = self.convert_raw_data_to_csv()
         else:
             ret = self.get_df_data()
 
+        if not ret:
+            self.paramEntry.set(_combIndex={'data_type': -1}, )
         self.refresh_data_channels(ret)
 
     def convert_raw_data_to_csv(self) -> bool:
-        val = self.fileSelector.get_file_path()
-        # if val is not None and val == self.file_path and self.df_data is None:
-        #     self.logger.error(f"file is not changed")
-        #     return True
-        self.file_path = val
-        if self.file_path is None or not os.path.exists(self.file_path):
-            self.logger.error(f"{self.file_path} is not exist!!")
-            self.messagebox.warning("Error", "File is not exist!!")
+        file_list = self.get_file_paths()
+        for val in file_list:
+            _err, df_data = self.rdp.extract_sensor_data(_file=val, _sensor=self.sensor_type.lower())
+            if _err != ErrorCode.ERR_NO_ERROR:
+                _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
+                self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
+                if _answer:
+                    continue
+                else:
+                    return False
+            _path = os.path.dirname(val)
+            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+            _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
+            df_data.to_csv(os.path.join(_path, _name), index=False)
+            self.df_data.update({_name: df_data})
+            self.file_path.append(os.path.join(_path, _name))
+            self.logger.info(f"save data to csv file: {_name}")
+        if len(self.file_path):
+            return True
+        else:
             return False
-        _err, self.df_data = self.rdp.extract_sensor_data(_file=self.file_path, _sensor=self.sensor_type.lower())
-        if _err != ErrorCode.ERR_NO_ERROR:
-            self.logger.error(f"Error during extract data, {_err}")
-            self.messagebox.warning("Error", f"Data invalid, {_err}")
-            return False
-        _path = os.path.dirname(self.file_path)
-        _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-        _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
-        self.df_data.to_csv(os.path.join(_path, _name), index=False)
-        self.logger.info(f"save data to csv file: {_name}")
-        return True
 
     def get_df_data(self):
         try:
-            self.df_data = pd.read_csv(self.file_path, index_col=False)
+            self.df_data = dict()
+            for i in range(len(self.file_path)):
+                _name = os.path.basename(self.file_path[i])
+                try:
+                    data = pd.read_csv(self.file_path[i], index_col=False)
+                except Exception as e:
+                    self.logger.error(f"Error during read csv file: {_name}")
+                    self.logger.error(f"{str(e)}\nin {__file__}:{str(e.__traceback__.tb_lineno)}")
+                    continue
+                self.df_data.update({_name: data})
             ret = True
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
@@ -257,9 +300,10 @@ class FlowControl:
         return [val['start'], val['end']] if val else []
 
     def on_button_go(self):
-        _file = self.fileSelector.get_file_path()
-        if _file is None or not os.path.exists(_file):
-            self.logger.error(f"{_file} is not exist!!")
+        # _file = self.fileSelector.get_file_path()
+        _file = self.get_file_paths()
+        if _file is None or not len(_file):
+            self.logger.error(f"No files exist!!")
             self.messagebox.warning("Error", "File is not exist!!")
             return
         self.data_type = self.paramEntry.get(_comb='data_type')
@@ -275,8 +319,12 @@ class FlowControl:
         if self.file_path != _file and self.data_type is not None and self.data_type.lower() == 'raw data':
             if not self.convert_raw_data_to_csv():
                 return
-        data_rate = self.paramEntry.get(_entry='data_rate')
-        self.logger.debug(f"data rate: {data_rate}")
+        if self.df_data is None:
+            self.logger.error("df_data is None!! do nothing")
+            self.messagebox.warning("Error", "Data is NULL!!\nPlease press 'Refresh' button first")
+            return
+        self.data_rate = self.paramEntry.get(_entry='data_rate')
+        self.logger.debug(f"data rate: {self.data_rate}")
         val = self.paramEntry.get(_entry='data_drop_start')
         self.data_drops[0] = int(val) if val is not None and len(val) else 0
         val = self.paramEntry.get(_entry='data_drop_end')
@@ -285,43 +333,105 @@ class FlowControl:
         self.plot_name = self.plotName.get()
         self.logger.debug(f"plot name: {self.plot_name}")
         # _highpassfilter = self.highPassFilter.get_parameters() if self.highPassFilter.isChecked else None
-        _highpassfilter = self.get_pass_filer_parameters(self.highPassFilter)
-        _lowpassfilter = self.get_pass_filer_parameters(self.lowPassFilter)
-        _notchfilter1 = self.get_notch_filer_parameters(self.notchFilter1)
-        _notchfilter2 = self.get_notch_filer_parameters(self.notchFilter2)
-        _notchfilter3 = self.get_notch_filer_parameters(self.notchFilter3)
-        _fft_scale_x = self.get_scale_filer_parameters(self.fftXScale)
-        _fft_scale_y = self.get_scale_filer_parameters(self.fftYScale)
+        filters = dict()
+        filters.update({"high": self.get_pass_filer_parameters(self.highPassFilter)})
+        # _lowpassfilter = self.get_pass_filer_parameters(self.lowPassFilter)
+        filters.update({"low": self.get_pass_filer_parameters(self.lowPassFilter)})
+        # _notchfilter1 = self.get_notch_filer_parameters(self.notchFilter1)
+        filters.update({"notch1": self.get_notch_filer_parameters(self.notchFilter1)})
+        filters.update({"notch2": self.get_notch_filer_parameters(self.notchFilter2)})
+        filters.update({"notch3": self.get_notch_filer_parameters(self.notchFilter3)})
+        # _notchfilter2 = self.get_notch_filer_parameters(self.notchFilter2)
+        # _notchfilter3 = self.get_notch_filer_parameters(self.notchFilter3)
+        # _fft_scale_x = self.get_scale_filer_parameters(self.fftXScale)
+        filters.update({"scaleX": self.get_scale_filer_parameters(self.fftXScale)})
+        filters.update({"scaleY": self.get_scale_filer_parameters(self.fftYScale)})
+        # _fft_scale_y = self.get_scale_filer_parameters(self.fftYScale)
 
         selected_channels = self.channelsSelector.get_checked_list()
         self.logger.debug(f"selected channels: {selected_channels}")
 
         if selected_channels is not None and len(selected_channels):
-            if self.data_type == "Summary Data":
-                _err_code = self.sdp.summary_data_visualize(data=self.df_data, sensor=self.sensor_type,
-                                                            channels=selected_channels, name=self.plot_name)
+            if len(self.df_data.keys()) > 1:  # for multiple files
+                self.popup = Popup(msg="Generating plot pictures ...", parent=self.root)
+                _thread = Thread(
+                    target=self.visualize_process,
+                    args=(filters, selected_channels, ),
+                    daemon=True
+                )
+                _thread.start()
             else:
-                _err_code = self.dv.visualize(data=self.df_data, logger=self.logger, name=self.plot_name,
-                                              sensor=self.sensor_type, channels=selected_channels, rate=data_rate,
-                                              drop=self.data_drops, highpassfilter=_highpassfilter,
-                                              lowpassfilter=_lowpassfilter,
-                                              notchfilter=[_notchfilter1, _notchfilter2, _notchfilter3],
-                                              fftscale=[_fft_scale_x, _fft_scale_y])
-            if _err_code != ErrorCode.ERR_NO_ERROR:
-                self.messagebox.warning("Error", ErrorMsg[f"{_err_code}"])
+                keys = [val for val in self.df_data.keys()]
+                err_code, _ = self.do_visualize(filters, selected_channels, keys[0])
+                if err_code != ErrorCode.ERR_NO_ERROR:
+                    self.logger.error(f"Error during plot!! {err_code}")
+                    self.messagebox.warning("Error", ErrorMsg[f"{err_code}"])
         else:
             self.messagebox.information("info", "Select at least one channel!!")
+
+    def do_visualize(self, filters: dict, _channels: list, file, show=True):
+        try:
+            if not show:
+                self.plot_name = file
+            if self.data_type == "Summary Data":
+                _err_code = self.sdp.summary_data_visualize(data=self.df_data[file], sensor=self.sensor_type,
+                                                            channels=_channels, name=self.plot_name,
+                                                            show=show)
+                fig = self.sdp.fig
+            else:
+                _err_code = self.dv.visualize(data=self.df_data[file], logger=self.logger, name=self.plot_name,
+                                              sensor=self.sensor_type, channels=_channels, rate=self.data_rate,
+                                              drop=self.data_drops, highpassfilter=filters['high'],
+                                              lowpassfilter=filters['low'],
+                                              notchfilter=[filters['notch1'], filters['notch2'], filters['notch3']],
+                                              fftscale=[filters['scaleX'], filters['scaleY']],
+                                              show=show)
+                fig = self.dv.fig
+            return _err_code, fig
+        except Exception as e:
+            self.logger.error(f"{str(e)}\nin {__file__}:{str(e.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_UNKNOWN, None
+
+    def visualize_process(self, filters: dict, channel_list: list):
+        self.signal.threadStateChanged.emit([0, 0])
+        for file in channel_list:
+            _err_code, _ = self.do_visualize(filters, [], file, False)
+            if _err_code != ErrorCode.ERR_NO_ERROR:
+                # self.messagebox.warning("Error", ErrorMsg[f"{_err_code}"])
+                self.signal.threadStateChanged.emit([-2, _err_code])
+        self.signal.threadStateChanged.emit([1, 0])
+
+    def on_thread_state_changed(self, data: list):
+        self.logger.debug(f"thread state changed: {data}")
+        state, err_code = data
+        if state == 0:
+            self.goButton.state_configure(0)
+        elif state == -2:
+            self.logger.error(f"Error during plot!! {err_code}")
+            self.messagebox.warning("Error", ErrorMsg[f"{err_code}"])
+        elif state == 1:
+            if self.popup is not None:
+                self.popup.close()
+            self.goButton.state_configure(1)
 
     def refresh_data_channels(self, show: bool = True):
         if not show:
             self.channelsSelector.show_channels()
             return
-        if self.df_data is None:
+        if self.df_data is None or len(self.df_data) == 0:
             self.messagebox.warning("Error", "No data available!!")
             return
         self.logger.debug(f"refresh: [{self.sensor_type}], [{self.data_type}]")
-        columns = self.df_data.columns.dropna().tolist()
-        if self.sensor_type is not None and len(self.sensor_type.strip()) and self.data_type.lower() == "summary data":
-            new_col = [val for val in columns if val.startswith(self.sensor_type)]
-            columns = new_col if len(new_col) else columns
-        self.channelsSelector.show_channels(columns, self.data_type)
+        keys = [val for val in self.df_data.keys()]
+        if len(keys) == 1:
+            columns = self.df_data[keys[0]].columns.dropna().tolist()
+            if self.sensor_type is not None and len(self.sensor_type.strip()) and self.data_type.lower() == "summary data":
+                new_col = [val for val in columns if val.startswith(self.sensor_type)]
+                columns = new_col if len(new_col) else columns
+            self.channelsSelector.show_channels(columns, self.data_type)
+        else:
+            columns = keys
+            if self.sensor_type is not None and len(self.sensor_type.strip()):
+                new_col = [val for val in columns if val.lower().startswith(self.sensor_type.lower())]
+                columns = new_col if len(new_col) else columns
+            self.channelsSelector.show_channels(columns, self.data_type)

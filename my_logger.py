@@ -16,7 +16,7 @@ class MyLogger:
     def __init__(self, **kwargs):
         is_to_file = kwargs['save'] if 'save' in kwargs else False
         log_level = kwargs['level'] if 'level' in kwargs else "info"
-        log_name = kwargs['name'] if 'name' in kwargs else f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        log_name = kwargs['name'] if 'name' in kwargs else f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
         self.logger = logging.getLogger("emulator")
         self.logger.setLevel(self.get_log_level(log_level))
         formatter = logging.Formatter("%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s")

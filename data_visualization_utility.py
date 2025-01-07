@@ -45,6 +45,7 @@ class DataVisualization:
         self.figsize = None
         self.txt_fontsize = 10
         self.channel_lines = dict()  #save {ax:[lines]) for click event
+        self.show = True
 
         self.process_func = {
             "emg": self.emg_data,
@@ -68,6 +69,8 @@ class DataVisualization:
         self.notch_filter = kwargs["notchfilter"] if "notchfilter" in kwargs else [[0,0], [0,0], [0,0]]
         self.fft_scale = kwargs["fftscale"] if "fftscale" in kwargs else [[], []]
         self.plot_name = kwargs["name"] if "name" in kwargs else self.sensor
+        self.show = kwargs["show"] if "show" in kwargs else True
+        self.signal = kwargs["signal"] if 'signal' in kwargs else None
         self.markers = []
         if self.fig is not None:
             for ax in self.fig.axes:
@@ -353,12 +356,12 @@ class DataVisualization:
         self.fig = plt.figure(self.plot_name, figsize=(20, 10))
         self.fig.suptitle(self.sensor, fontsize=16)
         self.figsize = self.fig.get_size_inches()
-        if self.figure_canvas is not None:
+        if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
         self.fig.subplots(_nrows, 2)
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         # plt.subplots(_nrows, 2, figsize=(20, 20))
-        plt.subplots_adjust(hspace=0.6)
+        plt.subplots_adjust(hspace=0.6, left=0.06, right=0.95, top=0.94, bottom=0.03)
         colors = ["#00cd00", "#0000ff"]
         # plt.figtext(.3, .9, 'Aggressor:{}'.format(aggressor_name), fontsize=20, ha='center')
         # plt.figtext(.7, .9, 'Victim:IMU', fontsize=20, ha='center')
@@ -369,7 +372,7 @@ class DataVisualization:
                     continue
                 # Time domain
                 ax = plt.subplot(_nrows, 2, i * 2 + 1)
-                plt.text(-0.05, 1.05, self.list[i], fontsize=10, transform=plt.gca().transAxes)
+                plt.text(-0.05, 1.15, self.list[i], fontsize=10, transform=plt.gca().transAxes)
                 _line, = plt.plot(data["time"][i], data["sig"][i], color=colors[0])
                 if ax in self.channel_lines:
                     self.channel_lines[ax].append(_line)
@@ -381,7 +384,7 @@ class DataVisualization:
 
                 # Frequency domain
                 ax = plt.subplot(_nrows, 2, i * 2 + 2)
-                plt.text(-0.05, 1.05, f"{self.list[i]}[unit/sqrt(Hz)]",
+                plt.text(-0.05, 1.15, f"{self.list[i]}[unit/sqrt(Hz)]",
                          fontsize=10, transform=plt.gca().transAxes)
                 FFT = 2.0 / len(data["sum_vector"][i]) * abs(scipy.fft.fft(data["sum_vector"][i]))
                 _freqs = scipy.fftpack.fftfreq(len(data["time"][i]), data["time"][i][1] - data["time"][i][0])
@@ -431,7 +434,7 @@ class DataVisualization:
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
         plt.savefig(_png_file)
-        if self.figure_canvas is not None and len(self.list):
+        if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
         return ErrorCode.ERR_NO_ERROR
 
@@ -526,6 +529,10 @@ class DataVisualization:
 
     def emg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
+        # ToDo:: need to review which columns needed
+        if not len(self.list):
+            tmp = self.df_data.columns.dropna().tolist()
+            self.list = [val for val in tmp if val.lower() not in ["timestamp"]]
         _err_code, _data = self.do_data_conversion(_sensor="emg")
         if _err_code != ErrorCode.ERR_NO_ERROR:
             return _err_code
@@ -534,7 +541,7 @@ class DataVisualization:
         self.fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
         self.fig.suptitle(self.sensor, fontsize=16)
         self.figsize = self.fig.get_size_inches()
-        if self.figure_canvas is not None:
+        if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
         plt.subplots_adjust(hspace=0.6)
         self.fig.subplots(2, 2)
@@ -546,6 +553,7 @@ class DataVisualization:
         channel_colors = {}
         _shift = np.amax(_data["sig"])-np.amin(_data["sig"])
         # print(_shift)
+
         for i in range(0, len(self.list)):
             if self.list[i] in self.bad_channel:
                 self.logger.error(f"skip bad channel: {self.list[i]}")
@@ -653,7 +661,7 @@ class DataVisualization:
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
         plt.savefig(_png_file)
-        if self.figure_canvas is not None and len(self.list):
+        if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
         # if len(self.list):
         #     plt.show()
@@ -713,6 +721,10 @@ class DataVisualization:
 
     def ppg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
+        # ToDo:: need to review which columns needed
+        if not len(self.list):
+            tmp = self.df_data.columns.dropna().tolist()
+            self.list = [val for val in tmp if "timestamp" not in val.lower()]
         _err_code, _data = self.do_data_conversion(_sensor="ppg")
         if _err_code != ErrorCode.ERR_NO_ERROR:
             return _err_code
@@ -721,7 +733,7 @@ class DataVisualization:
         self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
         self.fig.suptitle(self.sensor, fontsize=16)
         self.figsize = self.fig.get_size_inches()
-        if self.figure_canvas is not None:
+        if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
         # plt.subplots_adjust(hspace=0.6)
         plt.rcParams.update({'font.size': 10})
@@ -824,7 +836,7 @@ class DataVisualization:
         _png_file = f"{self.plot_name}_{_postfix}.png"
         # plt.tight_layout(rect=[0, 0, 1, 1])
         plt.savefig(_png_file)
-        if self.figure_canvas is not None and len(self.list):
+        if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
         # plt.show()
         # # plt.cla()
@@ -836,6 +848,10 @@ class DataVisualization:
     def imu_data(self):
         try:
             self.logger.info(f"process {self.sensor} data")
+            # ToDo:: need to review which columns needed
+            if not len(self.list):
+                tmp = self.df_data.columns.dropna().tolist()
+                self.list = [val for val in tmp if val.lower() not in ["timestamp"]]
             _err_code, _data = self.do_data_conversion()
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 return _err_code
@@ -849,6 +865,10 @@ class DataVisualization:
     def alt_data(self):
         try:
             self.logger.info(f"process {self.sensor} data")
+            # ToDo:: need to review which columns needed
+            if not len(self.list):
+                tmp = self.df_data.columns.dropna().tolist()
+                self.list = [val for val in tmp if val.lower() not in ["timestamp"]]
             _err_code, _data = self.do_data_conversion()
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 return _err_code
@@ -862,6 +882,10 @@ class DataVisualization:
     def compass_data(self):
         try:
             self.logger.info(f"process {self.sensor} data")
+            # ToDo:: need to review which columns needed
+            if not len(self.list):
+                tmp = self.df_data.columns.dropna().tolist()
+                self.list = [val for val in tmp if val.lower() not in ["timestamp"]]
             _err_code, _data = self.do_data_conversion()
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 return _err_code
@@ -875,6 +899,10 @@ class DataVisualization:
     def bti_data(self):
         try:
             self.logger.info(f"process {self.sensor} data")
+            # ToDo:: need to review which columns needed
+            if not len(self.list):
+                tmp = self.df_data.columns.dropna().tolist()
+                self.list = [val for val in tmp if val.lower() not in ["timestamp"]]
             _err_code, _data = self.do_data_conversion()
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 return _err_code

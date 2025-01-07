@@ -29,6 +29,7 @@ class SummaryDataParser:
         self.df_data = None
         self.plot_name = None
         self.figsize = list()
+        self.show = True
 
         self.main_funcs = {
             'alt': self.plot_emg_histogram,
@@ -48,6 +49,7 @@ class SummaryDataParser:
         self.sensor = kwargs["sensor"] if "sensor" in kwargs else "others"
         self.data_file = kwargs["file"] if "file" in kwargs else None
         self.plot_name = kwargs["name"] if "name" in kwargs else self.sensor
+        self.show = kwargs["show"] if "show" in kwargs else True
         self.markers = []
         if self.fig is not None:
             for ax in self.fig.axes:
@@ -68,7 +70,7 @@ class SummaryDataParser:
                 self.logger.error(f"Exception: {str(ex)}")
                 return ErrorCode.ERR_BAD_FILE
         else:
-            self.df_data = kwargs["data"] if "data" in kwargs else None
+            self.df_data: pd.DataFrame = kwargs["data"] if "data" in kwargs else None
 
         if self.sensor.lower() not in self.main_funcs:
             self.sensor = 'DEF'
@@ -86,6 +88,9 @@ class SummaryDataParser:
 
     def plot_emg_histogram(self, filename=None):
         try:
+            if not len(self.channels):
+                tmp = self.df_data.columns.dropna().tolist()
+                self.channels = [val for val in tmp if val.lower() not in ["sn", "start", "end"]]
             num_of_columns = len(self.channels)
 
             # for i, ch in enumerate(self.channels):
@@ -94,7 +99,7 @@ class SummaryDataParser:
             plt.close("all")
             self.fig = plt.figure(f"{self.plot_name}", figsize=(x, 12))
             self.figsize = self.fig.get_size_inches()
-            if self.figure_canvas is not None:
+            if self.figure_canvas is not None and self.show:
                 self.figure_canvas.create_canvas(self.fig)
             self.fig.suptitle(self.sensor, fontsize=16)
             gs = GridSpec(8, num_of_columns, figure=self.fig)
@@ -183,7 +188,7 @@ class SummaryDataParser:
             self.logger.info(f"Saved to file {sub_png_file}")
             self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
             # plt.show()
-            if self.figure_canvas is not None:
+            if self.show and self.figure_canvas is not None:
                 self.figure_canvas.show_plot()
             return ErrorCode.ERR_NO_ERROR
         except Exception as ex:

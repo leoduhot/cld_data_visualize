@@ -6,8 +6,8 @@ from my_logger import *
 import sys
 import os
 
-VERSION = "v0.4.100"
-tag = "2025/01/08 10:00"
+VERSION = "v0.4.200"
+tag = "2025/01/14 18:00"
 
 
 class MyApp(QMainWindow):

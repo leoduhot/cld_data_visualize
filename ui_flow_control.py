@@ -138,7 +138,7 @@ class FlowControl:
             self.refresh_data_channels(False)
         elif _file_path != self.file_path and self.data_type and self.sensor_type:
             self.logger.debug(f"file changed, update df_data, [{self.sensor_type}], [{self.data_type}]")
-            self.file_path = _file_path
+            # self.file_path = _file_path
             if self.data_type.lower() == 'raw data':
                 self.convert_raw_data_to_csv()
             else:
@@ -229,6 +229,8 @@ class FlowControl:
 
     def convert_raw_data_to_csv(self) -> bool:
         file_list = self.get_file_paths()
+        self.df_data = dict()
+        self.file_path = list()
         for val in file_list:
             _err, df_data = self.rdp.extract_sensor_data(_file=val, _sensor=self.sensor_type.lower())
             if _err != ErrorCode.ERR_NO_ERROR:
@@ -252,15 +254,18 @@ class FlowControl:
 
     def get_df_data(self):
         try:
+            file_path = self.get_file_paths()
+            self.file_path = list()
             self.df_data = dict()
-            for i in range(len(self.file_path)):
-                _name = os.path.basename(self.file_path[i])
+            for file in file_path:
+                _name = os.path.basename(file)
                 try:
-                    data = pd.read_csv(self.file_path[i], index_col=False)
+                    data = pd.read_csv(file, index_col=False)
                 except Exception as e:
                     self.logger.error(f"Error during read csv file: {_name}")
                     self.logger.error(f"{str(e)}\nin {__file__}:{str(e.__traceback__.tb_lineno)}")
                     continue
+                self.file_path.append(file)
                 self.df_data.update({_name: data})
             ret = True
         except Exception as ex:
@@ -272,6 +277,10 @@ class FlowControl:
 
     def on_fresh_data_button_clicked(self):
         self.logger.debug("refresh data button clicked")
+        if self.data_type.lower() == 'raw data':
+            self.convert_raw_data_to_csv()
+        else:
+            self.get_df_data()
         self.refresh_data_channels()
         pass
 
@@ -376,7 +385,7 @@ class FlowControl:
             if self.data_type == "Summary Data":
                 _err_code = self.sdp.summary_data_visualize(data=self.df_data[file], sensor=self.sensor_type,
                                                             channels=_channels, name=self.plot_name,
-                                                            show=show)
+                                                            show=show, filename=file)
                 fig = self.sdp.fig
             else:
                 _err_code = self.dv.visualize(data=self.df_data[file], logger=self.logger, name=self.plot_name,

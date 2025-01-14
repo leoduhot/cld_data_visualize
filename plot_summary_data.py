@@ -8,11 +8,13 @@ from scipy import stats
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.ticker as ticker
 from matplotlib.gridspec import GridSpec
 import re
 import logging
 from data_visualization_utility import ErrorCode
 import datetime
+import os
 
 
 class SummaryDataParser:
@@ -30,6 +32,7 @@ class SummaryDataParser:
         self.plot_name = None
         self.figsize = list()
         self.show = True
+        self.file_name = None
 
         self.main_funcs = {
             'alt': self.plot_emg_histogram,
@@ -46,10 +49,11 @@ class SummaryDataParser:
     def summary_data_visualize(self, *args, **kwargs):
         self.logger.info(f"start summary_data_visualize ...")
         self.channels = kwargs["channels"] if "channels" in kwargs else []
-        self.sensor = kwargs["sensor"] if "sensor" in kwargs else "others"
+        self.sensor = kwargs["sensor"] if "sensor" in kwargs else "def"
         self.data_file = kwargs["file"] if "file" in kwargs else None
         self.plot_name = kwargs["name"] if "name" in kwargs else self.sensor
         self.show = kwargs["show"] if "show" in kwargs else True
+        self.file_name = os.path.splitext(kwargs["filename"])[0] if "filename" in kwargs else None
         self.markers = []
         if self.fig is not None:
             for ax in self.fig.axes:
@@ -58,6 +62,9 @@ class SummaryDataParser:
                 plt.close("all")
         self.fig = None
         self.channel_lines = {}
+
+        if not len(self.sensor.strip()) or self.sensor.lower() not in self.main_funcs:
+            self.sensor = 'DEF'
 
         if self.plot_name is None or not len(self.plot_name.strip()):
             self.plot_name = self.sensor
@@ -75,7 +82,7 @@ class SummaryDataParser:
         if self.sensor.lower() not in self.main_funcs:
             self.sensor = 'DEF'
 
-        return self.main_funcs[self.sensor.lower()]()
+        return self.main_funcs[self.sensor.lower()](self.file_name)
 
     def extract_aggressors(self, victim, data):
         pass
@@ -86,8 +93,59 @@ class SummaryDataParser:
     def extract_data_type(self, victim, data):
         pass
 
+    def cdf_plot(self, filename=None):
+        import numpy as np
+        plt.clf()
+        plt.close("all")
+
+        if not len(self.channels):
+            tmp = self.df_data.columns.dropna().tolist()
+            self.channels = [val for val in tmp if val.lower() not in ["sn", "start", "end"]]
+        num_of_columns = len(self.channels)
+        max_length = np.max(np.vectorize(len)(self.channels))
+        self.logger.debug(f"max_length: {max_length}")
+        num = 27
+        ncol = int(num_of_columns / num) + 1 if num_of_columns % num else int(num_of_columns / num)
+        fig = plt.figure(f"{self.plot_name}")
+        for ch in self.channels:
+            ch_data = self.df_data[ch].dropna()
+            plt.plot(np.sort(ch_data), np.linspace(0, 1, len(ch_data), endpoint=True), label=ch)
+
+        plt.xlabel('Value')
+        plt.ylabel('Cumulative Probability')
+        plt.title(f'{filename} CDF Plot')
+        plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+
+        legend = plt.legend(ncol=ncol, bbox_to_anchor=(1.05, 1), fontsize=8)
+        width = legend.get_window_extent().width + 28
+        w = 8+width/fig.dpi + 40/fig.dpi
+        fig.set_size_inches(w, 6)
+        right_ratio = 8/w
+        left_ratio = 80/fig.dpi/w
+        plt.subplots_adjust(left=left_ratio, right=right_ratio)
+        # if filename:
+        #     sub_png_file = filename + '_CDF.png'
+        # else:
+        time_stamp = datetime.datetime.now()
+        postfix = time_stamp.strftime("%Y%m%d_%H%M%S")
+        sub_png_file = "_".join([self.plot_name, f'CDF_{postfix}.png'])
+        self.logger.debug(f"file name:{sub_png_file}")
+        plt.savefig(sub_png_file)
+
+        # self.figsize = fig.get_size_inches()
+        # if self.figure_canvas is not None and self.show:
+        #     self.figure_canvas.create_canvas(fig)
+        #
+        # if self.show and self.figure_canvas is not None:
+        #     self.figure_canvas.show_plot()
+
+        return True
+
     def plot_emg_histogram(self, filename=None):
         try:
+            ret = self.cdf_plot(filename)
+            if not ret:
+                return ErrorCode.ERR_NO_ERROR
             if not len(self.channels):
                 tmp = self.df_data.columns.dropna().tolist()
                 self.channels = [val for val in tmp if val.lower() not in ["sn", "start", "end"]]
@@ -177,12 +235,12 @@ class SummaryDataParser:
                 r_colors = ['#e8e8e8', '#fffafa']
                 rect = patches.Rectangle((0, 0.16), 0.96, 1, transform=ax_label.transAxes, color=r_colors[k % 2])
                 ax_label.add_patch(rect)
-            if filename:
-                sub_png_file = filename + '.png'
-            else:
-                time_stamp = datetime.datetime.now()
-                postfix = time_stamp.strftime("%Y%m%d_%H%M%S")
-                sub_png_file = f"{self.plot_name}_{postfix}.png"
+            # if filename:
+            #     sub_png_file = filename + '.png'
+            # else:
+            time_stamp = datetime.datetime.now()
+            postfix = time_stamp.strftime("%Y%m%d_%H%M%S")
+            sub_png_file = f"{self.plot_name}_{postfix}.png"
             plt.tight_layout(rect=[0, 0, 1, 1])
             plt.savefig(sub_png_file)
             self.logger.info(f"Saved to file {sub_png_file}")

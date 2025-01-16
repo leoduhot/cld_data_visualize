@@ -1,3 +1,11 @@
+v0.4.201
+1. add item filter
+2. plot name rule: Plot Name -> Sensor Type -> File Name
+
+v0.4.200
+1. add CDF plot for summary data type
+2. fix error when file content changed
+
 v0.4.100
 1. add feature to support selecting multiple files
 2. add feature to support drag and drop folders and files

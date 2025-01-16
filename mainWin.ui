@@ -92,7 +92,7 @@
          <x>0</x>
          <y>0</y>
          <width>777</width>
-         <height>667</height>
+         <height>672</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -1033,6 +1033,53 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
          </widget>
         </item>
         <item>
+         <widget class="QFrame" name="frame">
+          <property name="frameShape">
+           <enum>QFrame::Shape::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Shadow::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_7">
+           <property name="topMargin">
+            <number>6</number>
+           </property>
+           <property name="bottomMargin">
+            <number>6</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="refreshDataBtn">
+             <property name="toolTip">
+              <string>Click me to refresh the items' checkbox, only available when &quot;Keep Parameters&quot; is checked</string>
+             </property>
+             <property name="text">
+              <string>Refresh</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="itemFilterLabel">
+             <property name="toolTip">
+              <string>regular expression to fliter the items when press &quot;ENTER&quot; key or press &quot;Refresh&quot; button:
+e.g. ^EMG.*CH03.*noise: this regexp will search items which:
+	1. start with &quot;EMG&quot; 
+	2. then follows with any number of characters 
+	3. then follows with &quot;CH03&quot;
+	4. then follows with any number of characters 
+	5. then follows with &quot;noise&quot;</string>
+             </property>
+             <property name="text">
+              <string>Item Filter</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLineEdit" name="itemFilterEntry"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
          <widget class="QFrame" name="refreshFrm">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1056,16 +1103,6 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
            <property name="bottomMargin">
             <number>0</number>
            </property>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="refreshDataBtn">
-             <property name="toolTip">
-              <string>Click me to refresh the items' checkbox, only available when &quot;Keep Parameters&quot; is checked</string>
-             </property>
-             <property name="text">
-              <string>Refresh</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </widget>
         </item>
@@ -1256,6 +1293,7 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
        <zorder>filterfFm2</zorder>
        <zorder>contactFrm</zorder>
        <zorder>plotNameFrm</zorder>
+       <zorder>frame</zorder>
       </widget>
      </widget>
     </item>

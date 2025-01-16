@@ -1,3 +1,5 @@
+import re
+
 from mainWin_ui import Ui_MainWindow
 import os
 from ui_utility import *
@@ -87,6 +89,10 @@ class FlowControl:
                                      root=self.root, logger=self.logger)
         self.fftYScale.state_configure(0)
 
+        self.textFilter = TextFilter(editObj=self.ui.itemFilterEntry, labelObj=self.ui.itemFilterLabel,
+                                     logger=self.logger, root=self.root,
+                                     command=self.on_fresh_data_button_clicked)
+        self.textFilter.state_configure(0)
         self.channelsSelector = ChannelSelector(root=self.root, logger=self.logger, containObj=self.ui.channelFrm)
         self.goButton = SingleButton(root=self.root, logger=self.logger, btnObj=self.ui.goBtn, command=self.on_button_go)
         self.plotCanvas = PlotCanvas(logger=self.logger)
@@ -104,6 +110,7 @@ class FlowControl:
         self.data_drops = [0, -1]
         self.data_rate = 1
         self.popup = None
+        self.item_filter = None
 
         self.signal.threadStateChanged.connect(self.on_thread_state_changed)
 
@@ -119,6 +126,7 @@ class FlowControl:
         self.logger.debug("finished editing extra process ...")
         self.paramKeeper.state_configure(1)
         self.plotName.state_configure(1)
+        self.textFilter.state_configure(1)
         _file_path = self.get_file_paths()
         if not len(_file_path):
             self.messagebox.warning("Error", "File is not exist!!")
@@ -431,16 +439,20 @@ class FlowControl:
             self.messagebox.warning("Error", "No data available!!")
             return
         self.logger.debug(f"refresh: [{self.sensor_type}], [{self.data_type}]")
+        self.item_filter = self.textFilter.get_text()
         keys = [val for val in self.df_data.keys()]
         if len(keys) == 1:
             columns = self.df_data[keys[0]].columns.dropna().tolist()
-            if self.sensor_type is not None and len(self.sensor_type.strip()) and self.data_type.lower() == "summary data":
-                new_col = [val for val in columns if val.startswith(self.sensor_type)]
-                columns = new_col if len(new_col) else columns
-            self.channelsSelector.show_channels(columns, self.data_type)
+            # if self.sensor_type is not None and len(self.sensor_type.strip()) and self.data_type.lower() == "summary data":
+            #     new_col = [val for val in columns if val.startswith(self.sensor_type)]
+            #     columns = new_col if len(new_col) else columns
         else:
             columns = keys
-            if self.sensor_type is not None and len(self.sensor_type.strip()):
-                new_col = [val for val in columns if val.lower().startswith(self.sensor_type.lower())]
-                columns = new_col if len(new_col) else columns
-            self.channelsSelector.show_channels(columns, self.data_type)
+            # if self.sensor_type is not None and len(self.sensor_type.strip()):
+            #     new_col = [val for val in columns if val.lower().startswith(self.sensor_type.lower())]
+            #     columns = new_col if len(new_col) else columns
+        if self.item_filter is not None and len(self.item_filter.strip()):
+            self.logger.debug(f"reg:{self.item_filter.strip()}")
+            new_col = [val for val in columns if re.search(fr'{self.item_filter.strip()}', val)]
+            columns = new_col if len(new_col) else columns
+        self.channelsSelector.show_channels(columns, self.data_type)

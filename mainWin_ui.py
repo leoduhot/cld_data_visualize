@@ -63,7 +63,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 777, 667))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 777, 672))
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy2.setHorizontalStretch(1)
         sizePolicy2.setVerticalStretch(1)
@@ -572,6 +572,31 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.scaleFrm)
 
+        self.frame = QFrame(self.scrollAreaWidgetContents)
+        self.frame.setObjectName(u"frame")
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_7 = QGridLayout(self.frame)
+        self.gridLayout_7.setObjectName(u"gridLayout_7")
+        self.gridLayout_7.setContentsMargins(-1, 6, -1, 6)
+        self.refreshDataBtn = QPushButton(self.frame)
+        self.refreshDataBtn.setObjectName(u"refreshDataBtn")
+
+        self.gridLayout_7.addWidget(self.refreshDataBtn, 0, 0, 1, 1)
+
+        self.itemFilterLabel = QLabel(self.frame)
+        self.itemFilterLabel.setObjectName(u"itemFilterLabel")
+
+        self.gridLayout_7.addWidget(self.itemFilterLabel, 0, 1, 1, 1)
+
+        self.itemFilterEntry = QLineEdit(self.frame)
+        self.itemFilterEntry.setObjectName(u"itemFilterEntry")
+
+        self.gridLayout_7.addWidget(self.itemFilterEntry, 0, 2, 1, 1)
+
+
+        self.verticalLayout_3.addWidget(self.frame)
+
         self.refreshFrm = QFrame(self.scrollAreaWidgetContents)
         self.refreshFrm.setObjectName(u"refreshFrm")
         sizePolicy5.setHeightForWidth(self.refreshFrm.sizePolicy().hasHeightForWidth())
@@ -581,11 +606,6 @@ class Ui_MainWindow(object):
         self.gridLayout_5 = QGridLayout(self.refreshFrm)
         self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.gridLayout_5.setContentsMargins(0, 0, -1, 0)
-        self.refreshDataBtn = QPushButton(self.refreshFrm)
-        self.refreshDataBtn.setObjectName(u"refreshDataBtn")
-
-        self.gridLayout_5.addWidget(self.refreshDataBtn, 0, 0, 1, 1)
-
 
         self.verticalLayout_3.addWidget(self.refreshFrm)
 
@@ -687,6 +707,7 @@ class Ui_MainWindow(object):
         self.filterfFm2.raise_()
         self.contactFrm.raise_()
         self.plotNameFrm.raise_()
+        self.frame.raise_()
 
         self.verticalLayout.addWidget(self.scrollArea)
 
@@ -804,6 +825,16 @@ class Ui_MainWindow(object):
         self.refreshDataBtn.setToolTip(QCoreApplication.translate("MainWindow", u"Click me to refresh the items' checkbox, only available when \"Keep Parameters\" is checked", None))
 #endif // QT_CONFIG(tooltip)
         self.refreshDataBtn.setText(QCoreApplication.translate("MainWindow", u"Refresh", None))
+#if QT_CONFIG(tooltip)
+        self.itemFilterLabel.setToolTip(QCoreApplication.translate("MainWindow", u"regular expression to fliter the items when press \"ENTER\" key or press \"Refresh\" button:\n"
+"e.g. ^EMG.*CH03.*noise: this regexp will search items which:\n"
+"	1. start with \"EMG\" \n"
+"	2. then follows with any number of characters \n"
+"	3. then follows with \"CH03\"\n"
+"	4. then follows with any number of characters \n"
+"	5. then follows with \"noise\"", None))
+#endif // QT_CONFIG(tooltip)
+        self.itemFilterLabel.setText(QCoreApplication.translate("MainWindow", u"Item Filter", None))
         self.goBtn.setText(QCoreApplication.translate("MainWindow", u"GO", None))
         self.contactTeamLab.setText(QCoreApplication.translate("MainWindow", u"By APAC Engineering Team", None))
         self.contactInfoLab.setText(QCoreApplication.translate("MainWindow", u"Contact Info", None))

@@ -112,14 +112,15 @@ class ParameterKeeper:
     def on_check_event(self, checked: bool):
         self.logger.debug(f"is checked: {checked}")
         self.isChecked = checked
-        self.btn.setEnabled(checked)
+        # self.btn.setEnabled(checked)
 
     def state_configure(self, val):
         self.chkb.setEnabled(val)
-        if val:
-            self.btn.setEnabled(self.isChecked)
-        else:
-            self.btn.setEnabled(val)
+        # if val:
+        #     self.btn.setEnabled(self.isChecked)
+        # else:
+        #     self.btn.setEnabled(val)
+        self.btn.setEnabled(val)
 
 
 class ParameterEntry:
@@ -406,6 +407,29 @@ class FFTScaler:
         self.state_configure(checked)
 
 
+class TextFilter:
+    def __init__(self, editObj: QLineEdit, labelObj: QLabel, **kwargs):
+        self.lineEditObj = editObj
+        self.labelObj = labelObj
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.command = kwargs['command'] if 'command' in kwargs else None
+        self.lineEditObj.editingFinished.connect(self.on_finish_edit)
+
+    def on_finish_edit(self):
+        if self.command is not None:
+            self.command()
+
+    def state_configure(self, val):
+        self.lineEditObj.setEnabled(val)
+        self.labelObj.setEnabled(val)
+
+    def set_text(self, value):
+        self.lineEditObj.setText(value)
+
+    def get_text(self):
+        return self.lineEditObj.text()
+
 class MessageBox:
     def __init__(self, root, logger):
         self.root = root
@@ -487,10 +511,10 @@ class ChannelSelector:
             self.logger.error("channels list is empty!!")
             return
         if self.type.lower() == "summary data":
-            self.cols = 4
+            self.cols = 3
         else:
             self.cols = 3
-        self.rows = np.ceil(len(self.channel_list) / 4) + 1
+        self.rows = np.ceil(len(self.channel_list) / self.cols) + 1
 
         # delete old data:
         if self.chkb_all is not None:

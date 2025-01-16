@@ -46,6 +46,10 @@ class SummaryDataParser:
             'def': self.plot_emg_histogram
         }
 
+        cmaps = plt.colormaps['tab20']
+        cmaps_c = plt.colormaps['tab20b']
+        self.colors = [cmaps(i % 19) for i in range(20)] + [cmaps_c(i % 19) for i in range(20)]
+
     def summary_data_visualize(self, *args, **kwargs):
         self.logger.info(f"start summary_data_visualize ...")
         self.channels = kwargs["channels"] if "channels" in kwargs else []
@@ -63,9 +67,12 @@ class SummaryDataParser:
         self.fig = None
         self.channel_lines = {}
 
+        if self.plot_name is None or not len(self.plot_name.strip()):
+            self.plot_name = self.sensor
+        if self.plot_name is None or not len(self.plot_name.strip()):
+            self.plot_name = self.file_name
         if not len(self.sensor.strip()) or self.sensor.lower() not in self.main_funcs:
             self.sensor = 'DEF'
-
         if self.plot_name is None or not len(self.plot_name.strip()):
             self.plot_name = self.sensor
 
@@ -78,9 +85,6 @@ class SummaryDataParser:
                 return ErrorCode.ERR_BAD_FILE
         else:
             self.df_data: pd.DataFrame = kwargs["data"] if "data" in kwargs else None
-
-        if self.sensor.lower() not in self.main_funcs:
-            self.sensor = 'DEF'
 
         return self.main_funcs[self.sensor.lower()](self.file_name)
 
@@ -105,15 +109,16 @@ class SummaryDataParser:
         max_length = np.max(np.vectorize(len)(self.channels))
         self.logger.debug(f"max_length: {max_length}")
         num = 27
-        ncol = int(num_of_columns / num) + 1 if num_of_columns % num else int(num_of_columns / num)
+        ncol = np.ceil(num_of_columns / num)
         fig = plt.figure(f"{self.plot_name}")
-        for ch in self.channels:
+        for i, ch in enumerate(self.channels):
             ch_data = self.df_data[ch].dropna()
-            plt.plot(np.sort(ch_data), np.linspace(0, 1, len(ch_data), endpoint=True), label=ch)
+            plt.plot(np.sort(ch_data), np.linspace(0, 1, len(ch_data), endpoint=True), label=ch,
+                     color=self.colors[i % len(self.colors)], linewidth=1)
 
         plt.xlabel('Value')
         plt.ylabel('Cumulative Probability')
-        plt.title(f'{filename} CDF Plot')
+        plt.title(f'{self.plot_name} CDF Plot')
         plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
 
         legend = plt.legend(ncol=ncol, bbox_to_anchor=(1.05, 1), fontsize=8)
@@ -145,7 +150,7 @@ class SummaryDataParser:
         try:
             ret = self.cdf_plot(filename)
             if not ret:
-                return ErrorCode.ERR_NO_ERROR
+                return ErrorCode.ERR_BAD_UNKNOWN
             if not len(self.channels):
                 tmp = self.df_data.columns.dropna().tolist()
                 self.channels = [val for val in tmp if val.lower() not in ["sn", "start", "end"]]

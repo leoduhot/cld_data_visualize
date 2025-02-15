@@ -14,6 +14,11 @@ from enum import IntEnum
 import time
 
 
+colors_list = ['#e6e6fa', '#f5fffa', '#f0ffff', '#c1ffc1', '#97ffff', '#00bfff',
+               '#87ceeb', '#76ee00', '#b3ee3a', '#fff68f', '#ffc1c1', '#eedd82',
+               '#ff1493', '#ffb6c1', '#da70d6', '#8a2be2', '#9370db', '#ffa500',
+               '#63b8ff', '#6a5acd']
+
 class ErrorCode(IntEnum):
     ERR_NO_ERROR = 0,
     ERR_BAD_FILE = -1,
@@ -21,7 +26,6 @@ class ErrorCode(IntEnum):
     ERR_BAD_TYPE = -3,
     ERR_BAD_ARGS = -4,
     ERR_BAD_UNKNOWN = -255,
-
 
 class DataVisualization:
     def __init__(self, *args, **kwargs):
@@ -37,7 +41,7 @@ class DataVisualization:
         self.low_pass_filter = {"type": '', "order": 0, "freq": 0}
         self.notch_filter = [[0, 0], [0, 0], [0, 0]]
         self.df_data = None
-        self.check_btn = None
+        self.check_btn = list()
         self.fft_scale = [[], []]
         self.markers = list()
         self.fig = None
@@ -46,6 +50,7 @@ class DataVisualization:
         self.txt_fontsize = 10
         self.channel_lines = dict()  #save {ax:[lines]) for click event
         self.show = True
+        self.project = None
 
         self.process_func = {
             "emg": self.emg_data,
@@ -70,7 +75,8 @@ class DataVisualization:
         self.fft_scale = kwargs["fftscale"] if "fftscale" in kwargs else [[], []]
         self.plot_name = kwargs["name"] if "name" in kwargs else self.sensor
         self.show = kwargs["show"] if "show" in kwargs else True
-        self.signal = kwargs["signal"] if 'signal' in kwargs else None
+        # self.signal = kwargs["signal"] if 'signal' in kwargs else None
+        self.project = kwargs["project"] if "project" in kwargs else "malibu"
         self.markers = []
         if self.fig is not None:
             for ax in self.fig.axes:
@@ -96,6 +102,8 @@ class DataVisualization:
         return self.process_func[self.sensor.lower()]()
 
     def adjust_color(self, origin, diff=(-32, 32, -16)):
+        if self.project in ["tiki", "tycho"]:
+            return origin
         self.logger.debug(f"origin:{origin}, diff:{diff}")
         r = min(max(0, int(origin[1:3], 16) + diff[0]), 255)
         g = min(max(0, int(origin[3:5], 16) + diff[1]), 255)
@@ -104,8 +112,21 @@ class DataVisualization:
         return f"#{r:02x}{g:02x}{b:02x}"
 
     def others_data(self, *args, **kwargs):
-        self.logger.debug(f"Nothing to do!!")
-        pass
+        try:
+            self.logger.info(f"process {self.sensor} data")
+            # ToDo:: need to review which columns needed
+            if not len(self.list):
+                tmp = self.df_data.columns.dropna().tolist()
+                self.list = [val for val in tmp]
+            _err_code, _data = self.do_data_conversion()
+            if _err_code != ErrorCode.ERR_NO_ERROR:
+                return _err_code
+            _err_code = self.do_plot_list(_data)
+            self.logger.info(f"finish: {self.sensor}, {_err_code}")
+            return _err_code
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_UNKNOWN
 
     def do_notch_filter(self, _sig):
         try:
@@ -302,11 +323,12 @@ class DataVisualization:
         return
 
     def draw_checkbutton(self, _plt, _lines, _colors):
-        _h = 0.025*len(self.list)
+        _h = 0.025 * len(self.list)
         # _w = len(max(self.list, key=len))
         # 0.62*_w/self.fig.dpi
-        rax = _plt.axes((0.91, 0.88-_h, 0.08, _h))
-        self.check_btn = CheckButtons(
+        rax = _plt.axes((0.91, 0.88 - _h, 0.08, _h))
+        self.check_btn = list()
+        self.check_btn.append(CheckButtons(
             ax=rax,
             labels=self.list,
             actives=[True for _ in range(len(self.list))],
@@ -314,14 +336,40 @@ class DataVisualization:
             frame_props={'edgecolor': _colors},
             check_props={'facecolor': _colors},
         )
-
+        )
         def callback(label):
             for line in _lines[label]:
                 line.set_visible(not line.get_visible())
                 line.figure.canvas.draw_idle()
             if self.figure_canvas is not None:
                 self.figure_canvas.canvas.draw_idle()
-        self.check_btn.on_clicked(callback)
+        self.check_btn[0].on_clicked(callback)
+
+    def draw_checkbutton_tiki(self, _plt, _lines, _colors):
+        def callback(label):
+            for line in _lines[label]:
+                line.set_visible(not line.get_visible())
+                line.figure.canvas.draw_idle()
+            if self.figure_canvas is not None:
+                self.figure_canvas.canvas.draw_idle()
+        ncols = math.ceil(len(self.list)/10)
+        _w = 0.08
+        self.check_btn = list()
+        for i in range(ncols):
+            _h = 0.025 * len(self.list[:10])
+            # _w = len(max(self.list, key=len))
+            # 0.62*_w/self.fig.dpi
+            rax = _plt.axes((1.01-ncols*0.1+i*_w, 0.88 - _h, _w, _h))
+            self.check_btn.append(CheckButtons(
+                ax=rax,
+                labels=self.list[i*10:i*10+10],
+                actives=[True for _ in range(len(self.list[i*10:i*10+10]))],
+                label_props={'color': _colors[i*10:i*10+10]},
+                frame_props={'edgecolor': _colors[i*10:i*10+10]},
+                check_props={'facecolor': _colors[i*10:i*10+10]},
+            )
+            )
+            self.check_btn[i].on_clicked(callback)
 
     def _draw_table(self, _plt, _table_data):
         try:
@@ -354,7 +402,7 @@ class DataVisualization:
         plt.close("all")
         _nrows = len(self.list) + 1
         self.fig = plt.figure(self.plot_name, figsize=(20, 10))
-        self.fig.suptitle(self.sensor, fontsize=16)
+        self.fig.suptitle(self.plot_name, fontsize=16)
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
@@ -446,6 +494,10 @@ class DataVisualization:
         keys = ["channel", "time", "sig", "rms", "avg_p2p", "cycle", "cycle_time",
                 "max", "min", "fft_freq", "peak_freq", "fft_dbv", "peak_dbv", "bias"]
         _data = {key: [] for key in keys}
+
+        if self.project == "tiki":
+            self.df_data = (self.df_data.sub(4096)).div(4096)
+
         for channel in self.list:
             if int(self.data_drop[1]) > 0:
                 voltage = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]
@@ -528,6 +580,160 @@ class DataVisualization:
         return ErrorCode.ERR_NO_ERROR, _data
 
     def emg_data(self, *args, **kwargs):
+        if self.project in ["malibu", "ceres"]:
+            return self.malibu_emg_data(*args, **kwargs)
+        elif self.project in ["tiki", "tycho"]:
+            return self.tiki_emg_data(*args, **kwargs)
+        else:
+            return ErrorCode.ERR_NO_ERROR
+
+    def tiki_emg_data(self, *args, **kwargs):
+        self.logger.info(f"process {self.sensor} data")
+
+        # ToDo:: need to review which columns needed
+        if not len(self.list):
+            tmp = self.df_data.columns.dropna().tolist()
+            self.list = [val for val in tmp if val.lower() not in ["timestamp"]]
+        _err_code, _data = self.do_data_conversion(_sensor="emg")
+        if _err_code != ErrorCode.ERR_NO_ERROR:
+            return _err_code
+        plt.clf()
+        plt.close("all")
+        # colors = plt.rcParams["axes.prop_cycle"]()
+        # colors_list = [next(colors)["color"] for _ in range(20)]
+        self.fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
+        self.fig.suptitle(self.sensor, fontsize=16)
+        self.figsize = self.fig.get_size_inches()
+        if self.figure_canvas is not None and self.show:
+            self.figure_canvas.create_canvas(self.fig)
+        plt.subplots_adjust(hspace=0.3)
+        plt.rcParams['axes.prop_cycle'] = plt.cycler('color', plt.cm.tab20(np.linspace(0, 1, 20)))
+        # plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_list)
+        self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+        ax = plt.subplot(2, 2, 1)
+        plt.rcParams.update({'font.size': 10})
+        # ax = axes[0][0]
+        time_lines = {key: [] for key in self.list}
+        channel_lines = {key: [] for key in self.list}
+        channel_colors = {}
+        _shift = np.amax(_data["sig"])-np.amin(_data["sig"])
+        # print(_shift)
+
+        for i in range(0, len(self.list)):
+            if self.list[i] in self.bad_channel:
+                self.logger.error(f"skip bad channel: {self.list[i]}")
+                continue
+            plt.rcParams.update({'font.size': 10})
+            _line, = plt.plot(_data["time"][i], _data["sig"][i])
+            channel_lines[self.list[i]].append(_line)
+            channel_colors[self.list[i]] = _line.get_color()
+            if ax in self.channel_lines:
+                self.channel_lines[ax].append(_line)
+            else:
+                self.channel_lines.update({ax: [_line]})
+
+        plt.text(-0.05, 1.05, f"Signal (V)", fontsize=10, transform=plt.gca().transAxes)
+        plt.xlabel('Time (S)', fontsize=10)
+        # plt.yticks([_shift*i for i in np.arange(0, len(self.list))])
+        # ax.set_yticklabels(self.list)
+        # ax.legend()
+
+        table_ax = plt.subplot(2, 2, 3)
+        # plt.rcParams.update({'font.size': 10})
+        table_data = np.array([["Signal"]+self.list, ["RMS Level(V)"]+["{:.8f}".format(val) for val in _data["rms"]],
+                    ["Average Peak-to-Peak"]+["{:.8f}".format(val) for val in _data["avg_p2p"]],
+                    ["DC bias"]+["{:.8f}".format(val) for val in _data["bias"]]]).T
+        self._draw_table(table_ax, table_data)
+        # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
+        # for (row, col), cell in _table.get_celld().items():
+        #     cell.set_linewidth(0.3)
+        # plt.axis('off')
+
+        ax = plt.subplot(2, 2, 2)
+        harmonics = [2, 3, 4, 5]
+        harmonic_data = [[(0, 0)]*len(self.list) for _ in range(len(harmonics))]
+        for i in range(0, len(self.list)):
+            if self.list[i] in self.bad_channel:
+                self.logger.error(f"skip bad channel: {self.list[i]}")
+                continue
+            # Find harmonics of AC signal in FFT plot
+            harmonic_coords = []
+            # for h in harmonics:
+            for k, h in enumerate(harmonics):
+                harmonic_index = np.argmin(np.abs(_data["fft_freq"][i] - h * _data["peak_freq"][i]))
+                harmonic_freq = _data["fft_freq"][i][harmonic_index]
+                harmonic_dbv = _data["fft_dbv"][i][harmonic_index]
+                harmonic_coords.append((harmonic_freq, harmonic_dbv))
+                harmonic_data[k][i] = (harmonic_freq, harmonic_dbv)
+
+            # Plot FFT of AC signal
+            _line, = plt.plot(_data["fft_freq"][i], _data["fft_dbv"][i])
+            channel_lines[self.list[i]].append(_line)
+            if ax in self.channel_lines:
+                self.channel_lines[ax].append(_line)
+            else:
+                self.channel_lines.update({ax: [_line]})
+
+            _line, = plt.plot(_data["peak_freq"][i], _data["peak_dbv"][i], 'o',
+                              color=self.adjust_color(channel_colors[self.list[i]]))
+            channel_lines[self.list[i]].append(_line)
+
+            _line = plt.axvline(float(_data["peak_freq"][i]), linestyle='--',
+                               color=self.adjust_color(channel_colors[self.list[i]]))
+            channel_lines[self.list[i]].append(_line)
+
+            for k, h in enumerate(harmonics):
+                _line, = plt.plot(harmonic_coords[k][0], harmonic_coords[k][1], 'x',
+                                  color=self.adjust_color(channel_colors[self.list[i]]),
+                                  label=f'Harmonic {h} ({harmonic_coords[k][0]:.2f},{harmonic_coords[k][1]:.2f})')
+                channel_lines[self.list[i]].append(_line)
+
+        plt.xlabel('Frequency (Hz)', fontsize=10)
+        # plt.ylabel('Amplitude (dBV)', fontsize=10)
+        plt.text(-0.05, 1.05, f"Amplitude (dBV)",
+                fontsize=10, transform=plt.gca().transAxes)
+        # plt.xlim(1, self.sample_rate/2)
+        if len(self.fft_scale[0]):
+            _start, _end = list(self.fft_scale[0])
+            _end = self.sample_rate/2 if _end == -1 else _end
+            plt.xlim(_start, _end)
+        if len(self.fft_scale[1]):
+            _start, _end = list(self.fft_scale[1])
+            plt.ylim(_start, _end)
+        table_ax = plt.subplot(2, 2, 4)
+        # plt.rcParams.update({'font.size': 10})
+        table_data = np.array([["Signal"]+self.list,
+                               ["Peak"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
+                                         zip(_data["peak_freq"], _data["peak_dbv"])],
+                               ["Harmonic 2"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
+                               harmonic_data[0]],
+                               ["Harmonic 3"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
+                                                 harmonic_data[1]],
+                               ["Harmonic 4"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
+                                                 harmonic_data[2]],
+                               ["Harmonic 5"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
+                                                 harmonic_data[3]],
+                               ]).T
+        self._draw_table(table_ax, table_data)
+        # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
+        # for (row, col), cell in _table.get_celld().items():
+        #     cell.set_linewidth(0.3)
+        # plt.axis('off')
+        reserve_space = math.ceil(len(self.list)/10)*0.1
+        plt.subplots_adjust(left=0.05, right=1-reserve_space)
+        self.draw_checkbutton_tiki(plt, channel_lines, list(channel_colors.values()))
+
+        # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
+        self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
+        _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        _png_file = f"{self.plot_name}_{_postfix}.png"
+        plt.savefig(_png_file)
+        if self.show and self.figure_canvas is not None and len(self.list):
+            self.figure_canvas.show_plot()
+        self.logger.info(f"finish: {self.sensor}")
+        return ErrorCode.ERR_NO_ERROR
+
+    def malibu_emg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
         # ToDo:: need to review which columns needed
         if not len(self.list):
@@ -543,7 +749,7 @@ class DataVisualization:
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
-        plt.subplots_adjust(hspace=0.6)
+        plt.subplots_adjust(hspace=0.3)
         self.fig.subplots(2, 2)
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         ax = plt.subplot(2, 2, 1)
@@ -653,7 +859,6 @@ class DataVisualization:
         # for (row, col), cell in _table.get_celld().items():
         #     cell.set_linewidth(0.3)
         # plt.axis('off')
-
         self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))

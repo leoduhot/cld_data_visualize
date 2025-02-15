@@ -6,6 +6,7 @@ import logging
 from enum import IntEnum
 import json
 import re
+import csv
 
 
 class ErrorCode(IntEnum):
@@ -14,6 +15,7 @@ class ErrorCode(IntEnum):
     ERR_BAD_DATA = -2,
     ERR_BAD_TYPE = -3,
     ERR_BAD_ARGS = -4,
+    ERR_BAD_PROJECT = -5,
     ERR_BAD_UNKNOWN = -255,
 
 
@@ -22,6 +24,7 @@ ErrorMsg = {
     f"{ErrorCode.ERR_BAD_DATA}": "ErrorCode.ERR_BAD_DATA",
     f"{ErrorCode.ERR_BAD_TYPE}": "ErrorCode.ERR_BAD_DATA",
     f"{ErrorCode.ERR_BAD_ARGS}": "ErrorCode.ERR_BAD_ARGS",
+    f"{ErrorCode.ERR_BAD_PROJECT}": "ErrorCode.ERR_BAD_PROJECT",
     f"{ErrorCode.ERR_BAD_UNKNOWN}": "ErrorCode.ERR_BAD_UNKNOWN",
 }
 
@@ -64,7 +67,38 @@ class RawDataParser:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_DATA, ErrorCode.ERR_BAD_UNKNOWN
 
-    def extract_sensor_data(self, _file=None, _data=None, _sensor=None):
+    def convert_ceres_test_data(self, _file=None):
+        try:
+            if _file is None:
+                return ErrorCode.ERR_BAD_ARGS, None
+            with open(_file, 'r') as f:
+                reader = csv.reader(f)
+                data = [row for row in reader]
+
+            max_len = max(len(row) for row in data)
+            raw_data = np.array([row + [''] * (max_len - len(row)) for row in data]).T
+            df = pd.DataFrame(raw_data[1:], columns=raw_data[0])
+            new_columns = list()
+            valid_columns = list()
+            station_name = ""
+            for item in df.columns:
+                if len(df[item].values[0]) == 0:
+                    station_name = item
+                    new_columns.append(item)
+                else:
+                    new_columns.append(f"{station_name}_{item}")
+                    valid_columns.append(f"{station_name}_{item}")
+            df.columns = new_columns
+            df = df[valid_columns]
+            for name in df.columns:
+                if "EMG" in name:
+                    df_data[name] = (df[name].replace('', np.nan).astype(float).div(65536)).mul(5)
+            return ErrorCode.ERR_NO_ERROR, df_data
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_FILE, None
+
+    def extract_sensor_data(self, _file=None, _data=None, _sensor=None, _project=None):
         try:
             if _file is not None:
                 _fh = open(_file, 'r')
@@ -79,7 +113,7 @@ class RawDataParser:
             if _sensor not in self.sensor_pattern:
                 return ErrorCode.ERR_BAD_ARGS, None
             if _sensor == "emg":
-                return self.extract_emg_data(_fd)
+                return self.extract_emg_data(_fd, _project)
             else:
                 _err, _json_data = self.extract_json_data(_fd, self.sensor_pattern[_sensor])
                 if _err == ErrorCode.ERR_NO_ERROR:
@@ -96,7 +130,119 @@ class RawDataParser:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_FILE, None
 
-    def extract_emg_data(self, _data):
+    def extract_emg_data(self, _data, _project):
+        if _project.lower() == "malibu":
+            return self.extract_malibu_emg_data(_data)
+        elif _project.lower() == "ceres":
+            return self.extract_ceres_emg_data(_data)
+        elif _project.lower() == "tiki":
+            return self.extract_tiki_emg_data(_data)
+        elif _project.lower() == "tycho":
+            return self.extract_tycho_emg_data(_data)
+        else:
+            return ErrorCode.ERR_BAD_PROJECT, None
+
+    def extract_tycho_emg_data(self, _data):
+        try:
+            start_idx = _data.find("{")
+            end_idx = _data.rfind("}")
+            ch_num = 20
+            self.logger.debug(f"{start_idx}, {end_idx}")
+            js_obj = json.loads(_data[start_idx: end_idx + 1])
+            arr = np.array(js_obj["output"]["adc_data"])
+            self.logger.debug(f"arr length {len(arr)}")
+            output_arr = np.reshape(arr, (-1, ch_num*2))
+            base_timestamp = 0
+            # Decompress timestamps
+            for i in range(len(output_arr)):
+                output_arr[i][1] = output_arr[i][1] + base_timestamp
+                base_timestamp = output_arr[i][1]
+                for j in range(1, ch_num):
+                    output_arr[i][2 * j + 1] = output_arr[i][2 * j + 1] + base_timestamp
+            # Decompress channel data
+            for i in range(1, len(output_arr)):
+                for j in range(0, ch_num):
+                    output_arr[i][2 * j] = output_arr[i][2 * j] + output_arr[i - 1][2 * j]
+
+            df = pd.DataFrame(output_arr)
+            df.columns = ["ch1", "ts1", "ch3", "ts3", "ch4", "ts4", "ch6", "ts6", "ch7", "ts7", "ch9", "ts9", "ch10",
+                          "ts10", "ch11", "ts11", "ch12", "ts12", "ch13", "ts13", "ch14", "ts14", "ch15", "ts15",
+                          "ch16", "ts16", "ch17", "ts17", "ch18", "ts18", "ch19", "ts19", "ch20", "ts20", "ch21",
+                          "ts21", "ch22", "ts22", "ch24", "ts24"]
+            df = (df.sub(4096)).div(4096)
+            self.logger.debug(f"{__name__}: {len(df)}")
+            return ErrorCode.ERR_NO_ERROR, df
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_DATA, None
+
+    def extract_tiki_emg_data(self, _data):
+        try:
+            start_idx = _data.find("{")
+            end_idx = _data.rfind("}")
+            ch_num = 20
+            self.logger.debug(f"{start_idx}, {end_idx}")
+            js_obj = json.loads(_data[start_idx: end_idx + 1])
+            arr = np.array(js_obj["output"]["adc_data"])
+            self.logger.debug(f"arr length {len(arr)}")
+            output_arr = np.reshape(arr, (-1, ch_num*2))
+            base_timestamp = 0
+            # Decompress timestamps
+            for i in range(len(output_arr)):
+                output_arr[i][1] = output_arr[i][1] + base_timestamp
+                base_timestamp = output_arr[i][1]
+                for j in range(1, ch_num):
+                    output_arr[i][2 * j + 1] = output_arr[i][2 * j + 1] + base_timestamp
+            # Decompress channel data
+            for i in range(1, len(output_arr)):
+                for j in range(0, ch_num):
+                    output_arr[i][2 * j] = output_arr[i][2 * j] + output_arr[i - 1][2 * j]
+
+            df = pd.DataFrame(output_arr)
+            df.columns = ["ch1", "ts1", "ch3", "ts3", "ch4", "ts4", "ch6", "ts6", "ch7", "ts7", "ch9", "ts9", "ch10",
+                          "ts10", "ch11", "ts11", "ch12", "ts12", "ch13", "ts13", "ch14", "ts14", "ch15", "ts15",
+                          "ch16", "ts16", "ch17", "ts17", "ch18", "ts18", "ch19", "ts19", "ch20", "ts20", "ch21",
+                          "ts21", "ch22", "ts22", "ch24", "ts24"]
+            # df = (df.sub(4096)).div(4096)
+            self.logger.debug(f"{__name__}: {len(df)}")
+            return ErrorCode.ERR_NO_ERROR, df
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_DATA, None
+
+    def extract_ceres_emg_data(self, _data):
+        try:
+            start_idx = _data.find("{")
+            end_idx = _data.rfind("}")
+            ch_num = 8
+            self.logger.debug(f"{start_idx}, {end_idx}")
+            js_obj = json.loads(_data[start_idx: end_idx + 1])
+            arr = np.array(js_obj["output"]["adc_data"])
+            self.logger.debug(f"arr length {len(arr)}")
+            output_arr = np.reshape(arr, (-1, ch_num*2))
+            base_timestamp = 0
+            # Decompress timestamps
+            for i in range(len(output_arr)):
+                output_arr[i][1] = output_arr[i][1] + base_timestamp
+                base_timestamp = output_arr[i][1]
+                for j in range(1, ch_num):
+                    output_arr[i][2 * j + 1] = output_arr[i][2 * j + 1] + base_timestamp
+            # Decompress channel data
+            for i in range(1, len(output_arr)):
+                for j in range(0, ch_num):
+                    output_arr[i][2 * j] = output_arr[i][2 * j] + output_arr[i - 1][2 * j]
+
+            df = pd.DataFrame(output_arr)
+            df.columns = ["ch1", "ts1", "ch2", "ts2", "ch3", "ts3", "ch5", "ts5", "ch6", "ts6", "ch7", "ts7",
+                          "ch11", "ts11", "ch13", "ts13"]
+            df = (df.div(65536)).mul(5)
+            self.logger.debug(f"{__name__}: {len(df)}")
+            return ErrorCode.ERR_NO_ERROR, df
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_DATA, None
+
+    def extract_malibu_emg_data(self, _data):
         try:
             _data_lines = _data.splitlines()
             # _reg_index = _data_lines.index(self.sensor_pattern['emg'])
@@ -289,7 +435,11 @@ class RawDataParser:
 
 # example
 # if __name__ == '__main__':
+#     import sys
 #     rdp = RawDataParser()
+#     err, df_data = rdp.convert_ceres_test_data(sys.argv[1])
+#     if err == ErrorCode.ERR_NO_ERROR:
+#         df_data.to_csv("test.csv", index=False)
 #     s = sys.argv[2].strip()
 #
 #     err, df_data = rdp.extract_sensor_data(sys.argv[1], s)

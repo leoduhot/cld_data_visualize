@@ -10,6 +10,13 @@ import time
 from threading import Thread
 
 
+project_name = {
+            "01":   "malibu",
+            "02":   "ceres",
+            "03":   "tiki",
+            "04":   "tycho",
+        }
+
 # data rate and data drops default settings
 defaultSettings = {"alt": [10, 0, -1],
                    "bti": [31.25, 10, 72],
@@ -17,8 +24,23 @@ defaultSettings = {"alt": [10, 0, -1],
                    "imu": [120, 10, 490],
                    "mag": [50, 0, -1],
                    "ppg": [25, 125, 500],
-                   }
+                   "others": [1, 0, -1]}
 
+tiki_defaultSettings = {"alt": [10, 0, -1],
+                   "bti": [31.25, 10, 72],
+                   "emg": [2000, 200, -1],
+                   "imu": [120, 10, 490],
+                   "mag": [50, 0, -1],
+                   "ppg": [25, 125, 500],
+                   "others": [1, 0, -1]}
+
+ceres_defaultSettings = {"alt": [10, 0, -1],
+                   "bti": [31.25, 10, 72],
+                   "emg": [8192, 0, 8192],
+                   "imu": [120, 10, 490],
+                   "mag": [50, 0, -1],
+                   "ppg": [25, 125, 500],
+                   "others": [1, 0, -1]}
 
 class FlowControl:
     def __init__(self, root, ui: Ui_MainWindow, **kwargs):
@@ -39,7 +61,7 @@ class FlowControl:
                                    root=self.root, logger=self.logger)
         self.plotName.state_configure(0)
         self.paramEntry = ParameterEntry(root=self.root, logger=self.logger,
-                                         _combo={"sensor_type": self.ui.sensorTypeComb,
+                                         _combo={"project": self.ui.projectComb,"sensor_type": self.ui.sensorTypeComb,
                                                  "data_type": self.ui.dataTypeComb},
                                          _entry={"data_rate": self.ui.dataRateEntry,
                                                  "data_drop_start": self.ui.dataDropStartEntry,
@@ -89,10 +111,24 @@ class FlowControl:
                                      root=self.root, logger=self.logger)
         self.fftYScale.state_configure(0)
 
+        self.summPlotScale = FilterEntry(checkbox_obj=self.ui.summPlotLimitChkb,
+                                     edit_objs={"lower": self.ui.summPlotLimitLowerEntry,
+                                                "upper": self.ui.summPlotLimitUpperEntry},
+                                     label_objs=[self.ui.summPlotLimitLowerLab, self.ui.summPlotLimitUpperLab],
+                                     root=self.root, logger=self.logger)
+        self.summPlotScale.state_configure(0)
         self.textFilter = TextFilter(editObj=self.ui.itemFilterEntry, labelObj=self.ui.itemFilterLabel,
                                      logger=self.logger, root=self.root,
                                      command=self.on_fresh_data_button_clicked)
         self.textFilter.state_configure(0)
+        self.snFilter = TextFilter(editObj=self.ui.snFilterEntry, labelObj=self.ui.snFilterLab,
+                                     logger=self.logger, root=self.root,
+                                     command=self.on_fresh_data_button_clicked)
+        self.snFilter.state_configure(0)
+        self.stationFilter = TextFilter(editObj=self.ui.stationFilterEntry, labelObj=self.ui.stationFilterLab,
+                                   logger=self.logger, root=self.root,
+                                   command=self.on_fresh_data_button_clicked)
+        self.stationFilter.state_configure(0)
         self.channelsSelector = ChannelSelector(root=self.root, logger=self.logger, containObj=self.ui.channelFrm)
         self.goButton = SingleButton(root=self.root, logger=self.logger, btnObj=self.ui.goBtn, command=self.on_button_go)
         self.plotCanvas = PlotCanvas(logger=self.logger)
@@ -111,6 +147,7 @@ class FlowControl:
         self.data_rate = 1
         self.popup = None
         self.item_filter = None
+        self.project = "01"
 
         self.signal.threadStateChanged.connect(self.on_thread_state_changed)
 
@@ -158,6 +195,7 @@ class FlowControl:
         _file_path = list()
         result = list()
         if path_list is not None and len(path_list):
+            print(path_list)
             for val in path_list:
                 if os.path.isdir(val):
                     files = os.listdir(val)
@@ -185,14 +223,21 @@ class FlowControl:
         self.fftYScale.set_checked(checked)
 
     def set_default_values(self, sensor):
-        if not len(sensor):
+        self.project = self.get_parameter_project()
+        if self.project in ["tiki", "tycho"]:
+            def_settings = tiki_defaultSettings
+        elif self.project == "ceres":
+            def_settings = ceres_defaultSettings
+        else:
+            def_settings = defaultSettings
+        if not len(sensor) or sensor[:3].lower() not in def_settings:
             self.logger.debug(f"sensor type is empty, do nothing!!")
             self.paramEntry.set(_entry={"data_rate": 1,
                                         "data_drop_start": 0,
                                         "data_drop_end": -1})
             self.highPassFilter.set_checked(False)
             return
-        settings = defaultSettings[sensor[:3].lower()]
+        settings = def_settings[sensor[:3].lower()]
         self.paramEntry.set(_entry={"data_rate": settings[0],
                                     "data_drop_start": settings[1],
                                     "data_drop_end": settings[2]})
@@ -240,7 +285,8 @@ class FlowControl:
         self.df_data = dict()
         self.file_path = list()
         for val in file_list:
-            _err, df_data = self.rdp.extract_sensor_data(_file=val, _sensor=self.sensor_type.lower())
+            _err, df_data = self.rdp.extract_sensor_data(_file=val, _sensor=self.sensor_type.lower(),
+                                                         _project=self.get_parameter_project())
             if _err != ErrorCode.ERR_NO_ERROR:
                 _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
                 self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
@@ -260,21 +306,77 @@ class FlowControl:
         else:
             return False
 
+    def convert_ceres_test_data(self):
+        file_list = self.get_file_paths()
+        self.df_data = dict()
+        self.file_path = list()
+        for val in file_list:
+            _err, df_data = self.rdp.convert_ceres_test_data(_file=val)
+            if _err != ErrorCode.ERR_NO_ERROR:
+                _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
+                self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
+                if _answer:
+                    continue
+                else:
+                    return False
+            _path = os.path.dirname(val)
+            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+            _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
+            df_data.to_csv(os.path.join(_path, _name), index=False)
+            self.df_data.update({_name: df_data})
+            self.file_path.append(os.path.join(_path, _name))
+            self.logger.info(f"save data to csv file: {_name}")
+        if len(self.file_path):
+            return True
+        else:
+            return False
+
+    def convert_tiki_test_data(self):
+        file_list = self.get_file_paths()
+        self.df_data = dict()
+        self.file_path = list()
+        for val in file_list:
+            df_data = pd.read_csv(val, index_col=False)
+            df_data = (df_data.sub(4096)).div(4096)
+            # _err, df_data = self.rdp.convert_tiki_test_data(_file=val)
+            # if _err != ErrorCode.ERR_NO_ERROR:
+            #     _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
+            #     self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
+            #     if _answer:
+            #         continue
+            #     else:
+            #         return False
+            _path = os.path.dirname(val)
+            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+            _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
+            df_data.to_csv(os.path.join(_path, _name), index=False)
+            self.df_data.update({_name: df_data})
+            self.file_path.append(os.path.join(_path, _name))
+            self.logger.info(f"save data to csv file: {_name}")
+        if len(self.file_path):
+            return True
+        else:
+            return False
     def get_df_data(self):
         try:
-            file_path = self.get_file_paths()
-            self.file_path = list()
-            self.df_data = dict()
-            for file in file_path:
-                _name = os.path.basename(file)
-                try:
-                    data = pd.read_csv(file, index_col=False)
-                except Exception as e:
-                    self.logger.error(f"Error during read csv file: {_name}")
-                    self.logger.error(f"{str(e)}\nin {__file__}:{str(e.__traceback__.tb_lineno)}")
-                    continue
-                self.file_path.append(file)
-                self.df_data.update({_name: data})
+            if self.get_parameter_project() == 'ceres' and self.data_type.lower() == "tester data":
+                self.convert_ceres_test_data()
+            # if self.get_parameter_project() == 'tiki' and self.data_type.lower() == "tester data":
+            #     self.convert_tiki_test_data()
+            else:
+                file_path = self.get_file_paths()
+                self.file_path = list()
+                self.df_data = dict()
+                for file in file_path:
+                    _name = os.path.basename(file)
+                    try:
+                        data = pd.read_csv(file, index_col=False)
+                    except Exception as e:
+                        self.logger.error(f"Error during read csv file: {_name}")
+                        self.logger.error(f"{str(e)}\nin {__file__}:{str(e.__traceback__.tb_lineno)}")
+                        continue
+                    self.file_path.append(file)
+                    self.df_data.update({_name: data})
             ret = True
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
@@ -291,6 +393,10 @@ class FlowControl:
             self.get_df_data()
         self.refresh_data_channels()
         pass
+
+    def get_parameter_project(self):
+        p = self.paramEntry.get(_comb='project')
+        return project_name[p] if p in project_name else project_name["01"]
 
     def get_pass_filer_parameters(self, filter_obj: FilterEntry):
         val = filter_obj.get() if filter_obj.isChecked else None
@@ -315,6 +421,22 @@ class FlowControl:
             val['end'] = int(val['end'])
         self.logger.debug(f"{filter_obj.name} get values: {val}")
         return [val['start'], val['end']] if val else []
+
+    def get_filer_parameters_in_list(self, filter_obj: FilterEntry, keys: list):
+        val = filter_obj.get() if filter_obj.isChecked else None
+        if val is not None:
+            for key in keys:
+                val[key] = float(val[key])
+        self.logger.debug(f"{filter_obj.name} get values: {val}")
+        return [val[key] for key in keys] if val else []
+
+    def get_filer_parameters_in_dict(self, filter_obj: FilterEntry, keys: list):
+        val = filter_obj.get() if filter_obj.isChecked else None
+        if val is not None:
+            for key in keys:
+                val[key] = float(val[key])
+        self.logger.debug(f"{filter_obj.name} get values: {val}")
+        return val
 
     def on_button_go(self):
         # _file = self.fileSelector.get_file_path()
@@ -363,10 +485,13 @@ class FlowControl:
         # _fft_scale_x = self.get_scale_filer_parameters(self.fftXScale)
         filters.update({"scaleX": self.get_scale_filer_parameters(self.fftXScale)})
         filters.update({"scaleY": self.get_scale_filer_parameters(self.fftYScale)})
+
+        filters.update({"summYScale": self.get_filer_parameters_in_list(self.summPlotScale, ["lower", "upper"])})
         # _fft_scale_y = self.get_scale_filer_parameters(self.fftYScale)
 
         selected_channels = self.channelsSelector.get_checked_list()
         self.logger.debug(f"selected channels: {selected_channels}")
+        self.project = self.get_parameter_project()
 
         if selected_channels is not None and len(selected_channels):
             if len(self.df_data.keys()) > 1:  # for multiple files
@@ -393,7 +518,8 @@ class FlowControl:
             if self.data_type == "Summary Data":
                 _err_code = self.sdp.summary_data_visualize(data=self.df_data[file], sensor=self.sensor_type,
                                                             channels=_channels, name=self.plot_name,
-                                                            show=show, filename=file)
+                                                            yscale=filters["summYScale"],
+                                                            show=show, filename=file, project=self.project)
                 fig = self.sdp.fig
             else:
                 _err_code = self.dv.visualize(data=self.df_data[file], logger=self.logger, name=self.plot_name,
@@ -402,7 +528,7 @@ class FlowControl:
                                               lowpassfilter=filters['low'],
                                               notchfilter=[filters['notch1'], filters['notch2'], filters['notch3']],
                                               fftscale=[filters['scaleX'], filters['scaleY']],
-                                              show=show)
+                                              show=show, project=self.project)
                 fig = self.dv.fig
             return _err_code, fig
         except Exception as e:
@@ -453,6 +579,10 @@ class FlowControl:
             #     columns = new_col if len(new_col) else columns
         if self.item_filter is not None and len(self.item_filter.strip()):
             self.logger.debug(f"reg:{self.item_filter.strip()}")
-            new_col = [val for val in columns if re.search(fr'{self.item_filter.strip()}', val)]
+            try:
+                new_col = [val for val in columns if re.search(fr'{self.item_filter.strip()}', val)]
+            except Exception as ex:
+                self.messagebox.warning("Error", f"{ex}")
+                return
             columns = new_col if len(new_col) else columns
         self.channelsSelector.show_channels(columns, self.data_type)

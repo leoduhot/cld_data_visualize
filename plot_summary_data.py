@@ -33,6 +33,7 @@ class SummaryDataParser:
         self.figsize = list()
         self.show = True
         self.file_name = None
+        self.y_scale = None
 
         self.main_funcs = {
             'alt': self.plot_emg_histogram,
@@ -58,6 +59,9 @@ class SummaryDataParser:
         self.plot_name = kwargs["name"] if "name" in kwargs else self.sensor
         self.show = kwargs["show"] if "show" in kwargs else True
         self.file_name = os.path.splitext(kwargs["filename"])[0] if "filename" in kwargs else None
+        self.y_scale = kwargs["yscale"] if "yscale" in kwargs else None
+        if self.y_scale is not None and len(self.y_scale) == 0:
+            self.y_scale = None
         self.markers = []
         if self.fig is not None:
             for ax in self.fig.axes:
@@ -85,6 +89,12 @@ class SummaryDataParser:
                 return ErrorCode.ERR_BAD_FILE
         else:
             self.df_data: pd.DataFrame = kwargs["data"] if "data" in kwargs else None
+        if len(self.channels):
+            base_cols = [val for val in self.channels if 'baseline' in val.lower()]
+            non_base_cols = [val for val in self.channels if 'baseline' not in val.lower()]
+            base_cols.sort()
+            non_base_cols.sort()
+            self.channels = base_cols + non_base_cols
 
         return self.main_funcs[self.sensor.lower()](self.file_name)
 
@@ -98,56 +108,73 @@ class SummaryDataParser:
         pass
 
     def cdf_plot(self, filename=None):
-        import numpy as np
-        plt.clf()
-        plt.close("all")
+        try:
+            import numpy as np
+            plt.clf()
+            plt.close("all")
 
-        if not len(self.channels):
-            tmp = self.df_data.columns.dropna().tolist()
-            self.channels = [val for val in tmp if val.lower() not in ["sn", "start", "end"]]
-        num_of_columns = len(self.channels)
-        max_length = np.max(np.vectorize(len)(self.channels))
-        self.logger.debug(f"max_length: {max_length}")
-        num = 27
-        ncol = np.ceil(num_of_columns / num)
-        fig = plt.figure(f"{self.plot_name}")
-        for i, ch in enumerate(self.channels):
-            ch_data = self.df_data[ch].dropna()
-            plt.plot(np.sort(ch_data), np.linspace(0, 1, len(ch_data), endpoint=True), label=ch,
-                     color=self.colors[i % len(self.colors)], linewidth=1)
+            if not len(self.channels):
+                tmp = self.df_data.columns.dropna().tolist()
+                self.channels = [val for val in tmp if val.lower() not in ["sn", "start", "end"]]
+            num_of_columns = len(self.channels)
+            max_length = np.max(np.vectorize(len)(self.channels))
+            self.logger.debug(f"max_length: {max_length}")
+            num = 27
+            ncol = np.ceil(num_of_columns / num)
+            fig = plt.figure(f"{self.plot_name}")
+            labelcolor = list()
+            for i, ch in enumerate(self.channels):
+                ch_data = self.df_data[ch].dropna()
+                plt.plot(np.sort(ch_data), np.linspace(0, 1, len(ch_data), endpoint=True), label=ch,
+                         color=self.colors[i % len(self.colors)], linewidth=1)
+                if self.y_scale is not None and (ch_data.min() < self.y_scale[0] or ch_data.max() > self.y_scale[1]):
+                    labelcolor.append("red")
+                else:
+                    labelcolor.append("black")
 
-        plt.xlabel('Value')
-        plt.ylabel('Cumulative Probability')
-        plt.title(f'{self.plot_name} CDF Plot')
-        plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+            plt.xlabel('Value')
+            plt.ylabel('Cumulative Probability')
+            plt.title(f'{self.plot_name} CDF Plot')
+            if self.y_scale is not None:
+                plt.xlim(self.y_scale)
+            plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
 
-        legend = plt.legend(ncol=ncol, bbox_to_anchor=(1.05, 1), fontsize=8)
-        width = legend.get_window_extent().width + 28
-        w = 8+width/fig.dpi + 40/fig.dpi
-        fig.set_size_inches(w, 6)
-        right_ratio = 8/w
-        left_ratio = 80/fig.dpi/w
-        plt.subplots_adjust(left=left_ratio, right=right_ratio)
-        # if filename:
-        #     sub_png_file = filename + '_CDF.png'
-        # else:
-        time_stamp = datetime.datetime.now()
-        postfix = time_stamp.strftime("%Y%m%d_%H%M%S")
-        sub_png_file = "_".join([self.plot_name, f'CDF_{postfix}.png'])
-        self.logger.debug(f"file name:{sub_png_file}")
-        plt.savefig(sub_png_file)
+            legend = plt.legend(ncol=ncol, loc='upper left',
+                                labelcolor=labelcolor,
+                                bbox_to_anchor=(1.05, 1), fontsize=8)
+            plt.gca().add_artist(legend)
 
-        # self.figsize = fig.get_size_inches()
-        # if self.figure_canvas is not None and self.show:
-        #     self.figure_canvas.create_canvas(fig)
-        #
-        # if self.show and self.figure_canvas is not None:
-        #     self.figure_canvas.show_plot()
+            width = legend.get_window_extent().width + 28
+            w = 8+width/fig.dpi + 40/fig.dpi
+            fig.set_size_inches(w, 6)
+            right_ratio = 8/w
+            left_ratio = 80/fig.dpi/w
+            plt.subplots_adjust(left=left_ratio, right=right_ratio)
+            # legend.set_bbox_to_anchor(bbox=(1.05, 1), transform=plt.gca().transAxes)
+            # if filename:
+            #     sub_png_file = filename + '_CDF.png'
+            # else:
+            # time_stamp = datetime.datetime.now()
+            # postfix = time_stamp.strftime("%Y%m%d_%H%M%S")
+            sub_png_file = "_".join([self.plot_name, f'CDF_{self.postfix}.png'])
+            self.logger.debug(f"file name:{sub_png_file}")
+            plt.savefig(sub_png_file)
 
-        return True
+            # self.figsize = fig.get_size_inches()
+            # if self.figure_canvas is not None and self.show:
+            #     self.figure_canvas.create_canvas(fig)
+            #
+            # if self.show and self.figure_canvas is not None:
+            #     self.figure_canvas.show_plot()
+
+            return True
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return False
 
     def plot_emg_histogram(self, filename=None):
         try:
+            self.postfix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             ret = self.cdf_plot(filename)
             if not ret:
                 return ErrorCode.ERR_BAD_UNKNOWN
@@ -164,24 +191,44 @@ class SummaryDataParser:
             self.figsize = self.fig.get_size_inches()
             if self.figure_canvas is not None and self.show:
                 self.figure_canvas.create_canvas(self.fig)
-            self.fig.suptitle(self.sensor, fontsize=16)
+            self.fig.suptitle(self.plot_name, fontsize=16)
             gs = GridSpec(8, num_of_columns, figure=self.fig)
 
             ax_main = self.fig.add_subplot(gs[0:3, :])
             # ch_data = [data.iloc[:, j].dropna() for j in range(group_data_index[i], data.shape[1], group_size)]
             ch_data = [self.df_data[ch].dropna() for ch in self.channels]
-            ax_main.boxplot(ch_data, patch_artist=True)
+            bp = ax_main.boxplot(ch_data, patch_artist=True)
+            if self.y_scale is not None:
+                ax_main.set_ylim(self.y_scale)
+            # means = [np.mean(d) for d in ch_data]
+            for i, patch in enumerate(bp['boxes']):
+                if self.y_scale is not None and (ch_data[i].min() < self.y_scale[0] or ch_data[i].max() > self.y_scale[1]):
+                    patch.set_facecolor('red')
+                elif i == 0:
+                    patch.set_facecolor('#2faf00') # green
+
             # ax_main.set_ylim([0.8, 1.3])
             ax_main.set_xticklabels([re.sub(r"^.*_data_", "", val, flags=re.IGNORECASE) for val in self.channels])
             base_mean = self.df_data.loc[:, self.channels[0]].mean()
+            # base_mean = means[0]
             ax_main.axhline(base_mean, color='g', linestyle='-.')
             # ax_main.axhline(1.2, color='b', linestyle='-.')
 
             for j in range(num_of_columns):
                 ax_hist = self.fig.add_subplot(gs[3:6, j])
-                ax_hist.hist(ch_data[j], orientation='horizontal')
+                if self.y_scale is not None and (ch_data[j].min() < self.y_scale[0] or ch_data[j].max() > self.y_scale[1]):
+                    _color = "red"
+                elif j != 0:
+                    _color = "#1f77b4"
+                else:
+                    _color = "#2faf00" # green
+                ax_hist.hist(ch_data[j], orientation='horizontal', color=_color)
+                if _color != "red":
+                    ax_hist.set_ylim(self.y_scale)
                 # plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, loc: f"{x:.3e}"))
-
+            csv_data = dict()
+            csv_data.update({"": ["100% (maximum)", "75%", "50% (median)", "25%", "0% (minimum)",
+                                  "Mean", "Std Dev", "Std Error Mean", "Upper 95% Mean", "Lower 95% Mean", "N", "Outlier"]})
             for k in range(num_of_columns):
                 ax_label = self.fig.add_subplot(gs[6:8, k])
                 col_data = ch_data[k]
@@ -207,6 +254,7 @@ class SummaryDataParser:
                 upper_whisker = percentile_75 + 1.5 * (percentile_75 - percentile_25)
                 outliers = col_data[(col_data < lower_whisker) | (col_data > upper_whisker)]
                 outlier_count = len(outliers)
+                # print outlier SNs in log
                 if 'SN' in self.df_data and outlier_count:
                     self.logger.warning(f"outliers:")
                     for i, v in zip(outliers.index, outliers):
@@ -215,9 +263,6 @@ class SummaryDataParser:
                     self.logger.warning(f"outliers:")
                     for i, v in zip(outliers.index, outliers):
                         self.logger.warning(f"index {i}, {self.channels[k]}, {v}")
-                #     sn_list = [f"{self.df_data['SN'][i]}: {v}" for i, v in zip(outliers.index, outliers)]
-                # else:
-                #     sn_list = list()
                 text_list = [
                     f"100% (maximum): {col_max:.3e}",
                     f" 75%          : {percentile_75:.3e}",
@@ -232,20 +277,29 @@ class SummaryDataParser:
                     f"Lower 95% Mean: {lower_95_mean:.3e}",
                     f"N             : {col_data.shape[0]}",
                     f"Outlier       : {outlier_count}"
-                ] # + sn_list
+                ]
+
+                csv_data.update({self.channels[k]: [col_max, percentile_75,
+                                                    percentile_50, percentile_25,
+                                                    col_min, col_mean, col_std_dev,
+                                                    std_err_mean, upper_95_mean,
+                                                    lower_95_mean, col_data.shape[0], outlier_count]})
 
                 ax_label.text(0.02, 0.98, "\n".join(text_list), ha='left', va='top', fontname='monospace')
                 ax_label.axis('off')
                 # r_colors = ['lightgrey', '#eee9e9']
                 r_colors = ['#e8e8e8', '#fffafa']
-                rect = patches.Rectangle((0, 0.16), 0.96, 1, transform=ax_label.transAxes, color=r_colors[k % 2])
+                rect = patches.Rectangle((0, 0.16), 0.97, 1, transform=ax_label.transAxes, color=r_colors[k % 2])
                 ax_label.add_patch(rect)
             # if filename:
             #     sub_png_file = filename + '.png'
             # else:
-            time_stamp = datetime.datetime.now()
-            postfix = time_stamp.strftime("%Y%m%d_%H%M%S")
-            sub_png_file = f"{self.plot_name}_{postfix}.png"
+            # time_stamp = datetime.datetime.now()
+            # postfix = time_stamp.strftime("%Y%m%d_%H%M%S")
+            sub_png_file = f"{self.plot_name}_distribution_{self.postfix}.png"
+
+            pd_data = pd.DataFrame(csv_data)
+            pd_data.to_csv(f"{self.plot_name}_statistics_{self.postfix}.csv", index=False)
             plt.tight_layout(rect=[0, 0, 1, 1])
             plt.savefig(sub_png_file)
             self.logger.info(f"Saved to file {sub_png_file}")

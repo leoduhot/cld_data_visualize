@@ -1,3 +1,14 @@
+v0.5.000
+1. save summary statistics in csv file
+2. add limit entry for summary boxplot and histogram plot separately
+3. change sensor type blank item to "others"
+4. mark box plot and histogram as red if data out of limit
+5. resort items to make baseline as the first one in plot and mark it as greed
+6. mark cdf plot curve label to be red if data out of limit
+7. support Ceres data(both raw data and tester data)
+8. support Tiki data(both raw data and tester data)
+9. support Tycho data(both raw data and tester data)
+
 v0.4.201
 1. add item filter
 2. plot name rule: Plot Name -> Sensor Type -> File Name

@@ -13,7 +13,7 @@ from threading import Thread
 project_name = {
             "01":   "malibu",
             "02":   "ceres",
-            "03":   "tiki",
+            "03":   "bali",
             "04":   "tycho",
         }
 
@@ -26,7 +26,7 @@ defaultSettings = {"alt": [10, 0, -1],
                    "ppg": [25, 125, 500],
                    "others": [1, 0, -1]}
 
-tiki_defaultSettings = {"alt": [10, 0, -1],
+bali_defaultSettings = {"alt": [10, 0, -1],
                    "bti": [31.25, 10, 72],
                    "emg": [2000, 200, -1],
                    "imu": [120, 10, 490],
@@ -224,8 +224,8 @@ class FlowControl:
 
     def set_default_values(self, sensor):
         self.project = self.get_parameter_project()
-        if self.project in ["tiki", "tycho"]:
-            def_settings = tiki_defaultSettings
+        if self.project in ["bali", "tycho"]:
+            def_settings = bali_defaultSettings
         elif self.project == "ceres":
             def_settings = ceres_defaultSettings
         else:
@@ -331,14 +331,14 @@ class FlowControl:
         else:
             return False
 
-    def convert_tiki_test_data(self):
+    def convert_bali_test_data(self):
         file_list = self.get_file_paths()
         self.df_data = dict()
         self.file_path = list()
         for val in file_list:
             df_data = pd.read_csv(val, index_col=False)
             df_data = (df_data.sub(4096)).div(4096)
-            # _err, df_data = self.rdp.convert_tiki_test_data(_file=val)
+            # _err, df_data = self.rdp.convert_bali_test_data(_file=val)
             # if _err != ErrorCode.ERR_NO_ERROR:
             #     _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
             #     self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
@@ -361,8 +361,8 @@ class FlowControl:
         try:
             if self.get_parameter_project() == 'ceres' and self.data_type.lower() == "tester data":
                 self.convert_ceres_test_data()
-            # if self.get_parameter_project() == 'tiki' and self.data_type.lower() == "tester data":
-            #     self.convert_tiki_test_data()
+            # if self.get_parameter_project() == 'bali' and self.data_type.lower() == "tester data":
+            #     self.convert_bali_test_data()
             else:
                 file_path = self.get_file_paths()
                 self.file_path = list()

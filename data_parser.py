@@ -93,6 +93,8 @@ class RawDataParser:
             for name in df.columns:
                 if "EMG" in name:
                     df[name] = (df[name].replace('', np.nan).astype(float).div(65536)).mul(5)
+                else:
+                    df[name] = df[name].replace('', np.nan).astype(float)
             return ErrorCode.ERR_NO_ERROR, df
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
@@ -135,8 +137,8 @@ class RawDataParser:
             return self.extract_malibu_emg_data(_data)
         elif _project.lower() == "ceres":
             return self.extract_ceres_emg_data(_data)
-        elif _project.lower() == "tiki":
-            return self.extract_tiki_emg_data(_data)
+        elif _project.lower() == "bali":
+            return self.extract_bali_emg_data(_data)
         elif _project.lower() == "tycho":
             return self.extract_tycho_emg_data(_data)
         else:
@@ -176,7 +178,7 @@ class RawDataParser:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_DATA, None
 
-    def extract_tiki_emg_data(self, _data):
+    def extract_bali_emg_data(self, _data):
         try:
             start_idx = _data.find("{")
             end_idx = _data.rfind("}")

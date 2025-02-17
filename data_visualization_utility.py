@@ -19,6 +19,7 @@ colors_list = ['#e6e6fa', '#f5fffa', '#f0ffff', '#c1ffc1', '#97ffff', '#00bfff',
                '#ff1493', '#ffb6c1', '#da70d6', '#8a2be2', '#9370db', '#ffa500',
                '#63b8ff', '#6a5acd']
 
+
 class ErrorCode(IntEnum):
     ERR_NO_ERROR = 0,
     ERR_BAD_FILE = -1,
@@ -26,6 +27,7 @@ class ErrorCode(IntEnum):
     ERR_BAD_TYPE = -3,
     ERR_BAD_ARGS = -4,
     ERR_BAD_UNKNOWN = -255,
+
 
 class DataVisualization:
     def __init__(self, *args, **kwargs):
@@ -102,7 +104,7 @@ class DataVisualization:
         return self.process_func[self.sensor.lower()]()
 
     def adjust_color(self, origin, diff=(-32, 32, -16)):
-        if self.project in ["tiki", "tycho"]:
+        if self.project in ["bali", "tycho"]:
             return origin
         self.logger.debug(f"origin:{origin}, diff:{diff}")
         r = min(max(0, int(origin[1:3], 16) + diff[0]), 255)
@@ -345,7 +347,7 @@ class DataVisualization:
                 self.figure_canvas.canvas.draw_idle()
         self.check_btn[0].on_clicked(callback)
 
-    def draw_checkbutton_tiki(self, _plt, _lines, _colors):
+    def draw_checkbutton_bali(self, _plt, _lines, _colors):
         def callback(label):
             for line in _lines[label]:
                 line.set_visible(not line.get_visible())
@@ -481,6 +483,8 @@ class DataVisualization:
         self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
+        df = pd.DataFrame(table_data)
+        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
@@ -495,7 +499,7 @@ class DataVisualization:
                 "max", "min", "fft_freq", "peak_freq", "fft_dbv", "peak_dbv", "bias"]
         _data = {key: [] for key in keys}
 
-        if self.project == "tiki":
+        if self.project == "bali":
             self.df_data = (self.df_data.sub(4096)).div(4096)
 
         for channel in self.list:
@@ -582,12 +586,12 @@ class DataVisualization:
     def emg_data(self, *args, **kwargs):
         if self.project in ["malibu", "ceres"]:
             return self.malibu_emg_data(*args, **kwargs)
-        elif self.project in ["tiki", "tycho"]:
-            return self.tiki_emg_data(*args, **kwargs)
+        elif self.project in ["bali", "tycho"]:
+            return self.bali_emg_data(*args, **kwargs)
         else:
             return ErrorCode.ERR_NO_ERROR
 
-    def tiki_emg_data(self, *args, **kwargs):
+    def bali_emg_data(self, *args, **kwargs):
         self.logger.info(f"process {self.sensor} data")
 
         # ToDo:: need to review which columns needed
@@ -601,8 +605,8 @@ class DataVisualization:
         plt.close("all")
         # colors = plt.rcParams["axes.prop_cycle"]()
         # colors_list = [next(colors)["color"] for _ in range(20)]
-        self.fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
-        self.fig.suptitle(self.sensor, fontsize=16)
+        self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
+        self.fig.suptitle(self.plot_name, fontsize=16)
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
@@ -702,7 +706,7 @@ class DataVisualization:
             plt.ylim(_start, _end)
         table_ax = plt.subplot(2, 2, 4)
         # plt.rcParams.update({'font.size': 10})
-        table_data = np.array([["Signal"]+self.list,
+        table_data1 = np.array([["Signal"]+self.list,
                                ["Peak"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
                                          zip(_data["peak_freq"], _data["peak_dbv"])],
                                ["Harmonic 2"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
@@ -714,19 +718,19 @@ class DataVisualization:
                                ["Harmonic 5"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
                                                  harmonic_data[3]],
                                ]).T
-        self._draw_table(table_ax, table_data)
-        # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
-        # for (row, col), cell in _table.get_celld().items():
-        #     cell.set_linewidth(0.3)
-        # plt.axis('off')
+        self._draw_table(table_ax, table_data1)
+        df = pd.DataFrame(table_data[1:], columns=table_data[0])
+        df1 = pd.DataFrame(table_data1[1:], columns=table_data1[0])
+        df = pd.concat([df, df1[df1.columns[1:]]], axis=1)
         reserve_space = math.ceil(len(self.list)/10)*0.1
         plt.subplots_adjust(left=0.05, right=1-reserve_space)
-        self.draw_checkbutton_tiki(plt, channel_lines, list(channel_colors.values()))
+        self.draw_checkbutton_bali(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
         self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
+        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
@@ -744,8 +748,8 @@ class DataVisualization:
             return _err_code
         plt.clf()
         plt.close("all")
-        self.fig = plt.figure(f"{self.sensor}", figsize=(20, 10))
-        self.fig.suptitle(self.sensor, fontsize=16)
+        self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
+        self.fig.suptitle(self.plot_name, fontsize=16)
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
@@ -842,7 +846,7 @@ class DataVisualization:
             plt.ylim(_start, _end)
         table_ax = plt.subplot(2, 2, 4)
         # plt.rcParams.update({'font.size': 10})
-        table_data = np.array([["Signal"]+self.list,
+        table_data1 = np.array([["Signal"]+self.list,
                                ["Peak"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
                                          zip(_data["peak_freq"], _data["peak_dbv"])],
                                ["Harmonic 2"]+["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
@@ -854,17 +858,17 @@ class DataVisualization:
                                ["Harmonic 5"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
                                                  harmonic_data[3]],
                                ]).T
-        self._draw_table(table_ax, table_data)
-        # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
-        # for (row, col), cell in _table.get_celld().items():
-        #     cell.set_linewidth(0.3)
-        # plt.axis('off')
+        self._draw_table(table_ax, table_data1)
+        df = pd.DataFrame(table_data[1:], columns=table_data[0])
+        df1 = pd.DataFrame(table_data1[1:], columns=table_data1[0])
+        df = pd.concat([df, df1[df1.columns[1:]]], axis=1)
         self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
         self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
+        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
@@ -936,7 +940,7 @@ class DataVisualization:
         plt.clf()
         plt.close("all")
         self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
-        self.fig.suptitle(self.sensor, fontsize=16)
+        self.fig.suptitle(self.plot_name, fontsize=16)
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
@@ -1026,6 +1030,7 @@ class DataVisualization:
              ["SNR"] + ["{:.8f}".format(val) for val in _data["snr"]]
              ]).T
         self._draw_table(table_ax, table_data)
+        df = pd.DataFrame(table_data)
         # table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
         # # table.auto_set_font_size(False)
         # table.scale(1, 2.5)
@@ -1040,6 +1045,7 @@ class DataVisualization:
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
         # plt.tight_layout(rect=[0, 0, 1, 1])
+        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()

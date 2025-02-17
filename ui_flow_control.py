@@ -195,7 +195,7 @@ class FlowControl:
         _file_path = list()
         result = list()
         if path_list is not None and len(path_list):
-            print(path_list)
+            # print(path_list)
             for val in path_list:
                 if os.path.isdir(val):
                     files = os.listdir(val)

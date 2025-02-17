@@ -92,8 +92,8 @@ class RawDataParser:
             df = df[valid_columns]
             for name in df.columns:
                 if "EMG" in name:
-                    df_data[name] = (df[name].replace('', np.nan).astype(float).div(65536)).mul(5)
-            return ErrorCode.ERR_NO_ERROR, df_data
+                    df[name] = (df[name].replace('', np.nan).astype(float).div(65536)).mul(5)
+            return ErrorCode.ERR_NO_ERROR, df
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_FILE, None

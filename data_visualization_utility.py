@@ -53,6 +53,7 @@ class DataVisualization:
         self.channel_lines = dict()  #save {ax:[lines]) for click event
         self.show = True
         self.project = None
+        self.gain = 1.0
 
         self.process_func = {
             "emg": self.emg_data,
@@ -79,6 +80,7 @@ class DataVisualization:
         self.show = kwargs["show"] if "show" in kwargs else True
         # self.signal = kwargs["signal"] if 'signal' in kwargs else None
         self.project = kwargs["project"] if "project" in kwargs else "malibu"
+        self.gain = kwargs["gain"] if "gain" in kwargs else 1.0
         self.markers = []
         if self.fig is not None:
             for ax in self.fig.axes:
@@ -501,7 +503,7 @@ class DataVisualization:
 
         if self.project == "bali":
             self.df_data = (self.df_data.sub(4096)).div(4096)
-
+        self.df_data = self.df_data.div(self.gain)
         for channel in self.list:
             if int(self.data_drop[1]) > 0:
                 voltage = self.df_data[channel].iloc[int(self.data_drop[0]):int(self.data_drop[1])]

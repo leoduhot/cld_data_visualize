@@ -1,3 +1,13 @@
+v0.5.101
+1. add "gain" for EMG voltage calculate
+2. fix file override due to tool too fast(timestamp would not update)
+3. fix regenerate csv data from raw txt when press "Go"
+
+v0.5.100
+1. change 'tiki' to 'bali'
+2. save raw&test data statistics data to csv
+3. fix error when plot ceres test data
+
 v0.5.000
 1. save summary statistics in csv file
 2. add limit entry for summary boxplot and histogram plot separately

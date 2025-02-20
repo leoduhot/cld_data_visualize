@@ -65,9 +65,11 @@ class FlowControl:
                                                  "data_type": self.ui.dataTypeComb},
                                          _entry={"data_rate": self.ui.dataRateEntry,
                                                  "data_drop_start": self.ui.dataDropStartEntry,
-                                                 "data_drop_end": self.ui.dataDropEndEntry})
+                                                 "data_drop_end": self.ui.dataDropEndEntry,
+                                                 "gain": self.ui.gainEntry})
         self.paramEntry.state_configure(_comb={"sensor_type": 0, "data_type": 0},
-                                        _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
+                                        _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0,
+                                                "gain": 0})
         self.ui.sensorTypeComb.currentIndexChanged.connect(self.on_sensor_type_changed)
         self.ui.dataTypeComb.currentIndexChanged.connect(self.on_data_type_changed)
 
@@ -148,6 +150,7 @@ class FlowControl:
         self.popup = None
         self.item_filter = None
         self.project = "01"
+        self.gain = 1.0
 
         self.signal.threadStateChanged.connect(self.on_thread_state_changed)
 
@@ -240,7 +243,8 @@ class FlowControl:
         settings = def_settings[sensor[:3].lower()]
         self.paramEntry.set(_entry={"data_rate": settings[0],
                                     "data_drop_start": settings[1],
-                                    "data_drop_end": settings[2]})
+                                    "data_drop_end": settings[2],
+                                    "gain": 1})
         self.highPassFilter.set_checked(False)
         if sensor[:3].lower() == 'ppg':
             self.highPassFilter.set_checked(True)
@@ -260,7 +264,8 @@ class FlowControl:
             self.sensor_type = val
             self.set_default_values(self.sensor_type.strip())
             self.paramEntry.state_configure(_comb={"sensor_type": 1, "data_type": 1},
-                                            _entry={"data_rate": 1, "data_drop_start": 1, "data_drop_end": 1})
+                                            _entry={"data_rate": 1, "data_drop_start": 1, "data_drop_end": 1,
+                                                    "gain": 1})
         # if self.data_type is not None and self.data_type.lower() == "summary data":
         if self.data_type is not None:
             self.refresh_data_channels()
@@ -295,12 +300,13 @@ class FlowControl:
                 else:
                     return False
             _path = os.path.dirname(val)
+            _n = os.path.basename(val)
             _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
+            _name = f"{_n}_tool_format_data_{_time_now}.csv"
             df_data.to_csv(os.path.join(_path, _name), index=False)
             self.df_data.update({_name: df_data})
             self.file_path.append(os.path.join(_path, _name))
-            self.logger.info(f"save data to csv file: {_name}")
+            self.logger.info(f"save raw data to csv file: {_name}")
         if len(self.file_path):
             return True
         else:
@@ -320,8 +326,9 @@ class FlowControl:
                 else:
                     return False
             _path = os.path.dirname(val)
+            _n = os.path.basename(val)
             _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
+            _name = f"{_n}_tool_format_data_{_time_now}.csv"
             df_data.to_csv(os.path.join(_path, _name), index=False)
             self.df_data.update({_name: df_data})
             self.file_path.append(os.path.join(_path, _name))
@@ -348,7 +355,7 @@ class FlowControl:
             #         return False
             _path = os.path.dirname(val)
             _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            _name = f"{self.sensor_type.lower()}_data_{_time_now}.csv"
+            _name = f"{self.sensor_type.lower()}_tool_format_data_{_time_now}.csv"
             df_data.to_csv(os.path.join(_path, _name), index=False)
             self.df_data.update({_name: df_data})
             self.file_path.append(os.path.join(_path, _name))
@@ -455,9 +462,9 @@ class FlowControl:
             self.logger.error("Invalid sensor type!! do nothing")
             self.messagebox.warning("Error", "Invalid sensor type!!")
             return
-        if self.file_path != _file and self.data_type is not None and self.data_type.lower() == 'raw data':
-            if not self.convert_raw_data_to_csv():
-                return
+        # if self.file_path != _file and self.data_type is not None and self.data_type.lower() == 'raw data':
+        #     if not self.convert_raw_data_to_csv():
+        #         return
         if self.df_data is None:
             self.logger.error("df_data is None!! do nothing")
             self.messagebox.warning("Error", "Data is NULL!!\nPlease press 'Refresh' button first")
@@ -469,6 +476,8 @@ class FlowControl:
         val = self.paramEntry.get(_entry='data_drop_end')
         self.data_drops[1] = int(val) if val is not None and len(val) else -1
         self.logger.debug(f"data drops: {self.data_drops}")
+        val = self.paramEntry.get(_entry='gain')
+        self.gain = float(val) if val is not None and len(val) else 1
         self.plot_name = self.plotName.get()
         self.logger.debug(f"plot name: {self.plot_name}")
         # _highpassfilter = self.highPassFilter.get_parameters() if self.highPassFilter.isChecked else None
@@ -528,7 +537,7 @@ class FlowControl:
                                               lowpassfilter=filters['low'],
                                               notchfilter=[filters['notch1'], filters['notch2'], filters['notch3']],
                                               fftscale=[filters['scaleX'], filters['scaleY']],
-                                              show=show, project=self.project)
+                                              show=show, project=self.project, gain=self.gain)
                 fig = self.dv.fig
             return _err_code, fig
         except Exception as e:

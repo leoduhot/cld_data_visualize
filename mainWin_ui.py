@@ -171,23 +171,10 @@ class Ui_MainWindow(object):
         self.gridLayout = QGridLayout(self.paramFrm)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(-1, 6, -1, 6)
-        self.dataDropStartEntry = QLineEdit(self.paramFrm)
-        self.dataDropStartEntry.setObjectName(u"dataDropStartEntry")
-        sizePolicy3.setHeightForWidth(self.dataDropStartEntry.sizePolicy().hasHeightForWidth())
-        self.dataDropStartEntry.setSizePolicy(sizePolicy3)
-        self.dataDropStartEntry.setMinimumSize(QSize(40, 0))
+        self.projectLab = QLabel(self.paramFrm)
+        self.projectLab.setObjectName(u"projectLab")
 
-        self.gridLayout.addWidget(self.dataDropStartEntry, 1, 9, 1, 1)
-
-        self.sensorTypeLab = QLabel(self.paramFrm)
-        self.sensorTypeLab.setObjectName(u"sensorTypeLab")
-
-        self.gridLayout.addWidget(self.sensorTypeLab, 1, 2, 1, 1)
-
-        self.dataDropsLab = QLabel(self.paramFrm)
-        self.dataDropsLab.setObjectName(u"dataDropsLab")
-
-        self.gridLayout.addWidget(self.dataDropsLab, 1, 8, 1, 1)
+        self.gridLayout.addWidget(self.projectLab, 1, 0, 1, 1)
 
         self.dataTypeComb = QComboBox(self.paramFrm)
         self.dataTypeComb.addItem("")
@@ -200,15 +187,38 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.dataTypeComb, 1, 5, 1, 1)
 
+        self.dataDropStartEntry = QLineEdit(self.paramFrm)
+        self.dataDropStartEntry.setObjectName(u"dataDropStartEntry")
+        sizePolicy3.setHeightForWidth(self.dataDropStartEntry.sizePolicy().hasHeightForWidth())
+        self.dataDropStartEntry.setSizePolicy(sizePolicy3)
+        self.dataDropStartEntry.setMinimumSize(QSize(40, 0))
+
+        self.gridLayout.addWidget(self.dataDropStartEntry, 1, 9, 1, 1)
+
+        self.projectComb = QComboBox(self.paramFrm)
+        self.projectComb.addItem("")
+        self.projectComb.addItem("")
+        self.projectComb.addItem("")
+        self.projectComb.addItem("")
+        self.projectComb.setObjectName(u"projectComb")
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy6.setHorizontalStretch(1)
+        sizePolicy6.setVerticalStretch(0)
+        sizePolicy6.setHeightForWidth(self.projectComb.sizePolicy().hasHeightForWidth())
+        self.projectComb.setSizePolicy(sizePolicy6)
+        self.projectComb.setMinimumSize(QSize(40, 0))
+
+        self.gridLayout.addWidget(self.projectComb, 1, 1, 1, 1)
+
         self.dataRateLab = QLabel(self.paramFrm)
         self.dataRateLab.setObjectName(u"dataRateLab")
 
         self.gridLayout.addWidget(self.dataRateLab, 1, 6, 1, 1)
 
-        self.projectLab = QLabel(self.paramFrm)
-        self.projectLab.setObjectName(u"projectLab")
+        self.sensorTypeLab = QLabel(self.paramFrm)
+        self.sensorTypeLab.setObjectName(u"sensorTypeLab")
 
-        self.gridLayout.addWidget(self.projectLab, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.sensorTypeLab, 1, 2, 1, 1)
 
         self.sensorTypeComb = QComboBox(self.paramFrm)
         self.sensorTypeComb.addItem("")
@@ -219,19 +229,11 @@ class Ui_MainWindow(object):
         self.sensorTypeComb.addItem("")
         self.sensorTypeComb.addItem("")
         self.sensorTypeComb.setObjectName(u"sensorTypeComb")
-        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy6.setHorizontalStretch(1)
-        sizePolicy6.setVerticalStretch(0)
         sizePolicy6.setHeightForWidth(self.sensorTypeComb.sizePolicy().hasHeightForWidth())
         self.sensorTypeComb.setSizePolicy(sizePolicy6)
         self.sensorTypeComb.setMinimumSize(QSize(80, 0))
 
         self.gridLayout.addWidget(self.sensorTypeComb, 1, 3, 1, 1)
-
-        self.dataTypeLab = QLabel(self.paramFrm)
-        self.dataTypeLab.setObjectName(u"dataTypeLab")
-
-        self.gridLayout.addWidget(self.dataTypeLab, 1, 4, 1, 1)
 
         self.dataRateEntry = QLineEdit(self.paramFrm)
         self.dataRateEntry.setObjectName(u"dataRateEntry")
@@ -241,6 +243,16 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.dataRateEntry, 1, 7, 1, 1)
 
+        self.gainLab = QLabel(self.paramFrm)
+        self.gainLab.setObjectName(u"gainLab")
+
+        self.gridLayout.addWidget(self.gainLab, 1, 11, 1, 1)
+
+        self.dataTypeLab = QLabel(self.paramFrm)
+        self.dataTypeLab.setObjectName(u"dataTypeLab")
+
+        self.gridLayout.addWidget(self.dataTypeLab, 1, 4, 1, 1)
+
         self.dataDropEndEntry = QLineEdit(self.paramFrm)
         self.dataDropEndEntry.setObjectName(u"dataDropEndEntry")
         sizePolicy3.setHeightForWidth(self.dataDropEndEntry.sizePolicy().hasHeightForWidth())
@@ -249,17 +261,16 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.dataDropEndEntry, 1, 10, 1, 1)
 
-        self.projectComb = QComboBox(self.paramFrm)
-        self.projectComb.addItem("")
-        self.projectComb.addItem("")
-        self.projectComb.addItem("")
-        self.projectComb.addItem("")
-        self.projectComb.setObjectName(u"projectComb")
-        sizePolicy6.setHeightForWidth(self.projectComb.sizePolicy().hasHeightForWidth())
-        self.projectComb.setSizePolicy(sizePolicy6)
-        self.projectComb.setMinimumSize(QSize(40, 0))
+        self.dataDropsLab = QLabel(self.paramFrm)
+        self.dataDropsLab.setObjectName(u"dataDropsLab")
 
-        self.gridLayout.addWidget(self.projectComb, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.dataDropsLab, 1, 8, 1, 1)
+
+        self.gainEntry = QLineEdit(self.paramFrm)
+        self.gainEntry.setObjectName(u"gainEntry")
+        self.gainEntry.setMinimumSize(QSize(40, 0))
+
+        self.gridLayout.addWidget(self.gainEntry, 1, 12, 1, 1)
 
 
         self.verticalLayout_3.addWidget(self.paramFrm)
@@ -653,7 +664,7 @@ class Ui_MainWindow(object):
         self.refreshDataBtn = QPushButton(self.frame)
         self.refreshDataBtn.setObjectName(u"refreshDataBtn")
 
-        self.gridLayout_7.addWidget(self.refreshDataBtn, 0, 7, 1, 1)
+        self.gridLayout_7.addWidget(self.refreshDataBtn, 0, 0, 1, 1)
 
 
         self.verticalLayout_3.addWidget(self.frame)
@@ -809,20 +820,21 @@ class Ui_MainWindow(object):
 #if QT_CONFIG(tooltip)
         self.plotNameEntry.setToolTip(QCoreApplication.translate("MainWindow", u"Specify a string used as plot image name, default use sensor tpye", None))
 #endif // QT_CONFIG(tooltip)
-#if QT_CONFIG(tooltip)
-        self.dataDropStartEntry.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>start number of samples</p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.sensorTypeLab.setText(QCoreApplication.translate("MainWindow", u"Sensor Type", None))
-#if QT_CONFIG(tooltip)
-        self.dataDropsLab.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>specify the data to drop, e.g.: start 2, end 100, mean only visulize data from line 2 to line 100</p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.dataDropsLab.setText(QCoreApplication.translate("MainWindow", u"Data Drops", None))
+        self.projectLab.setText(QCoreApplication.translate("MainWindow", u"Project", None))
         self.dataTypeComb.setItemText(0, QCoreApplication.translate("MainWindow", u"Raw Data", None))
         self.dataTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"Tester Data", None))
         self.dataTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"Summary Data", None))
 
+#if QT_CONFIG(tooltip)
+        self.dataDropStartEntry.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>start number of samples</p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.projectComb.setItemText(0, QCoreApplication.translate("MainWindow", u"01", None))
+        self.projectComb.setItemText(1, QCoreApplication.translate("MainWindow", u"02", None))
+        self.projectComb.setItemText(2, QCoreApplication.translate("MainWindow", u"03", None))
+        self.projectComb.setItemText(3, QCoreApplication.translate("MainWindow", u"04", None))
+
         self.dataRateLab.setText(QCoreApplication.translate("MainWindow", u"Data Rate", None))
-        self.projectLab.setText(QCoreApplication.translate("MainWindow", u"Project", None))
+        self.sensorTypeLab.setText(QCoreApplication.translate("MainWindow", u"Sensor Type", None))
         self.sensorTypeComb.setItemText(0, QCoreApplication.translate("MainWindow", u"ALT", None))
         self.sensorTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"BTI", None))
         self.sensorTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"EMG", None))
@@ -831,15 +843,15 @@ class Ui_MainWindow(object):
         self.sensorTypeComb.setItemText(5, QCoreApplication.translate("MainWindow", u"PPG", None))
         self.sensorTypeComb.setItemText(6, QCoreApplication.translate("MainWindow", u"Others", None))
 
+        self.gainLab.setText(QCoreApplication.translate("MainWindow", u"Gain", None))
         self.dataTypeLab.setText(QCoreApplication.translate("MainWindow", u"Data Type", None))
 #if QT_CONFIG(tooltip)
         self.dataDropEndEntry.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>end number of samples, -1 for the end of data</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
-        self.projectComb.setItemText(0, QCoreApplication.translate("MainWindow", u"01", None))
-        self.projectComb.setItemText(1, QCoreApplication.translate("MainWindow", u"02", None))
-        self.projectComb.setItemText(2, QCoreApplication.translate("MainWindow", u"03", None))
-        self.projectComb.setItemText(3, QCoreApplication.translate("MainWindow", u"04", None))
-
+#if QT_CONFIG(tooltip)
+        self.dataDropsLab.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>specify the data to drop, e.g.: start 2, end 100, mean only visulize data from line 2 to line 100</p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.dataDropsLab.setText(QCoreApplication.translate("MainWindow", u"Data Drops", None))
         self.hpfOrdLab.setText(QCoreApplication.translate("MainWindow", u"Order", None))
         self.lpfOrdLab.setText(QCoreApplication.translate("MainWindow", u"Order", None))
         self.hpfTypeComb.setItemText(0, "")

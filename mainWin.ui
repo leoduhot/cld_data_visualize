@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>902</width>
-    <height>700</height>
+    <width>898</width>
+    <height>649</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -91,8 +91,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>898</width>
-         <height>723</height>
+         <width>894</width>
+         <height>643</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -398,6 +398,11 @@
              <item>
               <property name="text">
                <string>04</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>05</string>
               </property>
              </item>
             </widget>
@@ -1328,89 +1333,6 @@ e.g. (?i)emg.*ch03.*noise: this regexp will search items which:
            <property name="bottomMargin">
             <number>6</number>
            </property>
-           <item>
-            <widget class="QLabel" name="contactTeamLab">
-             <property name="text">
-              <string>By APAC Engineering Team</string>
-             </property>
-             <property name="margin">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="contactInfoLab">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="layoutDirection">
-              <enum>Qt::LayoutDirection::LeftToRight</enum>
-             </property>
-             <property name="lineWidth">
-              <number>0</number>
-             </property>
-             <property name="text">
-              <string>Contact Info</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="contactEmailLab1">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>wenzhao.li@oculus.com</string>
-             </property>
-             <property name="wordWrap">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="contactEmailLab2">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>eric.si@oculus.com</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="contactEmailLab3">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>duleo@meta.com</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </widget>
         </item>
@@ -1433,6 +1355,7 @@ e.g. (?i)emg.*ch03.*noise: this regexp will search items which:
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
   <action name="action1">
    <property name="text">
     <string>1</string>

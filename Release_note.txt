@@ -1,3 +1,6 @@
+v0.5.200
+1. add project 05 for GEN2 devices
+
 v0.5.101
 1. add "gain" for EMG voltage calculate
 2. fix file override due to tool too fast(timestamp would not update)

@@ -15,32 +15,46 @@ project_name = {
             "02":   "ceres",
             "03":   "bali",
             "04":   "tycho",
+            "05":   "gen2",
         }
 
 # data rate and data drops default settings
-defaultSettings = {"alt": [10, 0, -1],
-                   "bti": [31.25, 10, 72],
-                   "emg": [8192, 0, -1],
-                   "imu": [120, 10, 490],
-                   "mag": [50, 0, -1],
-                   "ppg": [25, 125, 500],
-                   "others": [1, 0, -1]}
+# [<data rate>, <drop start>, <drop end>]
+defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
+                   "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
+                   "emg": {"rate": 8192, "drop start": 0, "drop end": -1, "gain": 1},
+                   "imu": {"rate": 128, "drop start": 25, "drop end": -1, "gain": 1},
+                   "mag": {"rate": 64, "drop start": 0, "drop end": -1, "gain": 1},
+                   "ppg": {"rate": 32, "drop start": 160, "drop end": -1, "gain": 1},
+                   "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                   }
 
-bali_defaultSettings = {"alt": [10, 0, -1],
-                   "bti": [31.25, 10, 72],
-                   "emg": [2000, 200, -1],
-                   "imu": [120, 10, 490],
-                   "mag": [50, 0, -1],
-                   "ppg": [25, 125, 500],
-                   "others": [1, 0, -1]}
+bali_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
+                        "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
+                        "emg": {"rate": 2000, "drop start": 200, "drop end": -1, "gain": 1},
+                        "imu": {"rate": 120, "drop start": 10, "drop end": 490, "gain": 1},
+                        "mag": {"rate": 50, "drop start": 0, "drop end": -1, "gain": 1},
+                        "ppg": {"rate": 25, "drop start": 125, "drop end": 500, "gain": 1},
+                        "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                        }
 
-ceres_defaultSettings = {"alt": [10, 0, -1],
-                   "bti": [31.25, 10, 72],
-                   "emg": [8192, 0, 8192],
-                   "imu": [120, 10, 490],
-                   "mag": [50, 0, -1],
-                   "ppg": [25, 125, 500],
-                   "others": [1, 0, -1]}
+ceres_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
+                         "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
+                         "emg": {"rate": 8192, "drop start": 0, "drop end": 8192, "gain": 1},
+                         "imu": {"rate": 120, "drop start": 10, "drop end": 490, "gain": 1},
+                         "mag": {"rate": 50, "drop start": 0, "drop end": -1, "gain": 1},
+                         "ppg": {"rate": 25, "drop start": 125, "drop end": 500, "gain": 1},
+                         "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                         }
+
+gen2_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
+                        "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
+                        "emg": {"rate": 2048, "drop start": 500, "drop end": -1, "gain": 1},
+                        "imu": {"rate": 128, "drop start": 25, "drop end": -1, "gain": 1},
+                        "mag": {"rate": 64, "drop start": 0, "drop end": -1, "gain": 1},
+                        "ppg": {"rate": 32, "drop start": 160, "drop end": -1, "gain": 1},
+                        "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                        }
 
 class FlowControl:
     def __init__(self, root, ui: Ui_MainWindow, **kwargs):
@@ -70,6 +84,7 @@ class FlowControl:
         self.paramEntry.state_configure(_comb={"sensor_type": 0, "data_type": 0},
                                         _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0,
                                                 "gain": 0})
+        self.ui.projectComb.currentIndexChanged.connect(self.on_project_type_changed)
         self.ui.sensorTypeComb.currentIndexChanged.connect(self.on_sensor_type_changed)
         self.ui.dataTypeComb.currentIndexChanged.connect(self.on_data_type_changed)
 
@@ -137,6 +152,9 @@ class FlowControl:
         self.root.dropEvent = self._drop_event
         self.root.dragEnterEvent = self._drag_enter_event
 
+        self.status_bar = StatusBar(statusBarObj=self.ui.statusBar, click=self.on_statusbar_clicked)
+        self.status_bar.show_message("By APAC HW Engineering Team")
+
         self.rdp = RawDataParser(logger=self.logger)
         self.dv = DataVisualization(logger=self.logger, canvas=self.plotCanvas)
         self.sdp = SummaryDataParser(root=self.root, logger=self.logger, canvas=self.plotCanvas)
@@ -161,6 +179,11 @@ class FlowControl:
     def _drag_enter_event(self, event):
         self.logger.debug("on drag enter event")
         event.acceptProposedAction()
+
+    def on_statusbar_clicked(self):
+        msgbox = MessageBox(root=self.root, logger=self.logger)
+        msgbox.information(title="Contact us",
+                           text="wenzhao.li@oculus.com\neric.si@oculus.com\nduleo@meta.com")
 
     def on_finish_path_edit(self):
         self.logger.debug("finished editing extra process ...")
@@ -231,20 +254,25 @@ class FlowControl:
             def_settings = bali_defaultSettings
         elif self.project == "ceres":
             def_settings = ceres_defaultSettings
+        elif self.project == "gen2":
+            def_settings = gen2_defaultSettings
         else:
             def_settings = defaultSettings
         if not len(sensor) or sensor[:3].lower() not in def_settings:
-            self.logger.debug(f"sensor type is empty, do nothing!!")
-            self.paramEntry.set(_entry={"data_rate": 1,
-                                        "data_drop_start": 0,
-                                        "data_drop_end": -1})
-            self.highPassFilter.set_checked(False)
-            return
-        settings = def_settings[sensor[:3].lower()]
-        self.paramEntry.set(_entry={"data_rate": settings[0],
-                                    "data_drop_start": settings[1],
-                                    "data_drop_end": settings[2],
-                                    "gain": 1})
+            _sensor = "others"
+        else:
+            _sensor = sensor[:3].lower()
+            # self.logger.debug(f"sensor type is empty, do nothing!!")
+            # self.paramEntry.set(_entry={"data_rate": 1,
+            #                             "data_drop_start": 0,
+            #                             "data_drop_end": -1})
+            # self.highPassFilter.set_checked(False)
+            # return
+        settings = def_settings[_sensor]
+        self.paramEntry.set(_entry={"data_rate": settings["rate"],
+                                    "data_drop_start": settings["drop start"],
+                                    "data_drop_end": settings["drop end"],
+                                    "gain": settings["gain"]})
         self.highPassFilter.set_checked(False)
         if sensor[:3].lower() == 'ppg':
             self.highPassFilter.set_checked(True)
@@ -252,6 +280,13 @@ class FlowControl:
             # self.highPassFilter.set_type(1)  # 0 -- blank, 1 -- lfilter, 2 -- filtfilt
             # self.highPassFilter.set_order(3)
             # self.highPassFilter.set_freq(0.5)
+
+    def on_project_type_changed(self, index):
+        self.logger.debug(f"project type, selected index: {index}")
+        val =  self.get_parameter_project()
+        if val == "gen2":
+            self.paramEntry.set(_combIndex={'sensor_type': 2})  # force select EMG
+            # self.paramEntry.state_configure(_comb={"sensor_type": 0})
 
     def on_sensor_type_changed(self, index):
         self.logger.debug(f"sensor type, selected index: {index}")

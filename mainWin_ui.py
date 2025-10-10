@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'mainWin.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.1
+## Created by: Qt User Interface Compiler version 6.9.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -19,13 +19,14 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QAbstractScrollArea, QApplication, QCheckBox, QComboBox,
     QFrame, QGridLayout, QHBoxLayout, QLabel,
     QLayout, QLineEdit, QMainWindow, QPushButton,
-    QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
+    QScrollArea, QSizePolicy, QStatusBar, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(902, 700)
+        MainWindow.resize(898, 649)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
@@ -63,7 +64,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 898, 723))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 894, 643))
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy2.setHorizontalStretch(1)
         sizePolicy2.setVerticalStretch(1)
@@ -196,6 +197,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.dataDropStartEntry, 1, 9, 1, 1)
 
         self.projectComb = QComboBox(self.paramFrm)
+        self.projectComb.addItem("")
         self.projectComb.addItem("")
         self.projectComb.addItem("")
         self.projectComb.addItem("")
@@ -732,47 +734,6 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.setSpacing(0)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.verticalLayout_4.setContentsMargins(6, 0, 0, 6)
-        self.contactTeamLab = QLabel(self.contactFrm)
-        self.contactTeamLab.setObjectName(u"contactTeamLab")
-        self.contactTeamLab.setMargin(0)
-
-        self.verticalLayout_4.addWidget(self.contactTeamLab)
-
-        self.contactInfoLab = QLabel(self.contactFrm)
-        self.contactInfoLab.setObjectName(u"contactInfoLab")
-        self.contactInfoLab.setEnabled(False)
-        sizePolicy5.setHeightForWidth(self.contactInfoLab.sizePolicy().hasHeightForWidth())
-        self.contactInfoLab.setSizePolicy(sizePolicy5)
-        self.contactInfoLab.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        self.contactInfoLab.setLineWidth(0)
-
-        self.verticalLayout_4.addWidget(self.contactInfoLab)
-
-        self.contactEmailLab1 = QLabel(self.contactFrm)
-        self.contactEmailLab1.setObjectName(u"contactEmailLab1")
-        self.contactEmailLab1.setEnabled(False)
-        sizePolicy5.setHeightForWidth(self.contactEmailLab1.sizePolicy().hasHeightForWidth())
-        self.contactEmailLab1.setSizePolicy(sizePolicy5)
-        self.contactEmailLab1.setWordWrap(True)
-
-        self.verticalLayout_4.addWidget(self.contactEmailLab1)
-
-        self.contactEmailLab2 = QLabel(self.contactFrm)
-        self.contactEmailLab2.setObjectName(u"contactEmailLab2")
-        self.contactEmailLab2.setEnabled(False)
-        sizePolicy5.setHeightForWidth(self.contactEmailLab2.sizePolicy().hasHeightForWidth())
-        self.contactEmailLab2.setSizePolicy(sizePolicy5)
-
-        self.verticalLayout_4.addWidget(self.contactEmailLab2)
-
-        self.contactEmailLab3 = QLabel(self.contactFrm)
-        self.contactEmailLab3.setObjectName(u"contactEmailLab3")
-        self.contactEmailLab3.setEnabled(False)
-        sizePolicy5.setHeightForWidth(self.contactEmailLab3.sizePolicy().hasHeightForWidth())
-        self.contactEmailLab3.setSizePolicy(sizePolicy5)
-
-        self.verticalLayout_4.addWidget(self.contactEmailLab3)
-
 
         self.verticalLayout_3.addWidget(self.contactFrm, 0, Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignBottom)
 
@@ -794,6 +755,9 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.scrollArea)
 
         MainWindow.setCentralWidget(self.centralwidget)
+        self.statusBar = QStatusBar(MainWindow)
+        self.statusBar.setObjectName(u"statusBar")
+        MainWindow.setStatusBar(self.statusBar)
 
         self.retranslateUi(MainWindow)
 
@@ -832,6 +796,7 @@ class Ui_MainWindow(object):
         self.projectComb.setItemText(1, QCoreApplication.translate("MainWindow", u"02", None))
         self.projectComb.setItemText(2, QCoreApplication.translate("MainWindow", u"03", None))
         self.projectComb.setItemText(3, QCoreApplication.translate("MainWindow", u"04", None))
+        self.projectComb.setItemText(4, QCoreApplication.translate("MainWindow", u"05", None))
 
         self.dataRateLab.setText(QCoreApplication.translate("MainWindow", u"Data Rate", None))
         self.sensorTypeLab.setText(QCoreApplication.translate("MainWindow", u"Sensor Type", None))
@@ -943,10 +908,5 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.refreshDataBtn.setText(QCoreApplication.translate("MainWindow", u"Refresh", None))
         self.goBtn.setText(QCoreApplication.translate("MainWindow", u"GO", None))
-        self.contactTeamLab.setText(QCoreApplication.translate("MainWindow", u"By APAC Engineering Team", None))
-        self.contactInfoLab.setText(QCoreApplication.translate("MainWindow", u"Contact Info", None))
-        self.contactEmailLab1.setText(QCoreApplication.translate("MainWindow", u"wenzhao.li@oculus.com", None))
-        self.contactEmailLab2.setText(QCoreApplication.translate("MainWindow", u"eric.si@oculus.com", None))
-        self.contactEmailLab3.setText(QCoreApplication.translate("MainWindow", u"duleo@meta.com", None))
     # retranslateUi
 

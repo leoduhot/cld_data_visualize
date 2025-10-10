@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel, QMessageBox,
                                QFileDialog, QLineEdit, QPushButton, QCheckBox,
-                               QComboBox, QGridLayout, QScrollArea)
+                               QComboBox, QGridLayout, QScrollArea, QStatusBar)
 from PySide6.QtCore import QEvent, QObject, QTimer, Signal, Qt
 import logging
 import numpy as np
@@ -649,3 +649,54 @@ class PlotCanvas:
         scale = min(width / fig_width, height / fig_height)
         self.canvas.setFixedSize(int(fig_width * scale), int(fig_height * scale))
         super().resizeEvent(event)
+
+
+class ClickableLabel(QLabel):
+    def __init__(self, click=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setMouseTracking(True)
+
+        self.on_click = click
+
+    def mousePressEvent(self, ev):
+        # print(f"clicked, {ev.button()}")
+        if self.on_click:
+            self.on_click()
+        super().mousePressEvent(ev)
+
+
+class StatusBar:
+    def __init__(self, statusBarObj: QStatusBar = None, **kwargs):
+        self.logger = kwargs['logger'] if 'logger' in kwargs else logging.getLogger()
+        self.root = kwargs['root'] if 'root' in kwargs else None
+        self.on_click = kwargs['click'] if 'click' in kwargs else None
+        txt = kwargs['text'] if 'text' in kwargs else " "
+        self.statusBar = statusBarObj
+        self.info_label = QLabel(txt)
+        self.info_label.setStyleSheet(
+            """
+            font-style: italic;
+            """
+        )
+        self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.info_label.setAutoFillBackground(True)
+        self.info_label.setMargin(0)
+        self.statusBar.addPermanentWidget(self.info_label, stretch=1)
+
+        self.messageLabel = ClickableLabel(click=self.on_click)
+        self.messageLabel.setAutoFillBackground(True)
+        self.messageLabel.setMargin(0)
+
+    def show_message(self, txt: str, alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignCenter):
+        self.messageLabel.setStyleSheet(
+            """
+            color: #1e90ff;
+            font-style: italic;
+            text-decoration: underline;
+            """
+        )
+        self.messageLabel.setText(txt)
+        self.messageLabel.setAlignment(alignment)
+        self.statusBar.addPermanentWidget(self.messageLabel, stretch=0)
+        padding_txt = " "*len(txt)*2
+        self.info_label.setText(padding_txt+self.info_label.text())

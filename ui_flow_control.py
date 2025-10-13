@@ -438,6 +438,7 @@ class FlowControl:
 
     def get_parameter_project(self):
         p = self.paramEntry.get(_comb='project')
+        self.logger.debug(f"project selected: {p}")
         return project_name[p] if p in project_name else project_name["01"]
 
     def get_pass_filer_parameters(self, filter_obj: FilterEntry):

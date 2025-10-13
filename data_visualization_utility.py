@@ -322,7 +322,9 @@ class DataVisualization:
                 return
         # Add a new marker
         marker = ax.plot(x_data[idx], y_data[idx], 'ro')[0]
-        text = ax.annotate(f'({x_data[idx]:.4f}, {y_data[idx]:.4f})',
+        x_format = ".4f"
+        y_format = ".2e" if self.project == "gen2" else ".4f"
+        text = ax.annotate(f'({x_data[idx]:{x_format}}, {y_data[idx]:{y_format}})',
                            xy=(x_data[idx], y_data[idx]))
         self.markers.append((_line, idx, marker, text))
         self.fig.canvas.draw_idle()
@@ -405,6 +407,8 @@ class DataVisualization:
 
     def do_plot_list(self, data):
         self.logger.info(f"do_plot_list..")
+        # matplotlib.rc_file_defaults()
+        matplotlib.rcdefaults()
         plt.clf()
         plt.close("all")
         _nrows = len(self.list) + 1
@@ -703,7 +707,7 @@ class DataVisualization:
 
     def gen2_emg_data(self, *args, **kwargs):
         try:
-            self.logger.info(f"plot {self.sensor} data")
+            self.logger.info(f"gen2_emg_data: plot {self.sensor} data")
 
             # ToDo:: need to review which columns needed
             if not len(self.list):
@@ -712,6 +716,8 @@ class DataVisualization:
             _err_code, _data = self.do_data_conversion(_sensor="emg")
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 return _err_code
+            # matplotlib.rc_file_defaults()
+            matplotlib.rcdefaults()
             plt.clf()
             plt.close("all")
             # colors = plt.rcParams["axes.prop_cycle"]()
@@ -861,7 +867,7 @@ class DataVisualization:
             return ErrorCode.ERR_BAD_UNKNOWN
 
     def bali_emg_data(self, *args, **kwargs):
-        self.logger.info(f"process {self.sensor} data")
+        self.logger.info(f"bali_emg_data: process {self.sensor} data")
 
         # ToDo:: need to review which columns needed
         if not len(self.list):
@@ -870,6 +876,8 @@ class DataVisualization:
         _err_code, _data = self.do_data_conversion(_sensor="emg")
         if _err_code != ErrorCode.ERR_NO_ERROR:
             return _err_code
+        # matplotlib.rc_file_defaults()
+        matplotlib.rcdefaults()
         plt.clf()
         plt.close("all")
         # colors = plt.rcParams["axes.prop_cycle"]()
@@ -1007,7 +1015,7 @@ class DataVisualization:
         return ErrorCode.ERR_NO_ERROR
 
     def malibu_emg_data(self, *args, **kwargs):
-        self.logger.info(f"process {self.sensor} data")
+        self.logger.info(f"malibu_emg_data: process {self.sensor} data")
         # ToDo:: need to review which columns needed
         if not len(self.list):
             tmp = self.df_data.columns.dropna().tolist()
@@ -1015,6 +1023,8 @@ class DataVisualization:
         _err_code, _data = self.do_data_conversion(_sensor="emg")
         if _err_code != ErrorCode.ERR_NO_ERROR:
             return _err_code
+        # matplotlib.rc_file_defaults()
+        matplotlib.rcdefaults()
         plt.clf()
         plt.close("all")
         self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
@@ -1206,6 +1216,8 @@ class DataVisualization:
         _err_code, _data = self.do_data_conversion(_sensor="ppg")
         if _err_code != ErrorCode.ERR_NO_ERROR:
             return _err_code
+        # matplotlib.rc_file_defaults()
+        matplotlib.rcdefaults()
         plt.clf()
         plt.close("all")
         self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))

@@ -12,6 +12,7 @@ import math
 import logging
 from enum import IntEnum
 import time
+import os
 
 
 colors_list = ['#e6e6fa', '#f5fffa', '#f0ffff', '#c1ffc1', '#97ffff', '#00bfff',
@@ -54,6 +55,7 @@ class DataVisualization:
         self.show = True
         self.project = None
         self.gain = 1.0
+        self.legend_rows = 16
 
         self.process_func = {
             "emg": self.emg_data,
@@ -106,14 +108,15 @@ class DataVisualization:
         return self.process_func[self.sensor.lower()]()
 
     def adjust_color(self, origin, diff=(-32, 32, -16)):
-        if self.project in ["bali", "tycho", "gen2"]:
-            return origin
-        self.logger.debug(f"origin:{origin}, diff:{diff}")
-        r = min(max(0, int(origin[1:3], 16) + diff[0]), 255)
-        g = min(max(0, int(origin[3:5], 16) + diff[1]), 255)
-        b = min(max(0, int(origin[5:7], 16) + diff[2]), 255)
-        # self.logger.info(f"new: #{r:02x}{g:02x}{b:02x}")
-        return f"#{r:02x}{g:02x}{b:02x}"
+        return origin
+        # if self.project in ["bali", "tycho", "gen2"]:
+        #     return origin
+        # self.logger.debug(f"origin:{origin}, diff:{diff}")
+        # r = min(max(0, int(origin[1:3], 16) + diff[0]), 255)
+        # g = min(max(0, int(origin[3:5], 16) + diff[1]), 255)
+        # b = min(max(0, int(origin[5:7], 16) + diff[2]), 255)
+        # # self.logger.info(f"new: #{r:02x}{g:02x}{b:02x}")
+        # return f"#{r:02x}{g:02x}{b:02x}"
 
     def others_data(self, *args, **kwargs):
         try:
@@ -194,7 +197,7 @@ class DataVisualization:
                 self.logger.error(f"filter type is invalid, do nothing")
                 return ErrorCode.ERR_BAD_ARGS, sig_list
 
-            return ErrorCode.ERR_NO_ERROR, sig_filt.tolist()
+            return ErrorCode.ERR_NO_ERROR, sig_filt
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN, sig_list
@@ -221,7 +224,7 @@ class DataVisualization:
                 self.logger.error(f"filter type is invalid, do nothing")
                 return ErrorCode.ERR_BAD_ARGS, sig_list
 
-            return ErrorCode.ERR_NO_ERROR, sig_filt.tolist()
+            return ErrorCode.ERR_NO_ERROR, sig_filt
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN, sig_list
@@ -332,7 +335,7 @@ class DataVisualization:
         return
 
     def draw_checkbutton(self, _plt, _lines, _colors):
-        _h = 0.025 * len(self.list)
+        _h = 0.021 * len(self.list)
         # _w = len(max(self.list, key=len))
         # 0.62*_w/self.fig.dpi
         rax = _plt.axes((0.91, 0.88 - _h, 0.08, _h))
@@ -355,27 +358,30 @@ class DataVisualization:
         self.check_btn[0].on_clicked(callback)
 
     def draw_checkbutton_bali(self, _plt, _lines, _colors):
+        nrows = self.legend_rows
         def callback(label):
             for line in _lines[label]:
                 line.set_visible(not line.get_visible())
                 line.figure.canvas.draw_idle()
             if self.figure_canvas is not None:
                 self.figure_canvas.canvas.draw_idle()
-        ncols = math.ceil(len(self.list)/10)
+        ncols = math.ceil(len(self.list)/nrows)
+        self.logger.debug(f"mode rows = {len(self.list)%nrows}")
         _w = 0.08
         self.check_btn = list()
         for i in range(ncols):
-            _h = 0.025 * len(self.list[:10])
+            _h = 0.021 * nrows if i < ncols-1 or (len(self.list)%nrows) == 0 else 0.021 * (len(self.list)%nrows)
+            self.logger.debug(f"legend height for {i}: {_h}")
             # _w = len(max(self.list, key=len))
             # 0.62*_w/self.fig.dpi
             rax = _plt.axes((1.01-ncols*0.1+i*_w, 0.88 - _h, _w, _h))
             self.check_btn.append(CheckButtons(
                 ax=rax,
-                labels=self.list[i*10:i*10+10],
-                actives=[True for _ in range(len(self.list[i*10:i*10+10]))],
-                label_props={'color': _colors[i*10:i*10+10]},
-                frame_props={'edgecolor': _colors[i*10:i*10+10]},
-                check_props={'facecolor': _colors[i*10:i*10+10]},
+                labels=self.list[i*nrows:i*nrows+nrows],
+                actives=[True for _ in range(len(self.list[i*nrows:i*nrows+nrows]))],
+                label_props={'color': _colors[i*nrows:i*nrows+nrows]},
+                frame_props={'edgecolor': _colors[i*nrows:i*nrows+nrows]},
+                check_props={'facecolor': _colors[i*nrows:i*nrows+nrows]},
             )
             )
             self.check_btn[i].on_clicked(callback)
@@ -420,6 +426,7 @@ class DataVisualization:
         self.fig.subplots(_nrows, 2)
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         # plt.subplots(_nrows, 2, figsize=(20, 20))
+        plt.rcParams['axes.prop_cycle'] = plt.cycler('color', plt.cm.tab20(np.linspace(0, 1, 20)))
         plt.subplots_adjust(hspace=0.6, left=0.06, right=0.95, top=0.94, bottom=0.03)
         colors = ["#00cd00", "#0000ff"]
         # plt.figtext(.3, .9, 'Aggressor:{}'.format(aggressor_name), fontsize=20, ha='center')
@@ -432,7 +439,7 @@ class DataVisualization:
                 # Time domain
                 ax = plt.subplot(_nrows, 2, i * 2 + 1)
                 plt.text(-0.05, 1.15, self.list[i], fontsize=10, transform=plt.gca().transAxes)
-                _line, = plt.plot(data["time"][i], data["sig"][i], color=colors[0])
+                _line, = plt.plot(data["time"][i], data["sig"][i], color=colors[0], linewidth=0.5, alpha=0.7)
                 if ax in self.channel_lines:
                     self.channel_lines[ax].append(_line)
                 else:
@@ -447,7 +454,7 @@ class DataVisualization:
                          fontsize=10, transform=plt.gca().transAxes)
                 FFT = 2.0 / len(data["sum_vector"][i]) * abs(scipy.fft.fft(data["sum_vector"][i]))
                 _freqs = scipy.fftpack.fftfreq(len(data["time"][i]), data["time"][i][1] - data["time"][i][0])
-                _line, = plt.plot(_freqs[1:int(len(_freqs) / 2)], (FFT[1:int(len(_freqs) / 2)]), color=colors[1])
+                _line, = plt.plot(_freqs[1:int(len(_freqs) / 2)], (FFT[1:int(len(_freqs) / 2)]), color=colors[1], linewidth=0.5, alpha=0.7)
                 if ax in self.channel_lines:
                     self.channel_lines[ax].append(_line)
                 else:
@@ -491,9 +498,9 @@ class DataVisualization:
 
         self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-        _png_file = f"{self.plot_name}_{_postfix}.png"
+        _png_file = os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.png")
         df = pd.DataFrame(table_data)
-        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
+        df.to_csv(os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.csv"), index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
@@ -723,7 +730,9 @@ class DataVisualization:
             # colors = plt.rcParams["axes.prop_cycle"]()
             # colors_list = [next(colors)["color"] for _ in range(20)]
             self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
-            self.fig.suptitle(self.plot_name, fontsize=16)
+            reserve_space = math.ceil(len(self.list) / self.legend_rows) * 0.1  # reserve space for legend
+            plt.subplots_adjust(hspace=0.3, left=0.05, right=1 - reserve_space)
+            self.fig.suptitle(self.plot_name, fontsize=16, x=0.05 + (1 - reserve_space - 0.05) / 2)  # centralize title
             self.figsize = self.fig.get_size_inches()
             if self.figure_canvas is not None and self.show:
                 self.figure_canvas.create_canvas(self.fig)
@@ -805,18 +814,18 @@ class DataVisualization:
                     self.channel_lines.update({ax: [_line]})
 
                 _line, = plt.plot(_data["psd_freq_peak"][i], _data["psd_peak"][i], 'o',
-                                  color=self.adjust_color(channel_colors[self.list[i]]), linewidth=1.0, alpha=0.7)
+                                  color=self.adjust_color(channel_colors[self.list[i]]), linewidth=1.0, alpha=0.9)
                 channel_lines[self.list[i]].append(_line)
 
                 _line = plt.axvline(float(_data["psd_freq_peak"][i]), linestyle='--',
-                                    color=self.adjust_color(channel_colors[self.list[i]]), linewidth=0.5, alpha=0.7)
+                                    color=self.adjust_color(channel_colors[self.list[i]]), linewidth=0.5, alpha=0.9)
                 channel_lines[self.list[i]].append(_line)
 
                 for k, h in enumerate(harmonics):
                     _line, = plt.plot(harmonic_coords[k][0], harmonic_coords[k][1], 'x',
                                       color=self.adjust_color(channel_colors[self.list[i]]),
                                       label=f'Harmonic {h} ({harmonic_coords[k][0]:.2f},{harmonic_coords[k][1]:.2f})',
-                                      linewidth=0.5, alpha=0.7)
+                                      linewidth=0.5, alpha=0.9)
                     channel_lines[self.list[i]].append(_line)
 
             plt.xlabel('Frequency (Hz)', fontsize=10)
@@ -848,15 +857,15 @@ class DataVisualization:
             df = pd.DataFrame(table_data[1:], columns=table_data[0])
             df1 = pd.DataFrame(table_data1[1:], columns=table_data1[0])
             df = pd.concat([df, df1[df1.columns[1:]]], axis=1)
-            reserve_space = math.ceil(len(self.list) / 10) * 0.1
-            plt.subplots_adjust(left=0.05, right=1 - reserve_space)
+            # reserve_space = math.ceil(len(self.list) / self.legend_rows) * 0.1
+            # plt.subplots_adjust(left=0.05, right=1 - reserve_space)
             self.draw_checkbutton_bali(plt, channel_lines, list(channel_colors.values()))
 
             # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
             self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
             _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            _png_file = f"{self.plot_name}_{_postfix}.png"
-            df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
+            _png_file = os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.png")
+            df.to_csv(os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.csv"), index=False)
             plt.savefig(_png_file)
             if self.show and self.figure_canvas is not None and len(self.list):
                 self.figure_canvas.show_plot()
@@ -883,7 +892,9 @@ class DataVisualization:
         # colors = plt.rcParams["axes.prop_cycle"]()
         # colors_list = [next(colors)["color"] for _ in range(20)]
         self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
-        self.fig.suptitle(self.plot_name, fontsize=16)
+        reserve_space = math.ceil(len(self.list) / self.legend_rows) * 0.1  # reserve space for legend
+        plt.subplots_adjust(hspace=0.3, left=0.05, right=1 - reserve_space)
+        self.fig.suptitle(self.plot_name, fontsize=16, x=0.05 + (1 - reserve_space - 0.05) / 2)  # centralize title
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
@@ -905,7 +916,7 @@ class DataVisualization:
                 self.logger.error(f"skip bad channel: {self.list[i]}")
                 continue
             plt.rcParams.update({'font.size': 10})
-            _line, = plt.plot(_data["time"][i], _data["sig"][i])
+            _line, = plt.plot(_data["time"][i], _data["sig"][i], linewidth=0.5, alpha=0.7)
             channel_lines[self.list[i]].append(_line)
             channel_colors[self.list[i]] = _line.get_color()
             if ax in self.channel_lines:
@@ -948,7 +959,7 @@ class DataVisualization:
                 harmonic_data[k][i] = (harmonic_freq, harmonic_dbv)
 
             # Plot FFT of AC signal
-            _line, = plt.plot(_data["fft_freq"][i], _data["fft_dbv"][i])
+            _line, = plt.plot(_data["fft_freq"][i], _data["fft_dbv"][i], linewidth=0.5, alpha=0.7)
             channel_lines[self.list[i]].append(_line)
             if ax in self.channel_lines:
                 self.channel_lines[ax].append(_line)
@@ -956,17 +967,20 @@ class DataVisualization:
                 self.channel_lines.update({ax: [_line]})
 
             _line, = plt.plot(_data["peak_freq"][i], _data["peak_dbv"][i], 'o',
-                              color=self.adjust_color(channel_colors[self.list[i]]))
+                              color=self.adjust_color(channel_colors[self.list[i]]),
+                              linewidth=0.5, alpha=0.9)
             channel_lines[self.list[i]].append(_line)
 
             _line = plt.axvline(float(_data["peak_freq"][i]), linestyle='--',
-                               color=self.adjust_color(channel_colors[self.list[i]]))
+                                color=self.adjust_color(channel_colors[self.list[i]]),
+                                linewidth=0.5, alpha=0.9)
             channel_lines[self.list[i]].append(_line)
 
             for k, h in enumerate(harmonics):
                 _line, = plt.plot(harmonic_coords[k][0], harmonic_coords[k][1], 'x',
                                   color=self.adjust_color(channel_colors[self.list[i]]),
-                                  label=f'Harmonic {h} ({harmonic_coords[k][0]:.2f},{harmonic_coords[k][1]:.2f})')
+                                  label=f'Harmonic {h} ({harmonic_coords[k][0]:.2f},{harmonic_coords[k][1]:.2f})',
+                                  linewidth=0.5, alpha=0.9)
                 channel_lines[self.list[i]].append(_line)
 
         plt.xlabel('Frequency (Hz)', fontsize=10)
@@ -999,15 +1013,16 @@ class DataVisualization:
         df = pd.DataFrame(table_data[1:], columns=table_data[0])
         df1 = pd.DataFrame(table_data1[1:], columns=table_data1[0])
         df = pd.concat([df, df1[df1.columns[1:]]], axis=1)
-        reserve_space = math.ceil(len(self.list)/10)*0.1
-        plt.subplots_adjust(left=0.05, right=1-reserve_space)
+        # reserve_space = math.ceil(len(self.list)/self.legend_rows)*0.1
+        # plt.subplots_adjust(left=0.05, right=1-reserve_space)
         self.draw_checkbutton_bali(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
         self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
-        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
+        _png_file = os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.png")
+        df.to_csv(os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.csv"), index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
@@ -1028,11 +1043,14 @@ class DataVisualization:
         plt.clf()
         plt.close("all")
         self.fig = plt.figure(f"{self.plot_name}", figsize=(20, 10))
-        self.fig.suptitle(self.plot_name, fontsize=16)
+        reserve_space = math.ceil(len(self.list) / self.legend_rows) * 0.1  # reserve space for legend
+        plt.subplots_adjust(hspace=0.3, left=0.05, right=1 - reserve_space)
+        self.fig.suptitle(self.plot_name, fontsize=16, x=0.05+(1-reserve_space-0.05)/2)  # centralize title
         self.figsize = self.fig.get_size_inches()
         if self.figure_canvas is not None and self.show:
             self.figure_canvas.create_canvas(self.fig)
-        plt.subplots_adjust(hspace=0.3)
+        # plt.subplots_adjust(hspace=0.3)
+        plt.rcParams['axes.prop_cycle'] = plt.cycler('color', plt.cm.tab20(np.linspace(0, 1, 20)))
         self.fig.subplots(2, 2)
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         ax = plt.subplot(2, 2, 1)
@@ -1048,7 +1066,8 @@ class DataVisualization:
                 self.logger.error(f"skip bad channel: {self.list[i]}")
                 continue
             plt.rcParams.update({'font.size': 10})
-            _line, = plt.plot(_data["time"][i], _data["sig"][i]+i*_shift, label=f'{self.list[i]} AC Signal')
+            _line, = plt.plot(_data["time"][i], _data["sig"][i]+i*_shift, label=f'{self.list[i]} AC Signal'
+                              , linewidth=0.5, alpha=0.7)
             channel_colors[self.list[i]] = _line.get_color()
             if ax in self.channel_lines:
                 self.channel_lines[ax].append(_line)
@@ -1090,7 +1109,7 @@ class DataVisualization:
                 harmonic_data[k][i] = (harmonic_freq, harmonic_dbv)
 
             # Plot FFT of AC signal
-            _line, = plt.plot(_data["fft_freq"][i], _data["fft_dbv"][i])
+            _line, = plt.plot(_data["fft_freq"][i], _data["fft_dbv"][i], linewidth=0.5, alpha=0.7)
             channel_lines[self.list[i]].append(_line)
             if ax in self.channel_lines:
                 self.channel_lines[ax].append(_line)
@@ -1098,17 +1117,20 @@ class DataVisualization:
                 self.channel_lines.update({ax: [_line]})
 
             _line, = plt.plot(_data["peak_freq"][i], _data["peak_dbv"][i], 'o',
-                              color=self.adjust_color(channel_colors[self.list[i]]))
+                              color=self.adjust_color(channel_colors[self.list[i]]),
+                              linewidth=0.5, alpha=0.9)
             channel_lines[self.list[i]].append(_line)
 
             _line = plt.axvline(float(_data["peak_freq"][i]), linestyle='--',
-                               color=self.adjust_color(channel_colors[self.list[i]]))
+                                color=self.adjust_color(channel_colors[self.list[i]]),
+                                linewidth=0.5, alpha=0.9)
             channel_lines[self.list[i]].append(_line)
 
             for k, h in enumerate(harmonics):
                 _line, = plt.plot(harmonic_coords[k][0], harmonic_coords[k][1], 'x',
                                   color=self.adjust_color(channel_colors[self.list[i]]),
-                                  label=f'Harmonic {h} ({harmonic_coords[k][0]:.2f},{harmonic_coords[k][1]:.2f})')
+                                  label=f'Harmonic {h} ({harmonic_coords[k][0]:.2f},{harmonic_coords[k][1]:.2f})',
+                                  linewidth=0.5, alpha=0.9)
                 channel_lines[self.list[i]].append(_line)
 
         plt.xlabel('Frequency (Hz)', fontsize=10)
@@ -1141,13 +1163,16 @@ class DataVisualization:
         df = pd.DataFrame(table_data[1:], columns=table_data[0])
         df1 = pd.DataFrame(table_data1[1:], columns=table_data1[0])
         df = pd.concat([df, df1[df1.columns[1:]]], axis=1)
-        self.draw_checkbutton(plt, channel_lines, list(channel_colors.values()))
+        # reserve_space = math.ceil(len(self.list) / self.legend_rows) * 0.1
+        # plt.subplots_adjust(left=0.05, right=1 - reserve_space)
+        self.draw_checkbutton_bali(plt, channel_lines, list(channel_colors.values()))
 
         # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
         self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
-        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
+        _png_file = os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.png")
+        df.to_csv(os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.csv"), index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()
@@ -1325,8 +1350,9 @@ class DataVisualization:
         self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
         _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         _png_file = f"{self.plot_name}_{_postfix}.png"
+        _png_file = os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.png")
         # plt.tight_layout(rect=[0, 0, 1, 1])
-        df.to_csv(f"{self.plot_name}_{_postfix}.csv", index=False)
+        df.to_csv(os.path.join(self.logger.log_path, f"{self.plot_name}_{_postfix}.csv"), index=False)
         plt.savefig(_png_file)
         if self.show and self.figure_canvas is not None and len(self.list):
             self.figure_canvas.show_plot()

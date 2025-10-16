@@ -1,3 +1,9 @@
+v0.5.220
+1. change text formate for gen2 when on_click
+2. reset matplotlib to default to fix color error when change between different projects
+3. fix error when use signal filters for 05 project
+4. align emg plot color settings for all projects
+
 v0.5.200
 1. add project 05 for GEN2 devices
 

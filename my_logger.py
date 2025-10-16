@@ -17,6 +17,11 @@ class MyLogger:
         is_to_file = kwargs['save'] if 'save' in kwargs else False
         log_level = kwargs['level'] if 'level' in kwargs else "info"
         log_name = kwargs['name'] if 'name' in kwargs else f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+        self.log_path = os.path.join(os.path.abspath("."), "log")
+        if not os.path.exists(self.log_path):
+            os.makedirs(self.log_path, True)
+            os.chmod(self.log_path, 0o755)
         self.logger = logging.getLogger("emulator")
         self.logger.setLevel(self.get_log_level(log_level))
         formatter = logging.Formatter("%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s")
@@ -25,7 +30,7 @@ class MyLogger:
         log_strm_handler.setFormatter(formatter)
         self.logger.addHandler(log_strm_handler)
         if is_to_file:
-            log_file_handler = logging.FileHandler(filename=log_name, mode="w")
+            log_file_handler = logging.FileHandler(filename=os.path.join(self.log_path, log_name), mode="w")
             log_file_handler.setLevel(self.get_log_level(log_level))
             log_file_handler.setFormatter(formatter)
             self.logger.addHandler(log_file_handler)
@@ -36,7 +41,7 @@ class MyLogger:
         self.error = self.logger.error
         self.critical = self.logger.critical
         self.base_path = os.path.abspath(".")
-        self.log_path = os.path.dirname(log_name)
+        # self.log_path = os.path.dirname(log_name)
 
         self.data_files = dict()
         self.file_writers = dict()

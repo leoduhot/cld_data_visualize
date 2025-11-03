@@ -1,8 +1,13 @@
+v0.5.301
+1. add supporting for malibu2 sensors
+2. restruct data_parser and data_visualization utility
+
 v0.5.220
 1. change text formate for gen2 when on_click
 2. reset matplotlib to default to fix color error when change between different projects
 3. fix error when use signal filters for 05 project
-4. align emg plot color settings for all projects
+4. align emg plot color and layout settings for all projects
+5. change log, data and picture to log folder
 
 v0.5.200
 1. add project 05 for GEN2 devices

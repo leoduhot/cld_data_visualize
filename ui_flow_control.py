@@ -3,9 +3,9 @@ import re
 from mainWin_ui import Ui_MainWindow
 import os
 from ui_utility import *
-from data_visualization_utility import DataVisualization
+from data_visualization_utility import *
 from plot_summary_data import *
-from data_parser import *
+from data_parser_utility import *
 import time
 from threading import Thread
 
@@ -15,7 +15,7 @@ project_name = {
             "02":   "ceres",
             "03":   "bali",
             "04":   "tycho",
-            "05":   "gen2",
+            "05":   "malibu2",
         }
 
 # data rate and data drops default settings
@@ -155,9 +155,11 @@ class FlowControl:
         self.status_bar = StatusBar(statusBarObj=self.ui.statusBar, click=self.on_statusbar_clicked)
         self.status_bar.show_message("By APAC HW Engineering Team")
 
+        self.dv_params = VisualizeParameters()
         self.rdp = RawDataParser(logger=self.logger)
-        self.dv = DataVisualization(logger=self.logger, canvas=self.plotCanvas)
+        # self.dv = DataVisualization(logger=self.logger, canvas=self.plotCanvas)
         self.sdp = SummaryDataParser(root=self.root, logger=self.logger, canvas=self.plotCanvas)
+        self.dv = None
         self.file_path = list()
         self.sensor_type = None
         self.data_type = None
@@ -202,7 +204,7 @@ class FlowControl:
             self.sensor_type = None
             self.data_type = None
             self.df_data = None
-            self.data_drops = [0, -1]
+            self.dv_params.data_drop = [0, -1]
             self.toggle_parameters_chkb(False)
             self.paramEntry.state_configure(_comb={"sensor_type": 1, "data_type": 0},
                                             _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
@@ -254,7 +256,7 @@ class FlowControl:
             def_settings = bali_defaultSettings
         elif self.project == "ceres":
             def_settings = ceres_defaultSettings
-        elif self.project == "gen2":
+        elif self.project == "malibu2":
             def_settings = gen2_defaultSettings
         else:
             def_settings = defaultSettings
@@ -284,9 +286,11 @@ class FlowControl:
     def on_project_type_changed(self, index):
         self.logger.debug(f"project type, selected index: {index}")
         val =  self.get_parameter_project()
-        if val == "gen2":
-            self.paramEntry.set(_combIndex={'sensor_type': 2})  # force select EMG
-            # self.paramEntry.state_configure(_comb={"sensor_type": 0})
+        # if val == "gen2":
+        #     self.paramEntry.set(_combIndex={'sensor_type': 2})  # force select EMG
+        #     # self.paramEntry.state_configure(_comb={"sensor_type": 0})
+
+        self.rdp = RawDataParser(logger=self.logger, project=val)
 
     def on_sensor_type_changed(self, index):
         self.logger.debug(f"sensor type, selected index: {index}")
@@ -325,7 +329,7 @@ class FlowControl:
         self.df_data = dict()
         self.file_path = list()
         for val in file_list:
-            _err, df_data = self.rdp.extract_sensor_data(_file=val, _sensor=self.sensor_type.lower(),
+            _err, df_data = self.rdp.extract_sensor_data(_source_file=val, _sensor=self.sensor_type.lower(),
                                                          _project=self.get_parameter_project())
             if _err != ErrorCode.ERR_NO_ERROR:
                 _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
@@ -399,6 +403,7 @@ class FlowControl:
             return True
         else:
             return False
+
     def get_df_data(self):
         try:
             if self.get_parameter_project() == 'ceres' and self.data_type.lower() == "tester data":
@@ -441,42 +446,24 @@ class FlowControl:
         self.logger.debug(f"project selected: {p}")
         return project_name[p] if p in project_name else project_name["01"]
 
-    def get_pass_filer_parameters(self, filter_obj: FilterEntry):
+    def get_filer_parameters_list(self, filter_obj: FilterEntry, keys: list = None):
+        # keys: specify the keys whose value need to be converted
         val = filter_obj.get() if filter_obj.isChecked else None
         if val is not None:
-            val['order'] = float(val['order'])
-            val['freq'] = float(val['freq'])
-        self.logger.debug(f"{filter_obj.name} get values: {val}")
-        return val
-
-    def get_notch_filer_parameters(self, filter_obj: FilterEntry):
-        val = filter_obj.get() if filter_obj.isChecked else None
-        if val is not None:
-            val['qvalue'] = float(val['qvalue'])
-            val['freq'] = float(val['freq'])
-        self.logger.debug(f"{filter_obj.name} get values: {val}")
-        return [val['freq'], val['qvalue']] if val else []
-
-    def get_scale_filer_parameters(self, filter_obj: FilterEntry):
-        val = filter_obj.get() if filter_obj.isChecked else None
-        if val is not None:
-            val['start'] = int(val['start'])
-            val['end'] = int(val['end'])
-        self.logger.debug(f"{filter_obj.name} get values: {val}")
-        return [val['start'], val['end']] if val else []
-
-    def get_filer_parameters_in_list(self, filter_obj: FilterEntry, keys: list):
-        val = filter_obj.get() if filter_obj.isChecked else None
-        if val is not None:
-            for key in keys:
+            _keys = keys if keys is not None and set(keys).issubset(set(val.keys())) else val.keys()
+            for key in _keys:
                 val[key] = float(val[key])
+        else:
+            val = list()
         self.logger.debug(f"{filter_obj.name} get values: {val}")
-        return [val[key] for key in keys] if val else []
+        return [val[k] for k in val]
 
-    def get_filer_parameters_in_dict(self, filter_obj: FilterEntry, keys: list):
+    def get_filer_parameters_dict(self, filter_obj: FilterEntry, keys: list = None):
+        # keys: specify the keys whose value need to be converted
         val = filter_obj.get() if filter_obj.isChecked else None
         if val is not None:
-            for key in keys:
+            _keys = keys if keys is not None and set(keys).issubset(set(val.keys())) else val.keys()
+            for key in _keys:
                 val[key] = float(val[key])
         self.logger.debug(f"{filter_obj.name} get values: {val}")
         return val
@@ -505,85 +492,55 @@ class FlowControl:
             self.logger.error("df_data is None!! do nothing")
             self.messagebox.warning("Error", "Data is NULL!!\nPlease press 'Refresh' button first")
             return
-        self.data_rate = self.paramEntry.get(_entry='data_rate')
-        self.logger.debug(f"data rate: {self.data_rate}")
-        val = self.paramEntry.get(_entry='data_drop_start')
-        self.data_drops[0] = int(val) if val is not None and len(val) else 0
-        val = self.paramEntry.get(_entry='data_drop_end')
-        self.data_drops[1] = int(val) if val is not None and len(val) else -1
-        self.logger.debug(f"data drops: {self.data_drops}")
-        val = self.paramEntry.get(_entry='gain')
-        self.gain = float(val) if val is not None and len(val) else 1
-        self.plot_name = self.plotName.get()
-        self.logger.debug(f"plot name: {self.plot_name}")
-        # _highpassfilter = self.highPassFilter.get_parameters() if self.highPassFilter.isChecked else None
-        filters = dict()
-        filters.update({"high": self.get_pass_filer_parameters(self.highPassFilter)})
-        # _lowpassfilter = self.get_pass_filer_parameters(self.lowPassFilter)
-        filters.update({"low": self.get_pass_filer_parameters(self.lowPassFilter)})
-        # _notchfilter1 = self.get_notch_filer_parameters(self.notchFilter1)
-        filters.update({"notch1": self.get_notch_filer_parameters(self.notchFilter1)})
-        filters.update({"notch2": self.get_notch_filer_parameters(self.notchFilter2)})
-        filters.update({"notch3": self.get_notch_filer_parameters(self.notchFilter3)})
-        # _notchfilter2 = self.get_notch_filer_parameters(self.notchFilter2)
-        # _notchfilter3 = self.get_notch_filer_parameters(self.notchFilter3)
-        # _fft_scale_x = self.get_scale_filer_parameters(self.fftXScale)
-        filters.update({"scaleX": self.get_scale_filer_parameters(self.fftXScale)})
-        filters.update({"scaleY": self.get_scale_filer_parameters(self.fftYScale)})
 
-        filters.update({"summYScale": self.get_filer_parameters_in_list(self.summPlotScale, ["lower", "upper"])})
-        # _fft_scale_y = self.get_scale_filer_parameters(self.fftYScale)
+        self.get_data_visualize_parameters()
+        self.dv = DataVisualize(params=self.dv_params, logger=self.logger)
 
-        selected_channels = self.channelsSelector.get_checked_list()
-        self.logger.debug(f"selected channels: {selected_channels}")
-        self.project = self.get_parameter_project()
-
-        if selected_channels is not None and len(selected_channels):
+        if self.dv_params.selected_columns is not None and len(self.dv_params.selected_columns):
             if len(self.df_data.keys()) > 1:  # for multiple files
                 self.popup = Popup(msg="Generating plot pictures ...", parent=self.root)
                 _thread = Thread(
                     target=self.visualize_process,
-                    args=(filters, selected_channels, ),
+                    args=(self.dv_params.selected_columns, ),
                     daemon=True
                 )
                 _thread.start()
             else:
-                keys = [val for val in self.df_data.keys()]
-                err_code, _ = self.do_visualize(filters, selected_channels, keys[0])
+                err_code, fig = self.do_visualize()
                 if err_code != ErrorCode.ERR_NO_ERROR:
                     self.logger.error(f"Error during plot!! {err_code}")
                     self.messagebox.warning("Error", ErrorMsg[f"{err_code}"])
+                else:
+                    self.plotCanvas.create_canvas(fig)
+                    self.plotCanvas.show_plot()
         else:
             self.messagebox.information("info", "Select at least one channel!!")
 
-    def do_visualize(self, filters: dict, _channels: list, file, show=True):
+    def do_visualize(self, show=True):
         try:
-            if not show:
-                self.plot_name = file
-            if self.data_type == "Summary Data":
-                _err_code = self.sdp.summary_data_visualize(data=self.df_data[file], sensor=self.sensor_type,
-                                                            channels=_channels, name=self.plot_name,
-                                                            yscale=filters["summYScale"],
-                                                            show=show, filename=file, project=self.project)
-                fig = self.sdp.fig
-            else:
-                _err_code = self.dv.visualize(data=self.df_data[file], logger=self.logger, name=self.plot_name,
-                                              sensor=self.sensor_type, channels=_channels, rate=self.data_rate,
-                                              drop=self.data_drops, highpassfilter=filters['high'],
-                                              lowpassfilter=filters['low'],
-                                              notchfilter=[filters['notch1'], filters['notch2'], filters['notch3']],
-                                              fftscale=[filters['scaleX'], filters['scaleY']],
-                                              show=show, project=self.project, gain=self.gain)
-                fig = self.dv.fig
+            # if not show:
+            #     self.plot_name = file
+            # if self.data_type == "Summary Data":
+            #     _err_code = self.sdp.summary_data_visualize(data=self.df_data[file], sensor=self.sensor_type,
+            #                                                 channels=_channels, name=self.plot_name,
+            #                                                 yscale=filters["summYScale"],
+            #                                                 show=show, filename=file, project=self.project)
+            #     fig = self.sdp.fig
+            # else:
+            _err_code = self.dv.visualize_data(self.dv_params)
+            fig = self.dv.fig
             return _err_code, fig
         except Exception as e:
             self.logger.error(f"{str(e)}\nin {__file__}:{str(e.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN, None
 
-    def visualize_process(self, filters: dict, channel_list: list):
+    def visualize_process(self, file_list: list):
         self.signal.threadStateChanged.emit([0, 0])
-        for file in channel_list:
-            _err_code, _ = self.do_visualize(filters, [], file, False)
+        for file in file_list:
+            self.dv_params.df_data = self.df_data[file]
+            self.dv_params.selected_columns = []
+            self.dv_params.plot_name = file
+            _err_code, _ = self.do_visualize(False)
             if _err_code != ErrorCode.ERR_NO_ERROR:
                 # self.messagebox.warning("Error", ErrorMsg[f"{_err_code}"])
                 self.signal.threadStateChanged.emit([-2, _err_code])
@@ -614,14 +571,8 @@ class FlowControl:
         keys = [val for val in self.df_data.keys()]
         if len(keys) == 1:
             columns = self.df_data[keys[0]].columns.dropna().tolist()
-            # if self.sensor_type is not None and len(self.sensor_type.strip()) and self.data_type.lower() == "summary data":
-            #     new_col = [val for val in columns if val.startswith(self.sensor_type)]
-            #     columns = new_col if len(new_col) else columns
         else:
             columns = keys
-            # if self.sensor_type is not None and len(self.sensor_type.strip()):
-            #     new_col = [val for val in columns if val.lower().startswith(self.sensor_type.lower())]
-            #     columns = new_col if len(new_col) else columns
         if self.item_filter is not None and len(self.item_filter.strip()):
             self.logger.debug(f"reg:{self.item_filter.strip()}")
             try:
@@ -631,3 +582,42 @@ class FlowControl:
                 return
             columns = new_col if len(new_col) else columns
         self.channelsSelector.show_channels(columns, self.data_type)
+
+    def get_data_visualize_parameters(self):
+        self.dv_params.data_type = self.paramEntry.get(_comb='data_type')
+        self.dv_params.sensor = self.paramEntry.get(_comb='sensor_type')
+        self.dv_params.df_data = next(iter(self.df_data.values()))  # value of first key
+        val = self.paramEntry.get(_entry='data_rate')
+        self.dv_params.sample_rate = float(val) if val is not None and len(val) else 1
+        self.logger.debug(f"data rate: {self.dv_params.sample_rate}")
+
+        val = self.paramEntry.get(_entry='data_drop_start')
+        self.dv_params.data_drop[0] = int(val) if val is not None and len(val) else 0
+
+        val = self.paramEntry.get(_entry='data_drop_end')
+        self.dv_params.data_drop[1] = int(val) if val is not None and len(val) else -1
+        self.logger.debug(f"data drops: {self.dv_params.data_drop}")
+
+        val = self.paramEntry.get(_entry='gain')
+        self.dv_params.gain = float(val) if val is not None and len(val) else 1
+
+        self.dv_params.plot_name = self.plotName.get()
+        self.logger.debug(f"plot name: {self.dv_params.plot_name}")
+
+        self.dv_params.high_pass_filter = self.get_filer_parameters_dict(self.highPassFilter, ['order', 'freq'])
+        self.dv_params.low_pass_filter = self.get_filer_parameters_dict(self.lowPassFilter, ['order', 'freq'])
+        self.dv_params.notch_filter["0"] = self.get_filer_parameters_dict(self.notchFilter1)
+        self.dv_params.notch_filter["1"] = self.get_filer_parameters_dict(self.notchFilter2)
+        self.dv_params.notch_filter["2"] = self.get_filer_parameters_dict(self.notchFilter3)
+
+        self.dv_params.fft_scale["x"] = self.get_filer_parameters_dict(self.fftXScale)
+        self.dv_params.fft_scale["y"] = self.get_filer_parameters_dict(self.fftYScale)
+
+        # filters = dict()
+        # filters.update({"summYScale": self.get_filer_parameters_list(self.summPlotScale)})
+        self.dv_params.summary_scale = self.get_filer_parameters_list(self.summPlotScale)
+
+        self.dv_params.selected_columns = self.channelsSelector.get_checked_list()
+        self.logger.debug(f"selected channels: {self.dv_params.selected_columns}")
+        self.dv_params.project = self.get_parameter_project()
+

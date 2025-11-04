@@ -380,31 +380,6 @@
                <height>0</height>
               </size>
              </property>
-             <item>
-              <property name="text">
-               <string>01</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>02</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>03</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>04</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>05</string>
-              </property>
-             </item>
             </widget>
            </item>
            <item row="1" column="6">
@@ -435,41 +410,6 @@
                <height>0</height>
               </size>
              </property>
-             <item>
-              <property name="text">
-               <string>ALT</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>BTI</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>EMG</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>IMU</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>MAG</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>PPG</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Others</string>
-              </property>
-             </item>
             </widget>
            </item>
            <item row="1" column="7">

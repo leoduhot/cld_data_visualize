@@ -457,34 +457,40 @@ class DataVisualization:
 
     def convert_emg_adc_data(self) -> pd.DataFrame:
         # covert adc code to voltage
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
     def convert_ppg_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
     def convert_imu_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
     def convert_mag_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
     def convert_bti_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
     def convert_alt_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
     def convert_als_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
     def calculate_emg_data(self):
         self.bad_channel = list()
-        self.target_channels = list()
         keys = ["channel", "time", "sig", "total_rms", "avg_p2p", "cycle", "cycle_time",
                 "max", "min", "target_freq", "target_freq_peak", "target_sig", "target_sig_peak", "bias", "target_rms"]
         _data = {key: [] for key in keys}
 
-        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
+        self.convert_emg_adc_data()
         drops = self.parameters.data_drop
         for channel in self.parameters.selected_columns:
             if int(drops[1]) > 0:
@@ -504,8 +510,6 @@ class DataVisualization:
                 self.logger.error(f"bad channel data: {channel}")
                 self.bad_channel.append(channel)
                 continue
-
-            self.target_channels.append(channel)
             target_size = 2 ** int(np.ceil(np.log2(len(ac_signal))))
             target_freq = np.fft.rfftfreq(target_size, d=1 / self.parameters.sample_rate)
             _amplitude = np.abs(np.fft.rfft(ac_signal, target_size))
@@ -553,6 +557,7 @@ class DataVisualization:
             _data["target_sig"].append(target_sig)
             _data["target_sig_peak"].append(target_sig_peak)
             _data["bias"].append(dc_bias)
+            self.target_channels = copy.deepcopy(_data["channel"])
         return ErrorCode.ERR_NO_ERROR, _data
 
     def calculate_ppg_data(self):
@@ -1023,7 +1028,151 @@ class MalibuDataVisualization(DataVisualization):
         super().__init__(**kwargs)
 
 
-class Malibu2DataVisualization(DataVisualization):
+# Malibu2, Bali, Tycho
+class BaliDataVisualization(DataVisualization):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def visualize_emg_data(self):
+        try:
+            self.logger.info(f"Malibu2_emg_data: plot {self.parameters.sensor} data")
+
+            # ToDo:: need to review which columns needed
+            if not len(self.parameters.selected_columns):
+                tmp = self.parameters.df_data.columns.dropna().tolist()
+                self.parameters.selected_columns = [val for val in tmp if val.lower() not in ["timestamp"]]
+            _err_code, self.target_data = self.calculate_emg_data()
+            if _err_code != ErrorCode.ERR_NO_ERROR:
+                return _err_code
+
+            # 1. initialize
+            if self.initialize_figure(2, 2) != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            # 2. time domain
+            if self.draw_time_domain_chart({"rows": 2, "cols": 2, "index": 1},
+                                           "Signal(V)", True) != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            # 3. statistics table
+            _err_code, table_data = self.draw_statistics_table({"rows": 2, "cols": 2, "index": 3})
+            self.logger.debug(f"table_data1:\n{table_data}")
+            if _err_code != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            # 4. frequency domain
+            if self.draw_freq_domain_chart({"rows": 2, "cols": 2, "index": 2},
+                                           "Amplitude(dBV)") != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            # 5. harmonic table
+            _err_code, table_data1 = self.draw_harmonics_table({"rows": 2, "cols": 2, "index": 4})
+            self.logger.debug(f"table_data1:\n{table_data1}")
+            if _err_code != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            # 6. draw legend
+            if self.draw_checkbutton_2(plt, self.all_lines, list(self.line_colors.values())) != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+            # 7. save data and picture
+            if self.save_statistic_and_picture(table_data, table_data1) != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            self.logger.info(f"finish: {self.parameters.sensor}")
+            return ErrorCode.ERR_NO_ERROR
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_UNKNOWN
+
+    def convert_emg_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(4096)
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
+        return self.parameters.df_data
+
+    def visualize_ppg_data(self):
+        try:
+            self.logger.info(f"process {self.parameters.sensor} data")
+            # ToDo:: need to review which columns needed
+            if not len(self.parameters.selected_columns):
+                tmp = self.parameters.df_data.columns.dropna().tolist()
+                self.parameters.selected_columns = [val for val in tmp if "timestamp" not in val.lower()]
+            self.convert_emg_adc_data()
+            _err_code, self.target_data = self.calculate_ppg_data()
+            if _err_code != ErrorCode.ERR_NO_ERROR:
+                return _err_code
+            # 1. init figure
+            if self.initialize_figure(2, 2) != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            # 2. Time domain
+            if self.draw_time_domain_chart({"rows": 2, "cols": 2, "index": 1},
+                                           "Raw Cnt", True) != ErrorCode.ERR_NO_ERROR:
+                return ErrorCode.ERR_BAD_UNKNOWN
+
+            # 3. Freq domain
+            ax = plt.subplot(2, 2, 2)
+            for i in range(0, len(self.target_channels)):
+                try:
+                    plt.rcParams.update({'font.size': 10})
+                    FFT = 2.0 / len(self.target_data["sum_vector"][i]) * abs(scipy.fft.fft(self.target_data["sum_vector"][i]))
+                    timex = self.target_data["time"][i]
+                    freqs = scipy.fftpack.fftfreq(len(timex), timex[1] - timex[0])
+
+                    print(f"freq length:{len(freqs)}")
+                    _line, = plt.plot(freqs[1:int(len(freqs) / 2)], (FFT[1:int(len(freqs) / 2)]),
+                                      color=self.line_colors[self.target_channels[i]],
+                                      linewidth=0.5, alpha=0.7)
+                    self.all_lines[self.target_channels[i]].append(_line)
+                    if ax in self.main_lines:
+                        self.main_lines[ax].append(_line)
+                    else:
+                        self.main_lines.update({ax: [_line]})
+                    # Peak
+                    peak_index = np.argmax(FFT[1:int(len(freqs) / 2)])
+                    _line, = plt.plot(freqs[1:int(len(freqs) / 2)][peak_index],
+                                      FFT[1:int(len(freqs) / 2)][peak_index], 'o', color="#ff0000")
+                    self.all_lines[self.target_channels[i]].append(_line)
+                    _line = plt.axvline(freqs[1:int(len(freqs) / 2)][peak_index], color="#ff0000", linestyle='--')
+                    self.all_lines[self.target_channels[i]].append(_line)
+                except Exception as ex:
+                    self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+                    continue
+            # plt.ylabel('FFT[cnt/sqrt(Hz)]', fontsize=10)
+            plt.text(-0.05, 1.05, f"FFT[cnt/sqrt(Hz)]",
+                     fontsize=10, transform=plt.gca().transAxes)
+            plt.xlabel('Frequency [Hz]', fontsize=10)
+            self.scale_fft_axis()
+
+            # if self.draw_freq_domain_chart({"rows": 2, "cols": 2, "index": 2},
+            #                                "FFT[cnt/sqrt(Hz)]") != ErrorCode.ERR_NO_ERROR:
+            #     return ErrorCode.ERR_BAD_UNKNOWN
+            # 4. statistics table
+            table_ax = plt.subplot(2, 2, 3)
+            # plt.rcParams.update({'font.size': 10})
+            table_data = np.array(
+                [["Signal"] + self.target_channels,
+                 ["Average"] + ["{:.8f}".format(val) for val in self.target_data["avg"]],
+                 ["Noise"] + ["{:.8f}".format(val) for val in self.target_data["noise"]],
+                 ["SNR"] + ["{:.8f}".format(val) for val in self.target_data["snr"]]
+                 ]).T
+            self._draw_table(table_ax, table_data)
+            # df = pd.DataFrame(table_data)
+            # 5. blank
+            plt.subplot(2, 2, 4)
+            plt.axis('off')
+            self.draw_checkbutton(plt, self.all_lines, list(self.line_colors.values()))
+            # self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
+
+            self.save_statistic_and_picture(table_data)
+
+            self.logger.info(f"finish: {self.parameters.sensor}")
+            return ErrorCode.ERR_NO_ERROR
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_UNKNOWN
+
+
+class GEN2DataVisualization(DataVisualization):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -1085,8 +1234,7 @@ class Malibu2DataVisualization(DataVisualization):
         _data = {key: [] for key in keys}
 
         # covert adc code to voltage
-        self.parameters.df_data = (self.parameters.df_data.div(4095)).mul(0.8)
-        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
+        self.convert_emg_adc_data()
 
         drops = self.parameters.data_drop
         for channel in self.parameters.selected_columns:
@@ -1154,6 +1302,11 @@ class Malibu2DataVisualization(DataVisualization):
             _data["target_sig_peak"].append(target_sig_peak)
         self.target_channels = copy.deepcopy(_data["channel"])
         return ErrorCode.ERR_NO_ERROR, _data
+
+    def convert_emg_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = (self.parameters.df_data.div(4095)).mul(0.8)
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
+        return self.parameters.df_data
 
     def on_legend_click(self, event):
         if event.button != 3:  #  1: left key, 2: middle key, 3: right key
@@ -1260,267 +1413,6 @@ class Malibu2DataVisualization(DataVisualization):
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_UNKNOWN, None
-
-
-class BaliDataVisualization(DataVisualization):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def __visualize_emg_data(self):
-        try:
-            self.logger.info(f"bali_emg_data: process {self.parameters.sensor} data")
-
-            # ToDo:: need to review which columns needed
-            if not len(self.parameters.selected_columns):
-                tmp = self.parameters.df_data.columns.dropna().tolist()
-                self.parameters.selected_columns = [val for val in tmp if val.lower() not in ["timestamp"]]
-            _err_code, _data = self.calculate_emg_data()
-            if _err_code != ErrorCode.ERR_NO_ERROR:
-                return _err_code
-            # matplotlib.rc_file_defaults()
-            matplotlib.rcdefaults()
-            plt.clf()
-            plt.close("all")
-            # colors = plt.rcParams["axes.prop_cycle"]()
-            # colors_list = [next(colors)["color"] for _ in range(20)]
-            self.fig = plt.figure(f"{self.parameters.plot_name}", figsize=(20, 10))
-            reserve_space = math.ceil(len(self.parameters.selected_columns) / self.legend_rows) * 0.1  # reserve space for legend
-            plt.subplots_adjust(hspace=0.3, left=0.05, right=1 - reserve_space)
-            self.fig.suptitle(self.parameters.plot_name, fontsize=16, x=0.05 + (1 - reserve_space - 0.05) / 2)  # centralize title
-            self.figsize = self.fig.get_size_inches()
-            # if self.figure_canvas is not None and self.parameters.show:
-            #     self.figure_canvas.create_canvas(self.fig)
-            plt.subplots_adjust(hspace=0.3)
-            plt.rcParams['axes.prop_cycle'] = plt.cycler('color', plt.cm.tab20(np.linspace(0, 1, 20)))
-            # plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_list)
-            self.fig.canvas.mpl_connect('button_press_event', self.on_legend_click)
-            ax = plt.subplot(2, 2, 1)
-            plt.rcParams.update({'font.size': 10})
-            # ax = axes[0][0]
-            time_lines = {key: [] for key in self.parameters.selected_columns}
-            channel_lines = {key: [] for key in self.parameters.selected_columns}
-            channel_colors = {}
-            _shift = np.amax(_data["sig"]) - np.amin(_data["sig"])
-            # print(_shift)
-
-            for i in range(0, len(self.parameters.selected_columns)):
-                if self.parameters.selected_columns[i] in self.bad_channel:
-                    self.logger.error(f"skip bad channel: {self.parameters.selected_columns[i]}")
-                    continue
-                plt.rcParams.update({'font.size': 10})
-                _line, = plt.plot(_data["time"][i], _data["sig"][i], linewidth=0.5, alpha=0.7)
-                channel_lines[self.parameters.selected_columns[i]].append(_line)
-                channel_colors[self.parameters.selected_columns[i]] = _line.get_color()
-                if ax in self.main_lines:
-                    self.main_lines[ax].append(_line)
-                else:
-                    self.main_lines.update({ax: [_line]})
-
-            plt.text(-0.05, 1.05, f"Signal (V)", fontsize=10, transform=plt.gca().transAxes)
-            plt.xlabel('Time (S)', fontsize=10)
-
-            table_ax = plt.subplot(2, 2, 3)
-            # plt.rcParams.update({'font.size': 10})
-            table_data = np.array(
-                [["Signal"] + self.parameters.selected_columns, ["RMS Level(V)"] + ["{:.8f}".format(val) for val in _data["rms"]],
-                 ["Average Peak-to-Peak"] + ["{:.8f}".format(val) for val in _data["avg_p2p"]],
-                 ["DC bias"] + ["{:.8f}".format(val) for val in _data["bias"]]]).T
-            self._draw_table(table_ax, table_data)
-            # _table = plt.table(cellText=table_data, cellLoc='center', loc='center', fontsize=[10,10,10])
-            # for (row, col), cell in _table.get_celld().items():
-            #     cell.set_linewidth(0.3)
-            # plt.axis('off')
-
-            ax = plt.subplot(2, 2, 2)
-            harmonics = [2, 3, 4, 5]
-            harmonic_data = [[(0, 0)] * len(self.parameters.selected_columns) for _ in range(len(harmonics))]
-            for i in range(0, len(self.parameters.selected_columns)):
-                if self.parameters.selected_columns[i] in self.bad_channel:
-                    self.logger.error(f"skip bad channel: {self.parameters.selected_columns[i]}")
-                    continue
-                # Find harmonics of AC signal in FFT plot
-                harmonic_coords = []
-                # for h in harmonics:
-                for k, h in enumerate(harmonics):
-                    harmonic_index = np.argmin(np.abs(_data["fft_freq"][i] - h * _data["peak_freq"][i]))
-                    harmonic_freq = _data["fft_freq"][i][harmonic_index]
-                    harmonic_dbv = _data["fft_dbv"][i][harmonic_index]
-                    harmonic_coords.append((harmonic_freq, harmonic_dbv))
-                    harmonic_data[k][i] = (harmonic_freq, harmonic_dbv)
-
-                # Plot FFT of AC signal
-                _line, = plt.plot(_data["fft_freq"][i], _data["fft_dbv"][i], linewidth=0.5, alpha=0.7)
-                channel_lines[self.parameters.selected_columns[i]].append(_line)
-                if ax in self.main_lines:
-                    self.main_lines[ax].append(_line)
-                else:
-                    self.main_lines.update({ax: [_line]})
-
-                _line, = plt.plot(_data["peak_freq"][i], _data["peak_dbv"][i], 'o',
-                                  color=channel_colors[self.parameters.selected_columns[i]],
-                                  linewidth=0.5, alpha=0.9)
-                channel_lines[self.parameters.selected_columns[i]].append(_line)
-
-                _line = plt.axvline(float(_data["peak_freq"][i]), linestyle='--',
-                                    color=channel_colors[self.parameters.selected_columns[i]],
-                                    linewidth=0.5, alpha=0.9)
-                channel_lines[self.parameters.selected_columns[i]].append(_line)
-
-                for k, h in enumerate(harmonics):
-                    _line, = plt.plot(harmonic_coords[k][0], harmonic_coords[k][1], 'x',
-                                      color=channel_colors[self.parameters.selected_columns[i]],
-                                      label=f'Harmonic {h} ({harmonic_coords[k][0]:.2f},{harmonic_coords[k][1]:.2f})',
-                                      linewidth=0.5, alpha=0.9)
-                    channel_lines[self.parameters.selected_columns[i]].append(_line)
-
-            plt.xlabel('Frequency (Hz)', fontsize=10)
-            # plt.ylabel('Amplitude (dBV)', fontsize=10)
-            plt.text(-0.05, 1.05, f"Amplitude (dBV)",
-                     fontsize=10, transform=plt.gca().transAxes)
-            self.scale_fft_axis()
-            # plt.xlim(1, self.sample_rate/2)
-            # if len(self.parameters.fft_scale[0]):
-            #     _start, _end = list(self.parameters.fft_scale[0])
-            #     _end = self.parameters.sample_rate / 2 if _end == -1 else _end
-            #     plt.xlim(_start, _end)
-            # if len(self.parameters.fft_scale[1]):
-            #     _start, _end = list(self.parameters.fft_scale[1])
-            #     plt.ylim(_start, _end)
-            table_ax = plt.subplot(2, 2, 4)
-            # plt.rcParams.update({'font.size': 10})
-            table_data1 = np.array([["Signal"] + self.parameters.selected_columns,
-                                    ["Peak"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
-                                                zip(_data["peak_freq"], _data["peak_dbv"])],
-                                    ["Harmonic 2"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
-                                                      harmonic_data[0]],
-                                    ["Harmonic 3"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
-                                                      harmonic_data[1]],
-                                    ["Harmonic 4"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
-                                                      harmonic_data[2]],
-                                    ["Harmonic 5"] + ["({:.2f}, {:.2f})".format(val1, val2) for val1, val2 in
-                                                      harmonic_data[3]],
-                                    ]).T
-            self._draw_table(table_ax, table_data1)
-            df = pd.DataFrame(table_data[1:], columns=table_data[0])
-            df1 = pd.DataFrame(table_data1[1:], columns=table_data1[0])
-            df = pd.concat([df, df1[df1.columns[1:]]], axis=1)
-            # reserve_space = math.ceil(len(self.parameters.selected_columns)/self.legend_rows)*0.1
-            # plt.subplots_adjust(left=0.05, right=1-reserve_space)
-            self.draw_checkbutton_2(plt, channel_lines, list(channel_colors.values()))
-
-            # plt.tight_layout(rect=(0.1, 0.0, 0.9, 0.95))
-            self.fig.canvas.mpl_connect('resize_event', self.update_text_size)
-            _postfix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            # _png_file = f"{self.parameters.plot_name}_{_postfix}.png"
-            _png_file = os.path.join(self.logger.log_path, f"{self.parameters.plot_name}_{_postfix}.png")
-            df.to_csv(os.path.join(self.logger.log_path, f"{self.parameters.plot_name}_{_postfix}.csv"), index=False)
-            plt.savefig(_png_file)
-            # if self.parameters.show and self.figure_canvas is not None and len(self.parameters.selected_columns):
-            #     self.figure_canvas.show_plot()
-            self.logger.info(f"finish: {self.parameters.sensor}")
-            return ErrorCode.ERR_NO_ERROR
-        except Exception as ex:
-            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
-            return ErrorCode.ERR_BAD_UNKNOWN
-
-    def calculate_emg_data(self):
-        self.bad_channel = []
-        keys = ["channel", "time", "sig", "rms", "avg_p2p", "cycle", "cycle_time",
-                "max", "min", "fft_freq", "peak_freq", "fft_dbv", "peak_dbv", "bias",
-                "psd", "psd_freq", "psd_rms", "psd_peak", "psd_freq_peak"]
-        _data = {key: [] for key in keys}
-
-        # covert adc code to voltage
-        self.parameters.df_data = (self.parameters.df_data.sub(4096)).div(4096)
-        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
-
-        drops = self.parameters.data_drop
-        for channel in self.parameters.selected_columns:
-            if int(drops[1]) > 0:
-                voltage = self.parameters.df_data[channel].iloc[int(drops[0]):int(drops[1])]
-            else:
-                voltage = self.parameters.df_data[channel].iloc[int(drops[0]):]
-            dc_bias = np.mean(voltage)
-            # Remove DC bias from waveform
-            ac_signal = voltage - dc_bias
-            # _err_code, ac_signal = self.do_high_pass_filter(ac_signal)
-            # if _err_code != ErrorCode.ERR_NO_ERROR:
-            #     return _err_code, _data
-            # _err_code, ac_signal = self.do_low_pass_filter(ac_signal)
-            # if _err_code != ErrorCode.ERR_NO_ERROR:
-            #     return _err_code, _data
-            _err_code, ac_signal = self.filter_signals(ac_signal)
-            if _err_code != ErrorCode.ERR_NO_ERROR:
-                return _err_code, _data
-            # Create time axis
-            time = np.arange(len(voltage)) / self.parameters.sample_rate
-            # Calculate FFT of AC signal
-            if len(ac_signal) == 0:
-                self.logger.error(f"bad channel data: {channel}")
-                self.bad_channel.append(channel)
-                continue
-            else:
-                fft_size = 2 ** int(np.ceil(np.log2(len(ac_signal))))
-                fft_freq = np.fft.rfftfreq(fft_size, d=1 / self.parameters.sample_rate)
-                fft_amplitude = np.abs(np.fft.rfft(ac_signal, fft_size))
-                fft_dbv = 20 * np.log10(fft_amplitude / 1)  # Convert to dBV
-
-            # Find peak value of AC signal in FFT plot
-            # print(str(fft_amplitude))
-            ac_peak_index = np.argmax(fft_amplitude)
-            # print(str(ac_peak_index))
-            ac_peak_freq = fft_freq[ac_peak_index]
-            ac_peak_dbv = fft_dbv[ac_peak_index]
-            ac_peak_coord = (ac_peak_freq, ac_peak_dbv)
-            self.logger.info(f"peak:{ac_peak_freq},{ac_peak_dbv}")
-            # Find cycle time and max/min values in each cycle
-            cycle_time = 1 / ac_peak_freq
-            num_cycles = int(len(ac_signal) / (cycle_time * self.parameters.sample_rate))
-            max_vals = np.zeros(num_cycles)
-            min_vals = np.zeros(num_cycles)
-            for i in range(num_cycles):
-                cycle_start = int(i * cycle_time * self.parameters.sample_rate)
-                cycle_end = int((i + 1) * cycle_time * self.parameters.sample_rate)
-                cycle_vals = ac_signal[cycle_start:cycle_end]
-                max_val = np.max(cycle_vals)
-                min_val = np.min(cycle_vals)
-                max_vals[i] = max_val
-                min_vals[i] = min_val
-
-            # Calculate peak-to-peak value for each cycle
-            peak_to_peak_vals = max_vals - min_vals
-
-            # Compute average peak-to-peak value
-            avg_peak_to_peak_val = np.mean(peak_to_peak_vals)
-
-            psd_freq, psd = signal.welch(ac_signal, fs=self.parameters.sample_rate, nperseg=len(ac_signal))
-            psd_rms = np.sqrt(sum(psd[1:int(self.parameters.sample_rate / 2) + 1] * (psd_freq[1] - psd_freq[0])))
-            psd_peak_index = np.argmax(psd)
-            psd_peak = psd[psd_peak_index]
-            psd_freq_peak = psd_freq[psd_peak_index]
-
-            # Calculate RMS level value
-            rms_val = np.sqrt(np.mean(np.array(ac_signal) ** 2))
-            _data["channel"].append(channel)
-            _data["time"].append(time)
-            _data["sig"].append(ac_signal)
-            _data["rms"].append(rms_val)
-            _data["avg_p2p"].append(avg_peak_to_peak_val)
-            _data["cycle"].append(num_cycles)
-            _data["cycle_time"].append(cycle_time)
-            _data["max"].append(max_vals)
-            _data["min"].append(min_vals)
-            _data["fft_freq"].append(fft_freq)
-            _data["peak_freq"].append(ac_peak_freq)
-            _data["fft_dbv"].append(fft_dbv)
-            _data["peak_dbv"].append(ac_peak_dbv)
-            _data["bias"].append(dc_bias)
-            _data["psd"].append(psd)
-            _data["psd_freq"].append(psd_freq)
-            _data["psd_rms"].append(psd_rms)
-            _data["psd_freq_peak"].append(psd_freq_peak)
-            _data["psd_peak"].append(psd_peak)
-        return ErrorCode.ERR_NO_ERROR, _data
 
 
 class SummaryDataVisualization:
@@ -1820,8 +1712,8 @@ def DataVisualize(params: VisualizeParameters, logger=None):
     if params.data_type == "Summary Data":
         return SummaryDataVisualization(logger=logger)
     else:
-        if params.project == "malibu2":
-            return Malibu2DataVisualization(logger=logger)
+        if params.project == "gen2":
+            return GEN2DataVisualization(logger=logger)
         elif params.project == "bali" or params.project == "tycho":
             return BaliDataVisualization(logger=logger)
         else:

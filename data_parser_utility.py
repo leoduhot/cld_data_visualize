@@ -97,7 +97,7 @@ class RawSensorDataParser:
             # get data from file fist, if not available, get from _data
             self.data = None
             if _source_file is not None and os.path.exists(_source_file):
-                _fh = open(_source_file, 'r')
+                _fh = open(_source_file, 'r', errors='ignore')
                 self.data = _fh.read()
             if self.data is None:
                 self.data = _data
@@ -131,7 +131,7 @@ class RawSensorDataParser:
             # get data from file fist, if not available, get from _data
             self.data = None
             if _source_file is not None and os.path.exists(_source_file):
-                _fh = open(_source_file, 'r')
+                _fh = open(_source_file, 'r', errors='ignore')
                 self.data = _fh.read()
             if self.data is None:
                 self.data = _data
@@ -428,7 +428,7 @@ class MalibuSensorDataParser(RawSensorDataParser):
         super().__init__(**kwargs)
 
 
-class Malibu2SensorDataParser(RawSensorDataParser):
+class BaliSensorDataParser(RawSensorDataParser):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -502,7 +502,7 @@ class Malibu2SensorDataParser(RawSensorDataParser):
             output_arr = np.array(arr).T
             output_arr = np.column_stack(output_arr)
             self.logger.debug(f"output_arr {output_arr}")
-            print(f"output_arr:\n {output_arr}")
+            # print(f"output_arr:\n {output_arr}")
             df = pd.DataFrame(output_arr)
             df.columns = ["ppg_data-0", "ppg_data-1", "ppg_data-2", "ppg_data-3"]
             return ErrorCode.ERR_NO_ERROR, df
@@ -540,7 +540,7 @@ class Malibu2SensorDataParser(RawSensorDataParser):
                 self.logger.debug(f"arr length {len(arr)}")
             output_arr = np.column_stack(output_arr)
             self.logger.debug(f"output_arr {output_arr}")
-            print(f"output_arr:\n {output_arr}")
+            # print(f"output_arr:\n {output_arr}")
             df = pd.DataFrame(output_arr)
             df.columns = final_column_name
             return ErrorCode.ERR_NO_ERROR, df
@@ -580,6 +580,11 @@ class Malibu2SensorDataParser(RawSensorDataParser):
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_DATA, None
 
+    def convert_emg_data(self):
+        df_data = pd.DataFrame(self.data[1:], columns=self.data[0])
+        df_data = (df_data.sub(4096)).div(4096)
+        return df_data
+
 
 class TychoSensorDataParser(RawSensorDataParser):
     def __init__(self, **kwargs):
@@ -612,7 +617,7 @@ class TychoSensorDataParser(RawSensorDataParser):
                           "ts10", "ch11", "ts11", "ch12", "ts12", "ch13", "ts13", "ch14", "ts14", "ch15", "ts15",
                           "ch16", "ts16", "ch17", "ts17", "ch18", "ts18", "ch19", "ts19", "ch20", "ts20", "ch21",
                           "ts21", "ch22", "ts22", "ch24", "ts24"]
-            df = (df.sub(4096)).div(4096)
+            # df = (df.sub(4096)).div(4096)
             self.logger.debug(f"{__name__}: {len(df)}")
             return ErrorCode.ERR_NO_ERROR, df
         except Exception as ex:
@@ -659,8 +664,35 @@ class CeresSensorDataParser(RawSensorDataParser):
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_DATA, None
 
+    def convert_emg_data(self):
+        try:
+            max_len = max(len(row) for row in self.data)
+            raw_data = np.array([row + [''] * (max_len - len(row)) for row in self.data]).T
+            df = pd.DataFrame(raw_data[1:], columns=raw_data[0])
+            new_columns = list()
+            valid_columns = list()
+            station_name = ""
+            for item in df.columns:
+                if len(df[item].values[0]) == 0:
+                    station_name = item
+                    new_columns.append(item)
+                else:
+                    new_columns.append(f"{station_name}_{item}")
+                    valid_columns.append(f"{station_name}_{item}")
+            df.columns = new_columns
+            df = df[valid_columns]
+            for name in df.columns:
+                if "EMG" in name:
+                    df[name] = (df[name].replace('', np.nan).astype(float).div(65536)).mul(5)
+                else:
+                    df[name] = df[name].replace('', np.nan).astype(float)
+            return ErrorCode.ERR_NO_ERROR, df
+        except Exception as ex:
+            self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
+            return ErrorCode.ERR_BAD_FILE, None
 
-class BaliSensorDataParser(RawSensorDataParser):
+
+class GEN2SensorDataParser(RawSensorDataParser):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -690,11 +722,10 @@ class BaliSensorDataParser(RawSensorDataParser):
                     output_arr[i][2 * j] = output_arr[i][2 * j] + output_arr[i - 1][2 * j]
 
             df = pd.DataFrame(output_arr)
-            df.columns = ["ch1", "ts1", "ch3", "ts3", "ch4", "ts4", "ch6", "ts6", "ch7", "ts7", "ch9", "ts9", "ch10",
-                          "ts10", "ch11", "ts11", "ch12", "ts12", "ch13", "ts13", "ch14", "ts14", "ch15", "ts15",
-                          "ch16", "ts16", "ch17", "ts17", "ch18", "ts18", "ch19", "ts19", "ch20", "ts20", "ch21",
-                          "ts21", "ch22", "ts22", "ch24", "ts24"]
-            # df = (df.sub(4096)).div(4096)
+            df.columns = ["ch0", "ts0", "ch1", "ts1", "ch2", "ts2", "ch3", "ts3", "ch4", "ts4", "ch5", "ts5", "ch6",
+                          "ts6", "ch7", "ts7", "ch8", "ts8", "ch9", "ts9", "ch10", "ts10", "ch11", "ts11",
+                          "ch12", "ts12", "ch13", "ts13", "ch14", "ts14", "ch15", "ts15", "ch16", "ts16", "ch17",
+                          "ts17", "ch18", "ts18", "ch19", "ts19"]
             self.logger.debug(f"{__name__}: {len(df)}")
             return ErrorCode.ERR_NO_ERROR, df
         except Exception as ex:
@@ -705,10 +736,10 @@ class BaliSensorDataParser(RawSensorDataParser):
 def RawDataParser(project="malibu", logger=None):
     parser = {
         "malibu": MalibuSensorDataParser,
-        "malibu2": Malibu2SensorDataParser,
         "ceres": CeresSensorDataParser,
-        "tycho": TychoSensorDataParser,
         "bali": BaliSensorDataParser,
+        "tycho": TychoSensorDataParser,
+        "gen2": GEN2SensorDataParser,
     }
     if project in parser:
         return parser[project](logger=logger)
@@ -719,13 +750,13 @@ def RawDataParser(project="malibu", logger=None):
 # example
 if __name__ == '__main__':
     import sys
-    rdp = RawDataParser(project="malibu2")
+    rdp = RawDataParser(project="bali")
     # err, df_data = rdp.convert_ceres_test_data(sys.argv[1])
     # if err == ErrorCode.ERR_NO_ERROR:
     #     df_data.to_csv("test.csv", index=False)
     s = sys.argv[2].strip()
 
-    err, df_data = rdp.extract_sensor_data(_source_file=sys.argv[1], _sensor=s, _project="05")
+    err, df_data = rdp.extract_sensor_data(_source_file=sys.argv[1], _sensor=s, _project="03")
     if err == ErrorCode.ERR_NO_ERROR:
         print(df_data.to_string())
         df_data.to_csv(f"{s}.csv", index=False)

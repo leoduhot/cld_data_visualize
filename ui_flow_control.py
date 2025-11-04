@@ -15,8 +15,15 @@ project_name = {
             "02":   "ceres",
             "03":   "bali",
             "04":   "tycho",
-            "05":   "malibu2",
+            "05":   "gen2"
         }
+sensor_name = {
+    "malibu": ["alt", "bti", "emg", "imu", "mag", "ppg", "others"],
+    "bali": ["alt", "emg", "imu", "mag", "ppg", "others"],
+    "tycho": ["emg", "others"],
+    "ceres": ["emg", "others"],
+    "gen2": ["emg", "others"]
+}
 
 # data rate and data drops default settings
 # [<data rate>, <drop start>, <drop end>]
@@ -31,10 +38,10 @@ defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 
 
 bali_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
                         "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                        "emg": {"rate": 2000, "drop start": 200, "drop end": -1, "gain": 1},
-                        "imu": {"rate": 120, "drop start": 10, "drop end": 490, "gain": 1},
+                        "emg": {"rate": 2048, "drop start": 20, "drop end": -1, "gain": 1},
+                        "imu": {"rate": 30, "drop start": 20, "drop end": -1, "gain": 1},
                         "mag": {"rate": 50, "drop start": 0, "drop end": -1, "gain": 1},
-                        "ppg": {"rate": 25, "drop start": 125, "drop end": 500, "gain": 1},
+                        "ppg": {"rate": 32, "drop start": 160, "drop end": -1, "gain": 1},
                         "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
                         }
 
@@ -55,6 +62,14 @@ gen2_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "ga
                         "ppg": {"rate": 32, "drop start": 160, "drop end": -1, "gain": 1},
                         "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
                         }
+
+project_defaultSettings = {
+    "malibu":   defaultSettings,
+    "ceres":    ceres_defaultSettings,
+    "bali":     bali_defaultSettings,
+    "tycho":    bali_defaultSettings,
+    "gen2":     gen2_defaultSettings,
+}
 
 class FlowControl:
     def __init__(self, root, ui: Ui_MainWindow, **kwargs):
@@ -81,7 +96,8 @@ class FlowControl:
                                                  "data_drop_start": self.ui.dataDropStartEntry,
                                                  "data_drop_end": self.ui.dataDropEndEntry,
                                                  "gain": self.ui.gainEntry})
-        self.paramEntry.state_configure(_comb={"sensor_type": 0, "data_type": 0},
+        self.paramEntry.add_items({"project": project_name.keys()})
+        self.paramEntry.state_configure(_comb={"project": 0, "sensor_type": 0, "data_type": 0},
                                         _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0,
                                                 "gain": 0})
         self.ui.projectComb.currentIndexChanged.connect(self.on_project_type_changed)
@@ -206,7 +222,7 @@ class FlowControl:
             self.df_data = None
             self.dv_params.data_drop = [0, -1]
             self.toggle_parameters_chkb(False)
-            self.paramEntry.state_configure(_comb={"sensor_type": 1, "data_type": 0},
+            self.paramEntry.state_configure(_comb={"project": 1, "sensor_type": 0, "data_type": 0},
                                             _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
             self.refresh_data_channels(False)
         elif _file_path != self.file_path and self.data_type and self.sensor_type:
@@ -252,24 +268,14 @@ class FlowControl:
 
     def set_default_values(self, sensor):
         self.project = self.get_parameter_project()
-        if self.project in ["bali", "tycho"]:
-            def_settings = bali_defaultSettings
-        elif self.project == "ceres":
-            def_settings = ceres_defaultSettings
-        elif self.project == "malibu2":
-            def_settings = gen2_defaultSettings
+        if self.project in project_defaultSettings.keys():
+            def_settings = project_defaultSettings[self.project]
         else:
             def_settings = defaultSettings
         if not len(sensor) or sensor[:3].lower() not in def_settings:
             _sensor = "others"
         else:
             _sensor = sensor[:3].lower()
-            # self.logger.debug(f"sensor type is empty, do nothing!!")
-            # self.paramEntry.set(_entry={"data_rate": 1,
-            #                             "data_drop_start": 0,
-            #                             "data_drop_end": -1})
-            # self.highPassFilter.set_checked(False)
-            # return
         settings = def_settings[_sensor]
         self.paramEntry.set(_entry={"data_rate": settings["rate"],
                                     "data_drop_start": settings["drop start"],
@@ -279,17 +285,12 @@ class FlowControl:
         if sensor[:3].lower() == 'ppg':
             self.highPassFilter.set_checked(True)
             self.highPassFilter.set(comb={"type": 1}, edit={"order": 3, "freq": 0.5})
-            # self.highPassFilter.set_type(1)  # 0 -- blank, 1 -- lfilter, 2 -- filtfilt
-            # self.highPassFilter.set_order(3)
-            # self.highPassFilter.set_freq(0.5)
 
     def on_project_type_changed(self, index):
         self.logger.debug(f"project type, selected index: {index}")
-        val =  self.get_parameter_project()
-        # if val == "gen2":
-        #     self.paramEntry.set(_combIndex={'sensor_type': 2})  # force select EMG
-        #     # self.paramEntry.state_configure(_comb={"sensor_type": 0})
-
+        val = self.get_parameter_project()
+        self.paramEntry.add_items({"sensor_type": [_s.upper() for _s in sensor_name[val]]})
+        self.paramEntry.state_configure(_comb={"sensor_type": 1})
         self.rdp = RawDataParser(logger=self.logger, project=val)
 
     def on_sensor_type_changed(self, index):
@@ -324,13 +325,20 @@ class FlowControl:
             self.paramEntry.set(_combIndex={'data_type': -1}, )
         self.refresh_data_channels(ret)
 
+    #  from raw text to csv
     def convert_raw_data_to_csv(self) -> bool:
         file_list = self.get_file_paths()
         self.df_data = dict()
         self.file_path = list()
         for val in file_list:
+            _path = os.path.dirname(val)
+            _n = os.path.basename(val)
+            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+            _name = f"{_n}_tool_format_data_{_time_now}.csv"
+            save_path = os.path.join(_path, _name)
             _err, df_data = self.rdp.extract_sensor_data(_source_file=val, _sensor=self.sensor_type.lower(),
-                                                         _project=self.get_parameter_project())
+                                                         _project=self.get_parameter_project(),
+                                                         _target_file=save_path)
             if _err != ErrorCode.ERR_NO_ERROR:
                 _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
                 self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
@@ -338,25 +346,27 @@ class FlowControl:
                     continue
                 else:
                     return False
-            _path = os.path.dirname(val)
-            _n = os.path.basename(val)
-            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            _name = f"{_n}_tool_format_data_{_time_now}.csv"
-            df_data.to_csv(os.path.join(_path, _name), index=False)
             self.df_data.update({_name: df_data})
-            self.file_path.append(os.path.join(_path, _name))
+            self.file_path.append(save_path)
             self.logger.info(f"save raw data to csv file: {_name}")
         if len(self.file_path):
             return True
         else:
             return False
 
-    def convert_ceres_test_data(self):
+    # from csv to csv
+    def convert_test_data(self, _project: str, _sensor: str):
         file_list = self.get_file_paths()
         self.df_data = dict()
         self.file_path = list()
         for val in file_list:
-            _err, df_data = self.rdp.convert_ceres_test_data(_file=val)
+            _path = os.path.dirname(val)
+            _n = os.path.basename(val)
+            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+            _name = f"{_n}_tool_format_data_{_time_now}.csv"
+            save_path = os.path.join(_path, _name)
+            _err, df_data = self.rdp.convert_sensor_data(_source_file=val, _sensor=_sensor,
+                                                         _project=_project, _target_file=save_path)
             if _err != ErrorCode.ERR_NO_ERROR:
                 _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
                 self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
@@ -364,40 +374,8 @@ class FlowControl:
                     continue
                 else:
                     return False
-            _path = os.path.dirname(val)
-            _n = os.path.basename(val)
-            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            _name = f"{_n}_tool_format_data_{_time_now}.csv"
-            df_data.to_csv(os.path.join(_path, _name), index=False)
             self.df_data.update({_name: df_data})
-            self.file_path.append(os.path.join(_path, _name))
-            self.logger.info(f"save data to csv file: {_name}")
-        if len(self.file_path):
-            return True
-        else:
-            return False
-
-    def convert_bali_test_data(self):
-        file_list = self.get_file_paths()
-        self.df_data = dict()
-        self.file_path = list()
-        for val in file_list:
-            df_data = pd.read_csv(val, index_col=False)
-            df_data = (df_data.sub(4096)).div(4096)
-            # _err, df_data = self.rdp.convert_bali_test_data(_file=val)
-            # if _err != ErrorCode.ERR_NO_ERROR:
-            #     _answer = self.messagebox.query("Error", f"Data invalid, {_err}")
-            #     self.logger.error(f"Error during extract data from {val}, {_err}, {_answer}")
-            #     if _answer:
-            #         continue
-            #     else:
-            #         return False
-            _path = os.path.dirname(val)
-            _time_now = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            _name = f"{self.sensor_type.lower()}_tool_format_data_{_time_now}.csv"
-            df_data.to_csv(os.path.join(_path, _name), index=False)
-            self.df_data.update({_name: df_data})
-            self.file_path.append(os.path.join(_path, _name))
+            self.file_path.append(save_path)
             self.logger.info(f"save data to csv file: {_name}")
         if len(self.file_path):
             return True
@@ -407,9 +385,9 @@ class FlowControl:
     def get_df_data(self):
         try:
             if self.get_parameter_project() == 'ceres' and self.data_type.lower() == "tester data":
-                self.convert_ceres_test_data()
+                self.convert_test_data("ceres", "emg")
             # if self.get_parameter_project() == 'bali' and self.data_type.lower() == "tester data":
-            #     self.convert_bali_test_data()
+            #     self.convert_test_data("bali", "emg")
             else:
                 file_path = self.get_file_paths()
                 self.file_path = list()
@@ -518,15 +496,6 @@ class FlowControl:
 
     def do_visualize(self, show=True):
         try:
-            # if not show:
-            #     self.plot_name = file
-            # if self.data_type == "Summary Data":
-            #     _err_code = self.sdp.summary_data_visualize(data=self.df_data[file], sensor=self.sensor_type,
-            #                                                 channels=_channels, name=self.plot_name,
-            #                                                 yscale=filters["summYScale"],
-            #                                                 show=show, filename=file, project=self.project)
-            #     fig = self.sdp.fig
-            # else:
             _err_code = self.dv.visualize_data(self.dv_params)
             fig = self.dv.fig
             return _err_code, fig

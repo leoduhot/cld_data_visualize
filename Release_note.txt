@@ -1,3 +1,8 @@
+v0.5.311
+1. use bali for malibu2
+2. update default parameters
+3. fix encoding error in Windows when raw data file contains Chinese
+
 v0.5.301
 1. add supporting for malibu2 sensors
 2. restruct data_parser and data_visualization utility

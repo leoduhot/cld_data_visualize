@@ -163,6 +163,16 @@ class ParameterEntry:
                 self.logger.error(f"combobox {_entry} is not found")
                 return None
 
+    def add_items(self, _comb: dict = None, clr: bool = True):
+        if _comb and self.combDict:
+            for key in _comb:
+                if key in self.combDict:
+                    if clr:  # clear all exist items before adding
+                        self.combDict[key].clear()
+                    self.combDict[key].addItems(_comb[key])
+                else:
+                    self.logger.error(f"comb {key} is not found")
+
     def state_configure(self, _comb: dict = None, _entry: dict = None):
         if _entry and self.entryDict:
             for key in _entry:

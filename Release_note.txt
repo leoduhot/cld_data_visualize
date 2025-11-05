@@ -1,3 +1,7 @@
+v0.5.312
+1. update visualize functions for malibu2
+2. add manual search peak and emg signal convert options
+
 v0.5.311
 1. use bali for malibu2
 2. update default parameters

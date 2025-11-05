@@ -26,7 +26,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(898, 649)
+        MainWindow.resize(856, 686)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
@@ -64,7 +64,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 894, 643))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 852, 698))
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy2.setHorizontalStretch(1)
         sizePolicy2.setVerticalStretch(1)
@@ -132,36 +132,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.keepFrm)
 
-        self.plotNameFrm = QFrame(self.scrollAreaWidgetContents)
-        self.plotNameFrm.setObjectName(u"plotNameFrm")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.plotNameFrm.sizePolicy().hasHeightForWidth())
-        self.plotNameFrm.setSizePolicy(sizePolicy4)
-        self.plotNameFrm.setFrameShape(QFrame.Shape.StyledPanel)
-        self.plotNameFrm.setFrameShadow(QFrame.Shadow.Sunken)
-        self.horizontalLayout = QHBoxLayout(self.plotNameFrm)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(12, 6, 12, 6)
-        self.plotNameLab = QLabel(self.plotNameFrm)
-        self.plotNameLab.setObjectName(u"plotNameLab")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        sizePolicy5.setHorizontalStretch(0)
-        sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.plotNameLab.sizePolicy().hasHeightForWidth())
-        self.plotNameLab.setSizePolicy(sizePolicy5)
-
-        self.horizontalLayout.addWidget(self.plotNameLab)
-
-        self.plotNameEntry = QLineEdit(self.plotNameFrm)
-        self.plotNameEntry.setObjectName(u"plotNameEntry")
-
-        self.horizontalLayout.addWidget(self.plotNameEntry)
-
-
-        self.verticalLayout_3.addWidget(self.plotNameFrm)
-
         self.paramFrm = QFrame(self.scrollAreaWidgetContents)
         self.paramFrm.setObjectName(u"paramFrm")
         self.paramFrm.setEnabled(True)
@@ -169,15 +139,54 @@ class Ui_MainWindow(object):
         self.paramFrm.setSizePolicy(sizePolicy3)
         self.paramFrm.setFrameShape(QFrame.Shape.StyledPanel)
         self.paramFrm.setFrameShadow(QFrame.Shadow.Sunken)
-        self.gridLayout = QGridLayout(self.paramFrm)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.gridLayout.setContentsMargins(-1, 6, -1, 6)
-        self.projectLab = QLabel(self.paramFrm)
+        self.verticalLayout_5 = QVBoxLayout(self.paramFrm)
+#ifndef Q_OS_MAC
+        self.verticalLayout_5.setSpacing(-1)
+#endif
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.verticalLayout_5.setContentsMargins(-1, 6, -1, 6)
+        self.frame_2 = QFrame(self.paramFrm)
+        self.frame_2.setObjectName(u"frame_2")
+        self.frame_2.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame_2.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_8 = QGridLayout(self.frame_2)
+        self.gridLayout_8.setObjectName(u"gridLayout_8")
+        self.gridLayout_8.setContentsMargins(0, 0, 0, 0)
+        self.projectLab = QLabel(self.frame_2)
         self.projectLab.setObjectName(u"projectLab")
 
-        self.gridLayout.addWidget(self.projectLab, 1, 0, 1, 1)
+        self.gridLayout_8.addWidget(self.projectLab, 0, 0, 1, 1)
 
-        self.dataTypeComb = QComboBox(self.paramFrm)
+        self.projectComb = QComboBox(self.frame_2)
+        self.projectComb.setObjectName(u"projectComb")
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy4.setHorizontalStretch(1)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.projectComb.sizePolicy().hasHeightForWidth())
+        self.projectComb.setSizePolicy(sizePolicy4)
+        self.projectComb.setMinimumSize(QSize(40, 0))
+
+        self.gridLayout_8.addWidget(self.projectComb, 0, 1, 1, 1)
+
+        self.sensorTypeLab = QLabel(self.frame_2)
+        self.sensorTypeLab.setObjectName(u"sensorTypeLab")
+
+        self.gridLayout_8.addWidget(self.sensorTypeLab, 0, 2, 1, 1)
+
+        self.sensorTypeComb = QComboBox(self.frame_2)
+        self.sensorTypeComb.setObjectName(u"sensorTypeComb")
+        sizePolicy4.setHeightForWidth(self.sensorTypeComb.sizePolicy().hasHeightForWidth())
+        self.sensorTypeComb.setSizePolicy(sizePolicy4)
+        self.sensorTypeComb.setMinimumSize(QSize(80, 0))
+
+        self.gridLayout_8.addWidget(self.sensorTypeComb, 0, 3, 1, 1)
+
+        self.dataTypeLab = QLabel(self.frame_2)
+        self.dataTypeLab.setObjectName(u"dataTypeLab")
+
+        self.gridLayout_8.addWidget(self.dataTypeLab, 0, 4, 1, 1)
+
+        self.dataTypeComb = QComboBox(self.frame_2)
         self.dataTypeComb.addItem("")
         self.dataTypeComb.addItem("")
         self.dataTypeComb.addItem("")
@@ -186,84 +195,144 @@ class Ui_MainWindow(object):
         self.dataTypeComb.setSizePolicy(sizePolicy3)
         self.dataTypeComb.setMinimumSize(QSize(140, 0))
 
-        self.gridLayout.addWidget(self.dataTypeComb, 1, 5, 1, 1)
+        self.gridLayout_8.addWidget(self.dataTypeComb, 0, 5, 1, 1)
 
-        self.dataDropStartEntry = QLineEdit(self.paramFrm)
-        self.dataDropStartEntry.setObjectName(u"dataDropStartEntry")
-        sizePolicy3.setHeightForWidth(self.dataDropStartEntry.sizePolicy().hasHeightForWidth())
-        self.dataDropStartEntry.setSizePolicy(sizePolicy3)
-        self.dataDropStartEntry.setMinimumSize(QSize(40, 0))
+        self.convertTypeLab = QLabel(self.frame_2)
+        self.convertTypeLab.setObjectName(u"convertTypeLab")
 
-        self.gridLayout.addWidget(self.dataDropStartEntry, 1, 9, 1, 1)
+        self.gridLayout_8.addWidget(self.convertTypeLab, 0, 6, 1, 1)
 
-        self.projectComb = QComboBox(self.paramFrm)
-        self.projectComb.setObjectName(u"projectComb")
-        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy6.setHorizontalStretch(1)
-        sizePolicy6.setVerticalStretch(0)
-        sizePolicy6.setHeightForWidth(self.projectComb.sizePolicy().hasHeightForWidth())
-        self.projectComb.setSizePolicy(sizePolicy6)
-        self.projectComb.setMinimumSize(QSize(40, 0))
+        self.convertTypeComb = QComboBox(self.frame_2)
+        self.convertTypeComb.addItem("")
+        self.convertTypeComb.addItem("")
+        self.convertTypeComb.setObjectName(u"convertTypeComb")
 
-        self.gridLayout.addWidget(self.projectComb, 1, 1, 1, 1)
+        self.gridLayout_8.addWidget(self.convertTypeComb, 0, 7, 1, 1)
 
-        self.dataRateLab = QLabel(self.paramFrm)
-        self.dataRateLab.setObjectName(u"dataRateLab")
 
-        self.gridLayout.addWidget(self.dataRateLab, 1, 6, 1, 1)
+        self.verticalLayout_5.addWidget(self.frame_2)
 
-        self.sensorTypeLab = QLabel(self.paramFrm)
-        self.sensorTypeLab.setObjectName(u"sensorTypeLab")
-
-        self.gridLayout.addWidget(self.sensorTypeLab, 1, 2, 1, 1)
-
-        self.sensorTypeComb = QComboBox(self.paramFrm)
-        self.sensorTypeComb.setObjectName(u"sensorTypeComb")
-        sizePolicy6.setHeightForWidth(self.sensorTypeComb.sizePolicy().hasHeightForWidth())
-        self.sensorTypeComb.setSizePolicy(sizePolicy6)
-        self.sensorTypeComb.setMinimumSize(QSize(80, 0))
-
-        self.gridLayout.addWidget(self.sensorTypeComb, 1, 3, 1, 1)
-
-        self.dataRateEntry = QLineEdit(self.paramFrm)
-        self.dataRateEntry.setObjectName(u"dataRateEntry")
-        sizePolicy3.setHeightForWidth(self.dataRateEntry.sizePolicy().hasHeightForWidth())
-        self.dataRateEntry.setSizePolicy(sizePolicy3)
-        self.dataRateEntry.setMinimumSize(QSize(40, 0))
-
-        self.gridLayout.addWidget(self.dataRateEntry, 1, 7, 1, 1)
-
-        self.gainLab = QLabel(self.paramFrm)
-        self.gainLab.setObjectName(u"gainLab")
-
-        self.gridLayout.addWidget(self.gainLab, 1, 11, 1, 1)
-
-        self.dataTypeLab = QLabel(self.paramFrm)
-        self.dataTypeLab.setObjectName(u"dataTypeLab")
-
-        self.gridLayout.addWidget(self.dataTypeLab, 1, 4, 1, 1)
-
-        self.dataDropEndEntry = QLineEdit(self.paramFrm)
+        self.plotNameFrm = QFrame(self.paramFrm)
+        self.plotNameFrm.setObjectName(u"plotNameFrm")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.plotNameFrm.sizePolicy().hasHeightForWidth())
+        self.plotNameFrm.setSizePolicy(sizePolicy5)
+        self.plotNameFrm.setFrameShape(QFrame.Shape.NoFrame)
+        self.plotNameFrm.setFrameShadow(QFrame.Shadow.Sunken)
+        self.gridLayout = QGridLayout(self.plotNameFrm)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.dataDropEndEntry = QLineEdit(self.plotNameFrm)
         self.dataDropEndEntry.setObjectName(u"dataDropEndEntry")
         sizePolicy3.setHeightForWidth(self.dataDropEndEntry.sizePolicy().hasHeightForWidth())
         self.dataDropEndEntry.setSizePolicy(sizePolicy3)
         self.dataDropEndEntry.setMinimumSize(QSize(40, 0))
 
-        self.gridLayout.addWidget(self.dataDropEndEntry, 1, 10, 1, 1)
+        self.gridLayout.addWidget(self.dataDropEndEntry, 0, 4, 1, 1)
 
-        self.dataDropsLab = QLabel(self.paramFrm)
+        self.plotNameLab = QLabel(self.plotNameFrm)
+        self.plotNameLab.setObjectName(u"plotNameLab")
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy6.setHorizontalStretch(0)
+        sizePolicy6.setVerticalStretch(0)
+        sizePolicy6.setHeightForWidth(self.plotNameLab.sizePolicy().hasHeightForWidth())
+        self.plotNameLab.setSizePolicy(sizePolicy6)
+
+        self.gridLayout.addWidget(self.plotNameLab, 0, 10, 1, 1)
+
+        self.dataRateLab = QLabel(self.plotNameFrm)
+        self.dataRateLab.setObjectName(u"dataRateLab")
+
+        self.gridLayout.addWidget(self.dataRateLab, 0, 0, 1, 1)
+
+        self.dataRateEntry = QLineEdit(self.plotNameFrm)
+        self.dataRateEntry.setObjectName(u"dataRateEntry")
+        sizePolicy3.setHeightForWidth(self.dataRateEntry.sizePolicy().hasHeightForWidth())
+        self.dataRateEntry.setSizePolicy(sizePolicy3)
+        self.dataRateEntry.setMinimumSize(QSize(40, 0))
+
+        self.gridLayout.addWidget(self.dataRateEntry, 0, 1, 1, 1)
+
+        self.dataDropsLab = QLabel(self.plotNameFrm)
         self.dataDropsLab.setObjectName(u"dataDropsLab")
 
-        self.gridLayout.addWidget(self.dataDropsLab, 1, 8, 1, 1)
+        self.gridLayout.addWidget(self.dataDropsLab, 0, 2, 1, 1)
 
-        self.gainEntry = QLineEdit(self.paramFrm)
+        self.gainEntry = QLineEdit(self.plotNameFrm)
         self.gainEntry.setObjectName(u"gainEntry")
         self.gainEntry.setMinimumSize(QSize(40, 0))
 
-        self.gridLayout.addWidget(self.gainEntry, 1, 12, 1, 1)
+        self.gridLayout.addWidget(self.gainEntry, 0, 9, 1, 1)
+
+        self.plotNameEntry = QLineEdit(self.plotNameFrm)
+        self.plotNameEntry.setObjectName(u"plotNameEntry")
+
+        self.gridLayout.addWidget(self.plotNameEntry, 0, 11, 1, 1)
+
+        self.gainLab = QLabel(self.plotNameFrm)
+        self.gainLab.setObjectName(u"gainLab")
+
+        self.gridLayout.addWidget(self.gainLab, 0, 6, 1, 1)
+
+        self.dataDropStartEntry = QLineEdit(self.plotNameFrm)
+        self.dataDropStartEntry.setObjectName(u"dataDropStartEntry")
+        sizePolicy3.setHeightForWidth(self.dataDropStartEntry.sizePolicy().hasHeightForWidth())
+        self.dataDropStartEntry.setSizePolicy(sizePolicy3)
+        self.dataDropStartEntry.setMinimumSize(QSize(40, 0))
+
+        self.gridLayout.addWidget(self.dataDropStartEntry, 0, 3, 1, 1)
+
+
+        self.verticalLayout_5.addWidget(self.plotNameFrm)
 
 
         self.verticalLayout_3.addWidget(self.paramFrm)
+
+        self.frame_3 = QFrame(self.scrollAreaWidgetContents)
+        self.frame_3.setObjectName(u"frame_3")
+        self.frame_3.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_3.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_9 = QGridLayout(self.frame_3)
+        self.gridLayout_9.setObjectName(u"gridLayout_9")
+        self.gridLayout_9.setContentsMargins(-1, 6, -1, 6)
+        self.mspFreqEntry = QLineEdit(self.frame_3)
+        self.mspFreqEntry.setObjectName(u"mspFreqEntry")
+
+        self.gridLayout_9.addWidget(self.mspFreqEntry, 0, 3, 1, 1)
+
+        self.mspFreqLab = QLabel(self.frame_3)
+        self.mspFreqLab.setObjectName(u"mspFreqLab")
+
+        self.gridLayout_9.addWidget(self.mspFreqLab, 0, 2, 1, 1)
+
+        self.mspChkb = QCheckBox(self.frame_3)
+        self.mspChkb.setObjectName(u"mspChkb")
+
+        self.gridLayout_9.addWidget(self.mspChkb, 0, 0, 1, 1)
+
+        self.frame_4 = QFrame(self.frame_3)
+        self.frame_4.setObjectName(u"frame_4")
+        self.frame_4.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame_4.setFrameShadow(QFrame.Shadow.Raised)
+
+        self.gridLayout_9.addWidget(self.frame_4, 0, 1, 1, 1)
+
+        self.frame_5 = QFrame(self.frame_3)
+        self.frame_5.setObjectName(u"frame_5")
+        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy7.setHorizontalStretch(0)
+        sizePolicy7.setVerticalStretch(0)
+        sizePolicy7.setHeightForWidth(self.frame_5.sizePolicy().hasHeightForWidth())
+        self.frame_5.setSizePolicy(sizePolicy7)
+        self.frame_5.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame_5.setFrameShadow(QFrame.Shadow.Raised)
+
+        self.gridLayout_9.addWidget(self.frame_5, 0, 4, 1, 1)
+
+
+        self.verticalLayout_3.addWidget(self.frame_3)
 
         self.filterFrm = QFrame(self.scrollAreaWidgetContents)
         self.filterFrm.setObjectName(u"filterFrm")
@@ -274,26 +343,23 @@ class Ui_MainWindow(object):
         self.gridLayout_2 = QGridLayout(self.filterFrm)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.gridLayout_2.setContentsMargins(-1, 6, -1, 6)
-        self.hpfOrdLab = QLabel(self.filterFrm)
-        self.hpfOrdLab.setObjectName(u"hpfOrdLab")
-
-        self.gridLayout_2.addWidget(self.hpfOrdLab, 0, 4, 1, 1)
-
         self.lpfOrdLab = QLabel(self.filterFrm)
         self.lpfOrdLab.setObjectName(u"lpfOrdLab")
 
         self.gridLayout_2.addWidget(self.lpfOrdLab, 1, 4, 1, 1)
 
-        self.hpfTypeComb = QComboBox(self.filterFrm)
-        self.hpfTypeComb.addItem("")
-        self.hpfTypeComb.addItem("")
-        self.hpfTypeComb.addItem("")
-        self.hpfTypeComb.setObjectName(u"hpfTypeComb")
-        sizePolicy6.setHeightForWidth(self.hpfTypeComb.sizePolicy().hasHeightForWidth())
-        self.hpfTypeComb.setSizePolicy(sizePolicy6)
-        self.hpfTypeComb.setMinimumSize(QSize(80, 0))
+        self.lpfFreqEntry = QLineEdit(self.filterFrm)
+        self.lpfFreqEntry.setObjectName(u"lpfFreqEntry")
+        sizePolicy3.setHeightForWidth(self.lpfFreqEntry.sizePolicy().hasHeightForWidth())
+        self.lpfFreqEntry.setSizePolicy(sizePolicy3)
+        self.lpfFreqEntry.setAcceptDrops(False)
 
-        self.gridLayout_2.addWidget(self.hpfTypeComb, 0, 3, 1, 1)
+        self.gridLayout_2.addWidget(self.lpfFreqEntry, 1, 7, 1, 1)
+
+        self.pfPadLab1 = QLabel(self.filterFrm)
+        self.pfPadLab1.setObjectName(u"pfPadLab1")
+
+        self.gridLayout_2.addWidget(self.pfPadLab1, 0, 1, 1, 1)
 
         self.hpfFreqEntry = QLineEdit(self.filterFrm)
         self.hpfFreqEntry.setObjectName(u"hpfFreqEntry")
@@ -303,10 +369,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addWidget(self.hpfFreqEntry, 0, 7, 1, 1)
 
-        self.hpfFreqLab = QLabel(self.filterFrm)
-        self.hpfFreqLab.setObjectName(u"hpfFreqLab")
+        self.hpfOrdLab = QLabel(self.filterFrm)
+        self.hpfOrdLab.setObjectName(u"hpfOrdLab")
 
-        self.gridLayout_2.addWidget(self.hpfFreqLab, 0, 6, 1, 1)
+        self.gridLayout_2.addWidget(self.hpfOrdLab, 0, 4, 1, 1)
 
         self.lpfChkb = QCheckBox(self.filterFrm)
         self.lpfChkb.setObjectName(u"lpfChkb")
@@ -322,47 +388,15 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addWidget(self.hpfOrdEntry, 0, 5, 1, 1)
 
-        self.lpfOrdEntry = QLineEdit(self.filterFrm)
-        self.lpfOrdEntry.setObjectName(u"lpfOrdEntry")
-        sizePolicy3.setHeightForWidth(self.lpfOrdEntry.sizePolicy().hasHeightForWidth())
-        self.lpfOrdEntry.setSizePolicy(sizePolicy3)
-        self.lpfOrdEntry.setAcceptDrops(False)
-
-        self.gridLayout_2.addWidget(self.lpfOrdEntry, 1, 5, 1, 1)
-
-        self.lpfTypeLab = QLabel(self.filterFrm)
-        self.lpfTypeLab.setObjectName(u"lpfTypeLab")
-
-        self.gridLayout_2.addWidget(self.lpfTypeLab, 1, 2, 1, 1)
-
         self.lpfFreqLab = QLabel(self.filterFrm)
         self.lpfFreqLab.setObjectName(u"lpfFreqLab")
 
         self.gridLayout_2.addWidget(self.lpfFreqLab, 1, 6, 1, 1)
 
-        self.lpfFreqEntry = QLineEdit(self.filterFrm)
-        self.lpfFreqEntry.setObjectName(u"lpfFreqEntry")
-        sizePolicy3.setHeightForWidth(self.lpfFreqEntry.sizePolicy().hasHeightForWidth())
-        self.lpfFreqEntry.setSizePolicy(sizePolicy3)
-        self.lpfFreqEntry.setAcceptDrops(False)
+        self.hpfFreqLab = QLabel(self.filterFrm)
+        self.hpfFreqLab.setObjectName(u"hpfFreqLab")
 
-        self.gridLayout_2.addWidget(self.lpfFreqEntry, 1, 7, 1, 1)
-
-        self.hpfTypeLab = QLabel(self.filterFrm)
-        self.hpfTypeLab.setObjectName(u"hpfTypeLab")
-
-        self.gridLayout_2.addWidget(self.hpfTypeLab, 0, 2, 1, 1)
-
-        self.lpfTypeComb = QComboBox(self.filterFrm)
-        self.lpfTypeComb.addItem("")
-        self.lpfTypeComb.addItem("")
-        self.lpfTypeComb.addItem("")
-        self.lpfTypeComb.setObjectName(u"lpfTypeComb")
-        sizePolicy6.setHeightForWidth(self.lpfTypeComb.sizePolicy().hasHeightForWidth())
-        self.lpfTypeComb.setSizePolicy(sizePolicy6)
-        self.lpfTypeComb.setMinimumSize(QSize(80, 0))
-
-        self.gridLayout_2.addWidget(self.lpfTypeComb, 1, 3, 1, 1)
+        self.gridLayout_2.addWidget(self.hpfFreqLab, 0, 6, 1, 1)
 
         self.hpfChkb = QCheckBox(self.filterFrm)
         self.hpfChkb.setObjectName(u"hpfChkb")
@@ -374,10 +408,45 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addWidget(self.pfPadLad2, 1, 1, 1, 1)
 
-        self.pfPadLab1 = QLabel(self.filterFrm)
-        self.pfPadLab1.setObjectName(u"pfPadLab1")
+        self.lpfTypeComb = QComboBox(self.filterFrm)
+        self.lpfTypeComb.addItem("")
+        self.lpfTypeComb.addItem("")
+        self.lpfTypeComb.addItem("")
+        self.lpfTypeComb.setObjectName(u"lpfTypeComb")
+        sizePolicy4.setHeightForWidth(self.lpfTypeComb.sizePolicy().hasHeightForWidth())
+        self.lpfTypeComb.setSizePolicy(sizePolicy4)
+        self.lpfTypeComb.setMinimumSize(QSize(80, 0))
 
-        self.gridLayout_2.addWidget(self.pfPadLab1, 0, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.lpfTypeComb, 1, 3, 1, 1)
+
+        self.lpfOrdEntry = QLineEdit(self.filterFrm)
+        self.lpfOrdEntry.setObjectName(u"lpfOrdEntry")
+        sizePolicy3.setHeightForWidth(self.lpfOrdEntry.sizePolicy().hasHeightForWidth())
+        self.lpfOrdEntry.setSizePolicy(sizePolicy3)
+        self.lpfOrdEntry.setAcceptDrops(False)
+
+        self.gridLayout_2.addWidget(self.lpfOrdEntry, 1, 5, 1, 1)
+
+        self.hpfTypeLab = QLabel(self.filterFrm)
+        self.hpfTypeLab.setObjectName(u"hpfTypeLab")
+
+        self.gridLayout_2.addWidget(self.hpfTypeLab, 0, 2, 1, 1)
+
+        self.lpfTypeLab = QLabel(self.filterFrm)
+        self.lpfTypeLab.setObjectName(u"lpfTypeLab")
+
+        self.gridLayout_2.addWidget(self.lpfTypeLab, 1, 2, 1, 1)
+
+        self.hpfTypeComb = QComboBox(self.filterFrm)
+        self.hpfTypeComb.addItem("")
+        self.hpfTypeComb.addItem("")
+        self.hpfTypeComb.addItem("")
+        self.hpfTypeComb.setObjectName(u"hpfTypeComb")
+        sizePolicy4.setHeightForWidth(self.hpfTypeComb.sizePolicy().hasHeightForWidth())
+        self.hpfTypeComb.setSizePolicy(sizePolicy4)
+        self.hpfTypeComb.setMinimumSize(QSize(80, 0))
+
+        self.gridLayout_2.addWidget(self.hpfTypeComb, 0, 3, 1, 1)
 
 
         self.verticalLayout_3.addWidget(self.filterFrm)
@@ -504,11 +573,11 @@ class Ui_MainWindow(object):
 
         self.scaleFrm = QFrame(self.scrollAreaWidgetContents)
         self.scaleFrm.setObjectName(u"scaleFrm")
-        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy7.setHorizontalStretch(0)
-        sizePolicy7.setVerticalStretch(0)
-        sizePolicy7.setHeightForWidth(self.scaleFrm.sizePolicy().hasHeightForWidth())
-        self.scaleFrm.setSizePolicy(sizePolicy7)
+        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy8.setHorizontalStretch(0)
+        sizePolicy8.setVerticalStretch(0)
+        sizePolicy8.setHeightForWidth(self.scaleFrm.sizePolicy().hasHeightForWidth())
+        self.scaleFrm.setSizePolicy(sizePolicy8)
         self.scaleFrm.setFrameShape(QFrame.Shape.StyledPanel)
         self.scaleFrm.setFrameShadow(QFrame.Shadow.Sunken)
         self.gridLayout_3 = QGridLayout(self.scaleFrm)
@@ -621,15 +690,10 @@ class Ui_MainWindow(object):
         self.gridLayout_7 = QGridLayout(self.frame)
         self.gridLayout_7.setObjectName(u"gridLayout_7")
         self.gridLayout_7.setContentsMargins(-1, 6, -1, 6)
-        self.itemFilterLabel = QLabel(self.frame)
-        self.itemFilterLabel.setObjectName(u"itemFilterLabel")
+        self.refreshDataBtn = QPushButton(self.frame)
+        self.refreshDataBtn.setObjectName(u"refreshDataBtn")
 
-        self.gridLayout_7.addWidget(self.itemFilterLabel, 0, 1, 1, 1)
-
-        self.stationFilterLab = QLabel(self.frame)
-        self.stationFilterLab.setObjectName(u"stationFilterLab")
-
-        self.gridLayout_7.addWidget(self.stationFilterLab, 0, 5, 1, 1)
+        self.gridLayout_7.addWidget(self.refreshDataBtn, 0, 0, 1, 1)
 
         self.itemFilterEntry = QLineEdit(self.frame)
         self.itemFilterEntry.setObjectName(u"itemFilterEntry")
@@ -646,26 +710,31 @@ class Ui_MainWindow(object):
 
         self.gridLayout_7.addWidget(self.snFilterEntry, 0, 4, 1, 1)
 
+        self.itemFilterLabel = QLabel(self.frame)
+        self.itemFilterLabel.setObjectName(u"itemFilterLabel")
+
+        self.gridLayout_7.addWidget(self.itemFilterLabel, 0, 1, 1, 1)
+
+        self.stationFilterLab = QLabel(self.frame)
+        self.stationFilterLab.setObjectName(u"stationFilterLab")
+
+        self.gridLayout_7.addWidget(self.stationFilterLab, 0, 5, 1, 1)
+
         self.snFilterLab = QLabel(self.frame)
         self.snFilterLab.setObjectName(u"snFilterLab")
 
         self.gridLayout_7.addWidget(self.snFilterLab, 0, 3, 1, 1)
-
-        self.refreshDataBtn = QPushButton(self.frame)
-        self.refreshDataBtn.setObjectName(u"refreshDataBtn")
-
-        self.gridLayout_7.addWidget(self.refreshDataBtn, 0, 0, 1, 1)
 
 
         self.verticalLayout_3.addWidget(self.frame)
 
         self.testItemFrm = QFrame(self.scrollAreaWidgetContents)
         self.testItemFrm.setObjectName(u"testItemFrm")
-        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        sizePolicy8.setHorizontalStretch(1)
-        sizePolicy8.setVerticalStretch(0)
-        sizePolicy8.setHeightForWidth(self.testItemFrm.sizePolicy().hasHeightForWidth())
-        self.testItemFrm.setSizePolicy(sizePolicy8)
+        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy9.setHorizontalStretch(1)
+        sizePolicy9.setVerticalStretch(0)
+        sizePolicy9.setHeightForWidth(self.testItemFrm.sizePolicy().hasHeightForWidth())
+        self.testItemFrm.setSizePolicy(sizePolicy9)
         self.testItemFrm.setFrameShape(QFrame.Shape.StyledPanel)
         self.testItemFrm.setFrameShadow(QFrame.Shadow.Raised)
 
@@ -673,8 +742,8 @@ class Ui_MainWindow(object):
 
         self.refreshFrm = QFrame(self.scrollAreaWidgetContents)
         self.refreshFrm.setObjectName(u"refreshFrm")
-        sizePolicy5.setHeightForWidth(self.refreshFrm.sizePolicy().hasHeightForWidth())
-        self.refreshFrm.setSizePolicy(sizePolicy5)
+        sizePolicy6.setHeightForWidth(self.refreshFrm.sizePolicy().hasHeightForWidth())
+        self.refreshFrm.setSizePolicy(sizePolicy6)
         self.refreshFrm.setFrameShape(QFrame.Shape.NoFrame)
         self.refreshFrm.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_5 = QGridLayout(self.refreshFrm)
@@ -685,8 +754,8 @@ class Ui_MainWindow(object):
 
         self.channelFrm = QFrame(self.scrollAreaWidgetContents)
         self.channelFrm.setObjectName(u"channelFrm")
-        sizePolicy8.setHeightForWidth(self.channelFrm.sizePolicy().hasHeightForWidth())
-        self.channelFrm.setSizePolicy(sizePolicy8)
+        sizePolicy9.setHeightForWidth(self.channelFrm.sizePolicy().hasHeightForWidth())
+        self.channelFrm.setSizePolicy(sizePolicy9)
         self.channelFrm.setFrameShape(QFrame.Shape.StyledPanel)
         self.channelFrm.setFrameShadow(QFrame.Shadow.Raised)
 
@@ -694,8 +763,8 @@ class Ui_MainWindow(object):
 
         self.goBtnFrm = QFrame(self.scrollAreaWidgetContents)
         self.goBtnFrm.setObjectName(u"goBtnFrm")
-        sizePolicy4.setHeightForWidth(self.goBtnFrm.sizePolicy().hasHeightForWidth())
-        self.goBtnFrm.setSizePolicy(sizePolicy4)
+        sizePolicy5.setHeightForWidth(self.goBtnFrm.sizePolicy().hasHeightForWidth())
+        self.goBtnFrm.setSizePolicy(sizePolicy5)
         self.goBtnFrm.setFrameShape(QFrame.Shape.NoFrame)
         self.goBtnFrm.setFrameShadow(QFrame.Shadow.Raised)
         self.verticalLayout_2 = QVBoxLayout(self.goBtnFrm)
@@ -703,8 +772,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setContentsMargins(0, 0, 0, -1)
         self.goBtn = QPushButton(self.goBtnFrm)
         self.goBtn.setObjectName(u"goBtn")
-        sizePolicy5.setHeightForWidth(self.goBtn.sizePolicy().hasHeightForWidth())
-        self.goBtn.setSizePolicy(sizePolicy5)
+        sizePolicy6.setHeightForWidth(self.goBtn.sizePolicy().hasHeightForWidth())
+        self.goBtn.setSizePolicy(sizePolicy6)
 
         self.verticalLayout_2.addWidget(self.goBtn, 0, Qt.AlignmentFlag.AlignVCenter)
 
@@ -714,8 +783,8 @@ class Ui_MainWindow(object):
         self.contactFrm = QFrame(self.scrollAreaWidgetContents)
         self.contactFrm.setObjectName(u"contactFrm")
         self.contactFrm.setEnabled(False)
-        sizePolicy5.setHeightForWidth(self.contactFrm.sizePolicy().hasHeightForWidth())
-        self.contactFrm.setSizePolicy(sizePolicy5)
+        sizePolicy6.setHeightForWidth(self.contactFrm.sizePolicy().hasHeightForWidth())
+        self.contactFrm.setSizePolicy(sizePolicy6)
         self.contactFrm.setFrameShape(QFrame.Shape.NoFrame)
         self.contactFrm.setFrameShadow(QFrame.Shadow.Raised)
         self.verticalLayout_4 = QVBoxLayout(self.contactFrm)
@@ -736,9 +805,9 @@ class Ui_MainWindow(object):
         self.goBtnFrm.raise_()
         self.filterfFm2.raise_()
         self.contactFrm.raise_()
-        self.plotNameFrm.raise_()
         self.frame.raise_()
         self.testItemFrm.raise_()
+        self.frame_3.raise_()
 
         self.verticalLayout.addWidget(self.scrollArea)
 
@@ -765,52 +834,49 @@ class Ui_MainWindow(object):
         self.keepParamCkb.setToolTip(QCoreApplication.translate("MainWindow", u"Click me to keep parameters when change data file", None))
 #endif // QT_CONFIG(tooltip)
         self.keepParamCkb.setText(QCoreApplication.translate("MainWindow", u"Keep Parameters", None))
-#if QT_CONFIG(tooltip)
-        self.plotNameLab.setToolTip(QCoreApplication.translate("MainWindow", u"Specify a string used as plot image name, default use sensor tpye", None))
-#endif // QT_CONFIG(tooltip)
-        self.plotNameLab.setText(QCoreApplication.translate("MainWindow", u"Plot Name", None))
-#if QT_CONFIG(tooltip)
-        self.plotNameEntry.setToolTip(QCoreApplication.translate("MainWindow", u"Specify a string used as plot image name, default use sensor tpye", None))
-#endif // QT_CONFIG(tooltip)
         self.projectLab.setText(QCoreApplication.translate("MainWindow", u"Project", None))
+        self.sensorTypeLab.setText(QCoreApplication.translate("MainWindow", u"Sensor Type", None))
+        self.dataTypeLab.setText(QCoreApplication.translate("MainWindow", u"Data Type", None))
         self.dataTypeComb.setItemText(0, QCoreApplication.translate("MainWindow", u"Raw Data", None))
         self.dataTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"Tester Data", None))
         self.dataTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"Summary Data", None))
 
-#if QT_CONFIG(tooltip)
-        self.dataDropStartEntry.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>start number of samples</p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.dataRateLab.setText(QCoreApplication.translate("MainWindow", u"Data Rate", None))
-        self.sensorTypeLab.setText(QCoreApplication.translate("MainWindow", u"Sensor Type", None))
-        self.gainLab.setText(QCoreApplication.translate("MainWindow", u"Gain", None))
-        self.dataTypeLab.setText(QCoreApplication.translate("MainWindow", u"Data Type", None))
+        self.convertTypeLab.setText(QCoreApplication.translate("MainWindow", u"Sig convert type", None))
+        self.convertTypeComb.setItemText(0, QCoreApplication.translate("MainWindow", u"FFT", None))
+        self.convertTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"PSD", None))
+
 #if QT_CONFIG(tooltip)
         self.dataDropEndEntry.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>end number of samples, -1 for the end of data</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(tooltip)
+        self.plotNameLab.setToolTip(QCoreApplication.translate("MainWindow", u"Specify a string used as plot image name, default use sensor tpye", None))
+#endif // QT_CONFIG(tooltip)
+        self.plotNameLab.setText(QCoreApplication.translate("MainWindow", u"Plot Name", None))
+        self.dataRateLab.setText(QCoreApplication.translate("MainWindow", u"Data Rate", None))
+#if QT_CONFIG(tooltip)
         self.dataDropsLab.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>specify the data to drop, e.g.: start 2, end 100, mean only visulize data from line 2 to line 100</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.dataDropsLab.setText(QCoreApplication.translate("MainWindow", u"Data Drops", None))
-        self.hpfOrdLab.setText(QCoreApplication.translate("MainWindow", u"Order", None))
+#if QT_CONFIG(tooltip)
+        self.plotNameEntry.setToolTip(QCoreApplication.translate("MainWindow", u"Specify a string used as plot image name, default use sensor tpye", None))
+#endif // QT_CONFIG(tooltip)
+        self.gainLab.setText(QCoreApplication.translate("MainWindow", u"Gain", None))
+#if QT_CONFIG(tooltip)
+        self.dataDropStartEntry.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>start number of samples</p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.mspFreqLab.setText(QCoreApplication.translate("MainWindow", u"Freq", None))
+        self.mspChkb.setText(QCoreApplication.translate("MainWindow", u"Manual search peak", None))
         self.lpfOrdLab.setText(QCoreApplication.translate("MainWindow", u"Order", None))
-        self.hpfTypeComb.setItemText(0, "")
-        self.hpfTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"lfilter", None))
-        self.hpfTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"filtfilt", None))
-
-        self.hpfFreqLab.setText(QCoreApplication.translate("MainWindow", u"Freq", None))
+        self.pfPadLab1.setText("")
+        self.hpfOrdLab.setText(QCoreApplication.translate("MainWindow", u"Order", None))
 #if QT_CONFIG(tooltip)
         self.lpfChkb.setToolTip(QCoreApplication.translate("MainWindow", u"b, a = butter(<order>, <freq>/(0.5x<data rate>), btype=\u2018low\u2019)\n"
 "new_data = lfilter(b, a, <data>, axis=-1)\n"
 "new_data = filtfilt(b, a, <data>, axis=-1)", None))
 #endif // QT_CONFIG(tooltip)
         self.lpfChkb.setText(QCoreApplication.translate("MainWindow", u"Low Pass Filter", None))
-        self.lpfTypeLab.setText(QCoreApplication.translate("MainWindow", u"Type", None))
         self.lpfFreqLab.setText(QCoreApplication.translate("MainWindow", u"Freq", None))
-        self.hpfTypeLab.setText(QCoreApplication.translate("MainWindow", u"Type", None))
-        self.lpfTypeComb.setItemText(0, "")
-        self.lpfTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"lfilter", None))
-        self.lpfTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"filtfilt", None))
-
+        self.hpfFreqLab.setText(QCoreApplication.translate("MainWindow", u"Freq", None))
 #if QT_CONFIG(tooltip)
         self.hpfChkb.setToolTip(QCoreApplication.translate("MainWindow", u"b, a = butter(<order>, <freq>/(0.5x<data rate>), btype='high')\n"
 "new_data = lfilter(b, a, <data>, axis=-1)\n"
@@ -818,7 +884,16 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.hpfChkb.setText(QCoreApplication.translate("MainWindow", u"High Pass Filter", None))
         self.pfPadLad2.setText("")
-        self.pfPadLab1.setText("")
+        self.lpfTypeComb.setItemText(0, "")
+        self.lpfTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"lfilter", None))
+        self.lpfTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"filtfilt", None))
+
+        self.hpfTypeLab.setText(QCoreApplication.translate("MainWindow", u"Type", None))
+        self.lpfTypeLab.setText(QCoreApplication.translate("MainWindow", u"Type", None))
+        self.hpfTypeComb.setItemText(0, "")
+        self.hpfTypeComb.setItemText(1, QCoreApplication.translate("MainWindow", u"lfilter", None))
+        self.hpfTypeComb.setItemText(2, QCoreApplication.translate("MainWindow", u"filtfilt", None))
+
 #if QT_CONFIG(tooltip)
         self.nf1Chkb.setToolTip(QCoreApplication.translate("MainWindow", u"b1, a1 = signal.iirnotch(w0=float(<freq>), Q=float(<q value>), fs=<data rate>)\n"
 "new_data = signal.lfilter(b1, a1, <data>)", None))
@@ -855,6 +930,20 @@ class Ui_MainWindow(object):
         self.fftScaleXChkb.setText(QCoreApplication.translate("MainWindow", u"FFT Scale(X-axis)", None))
         self.summPlotLimitUpperLab.setText(QCoreApplication.translate("MainWindow", u"Upper", None))
 #if QT_CONFIG(tooltip)
+        self.refreshDataBtn.setToolTip(QCoreApplication.translate("MainWindow", u"Click me to refresh the items' checkbox", None))
+#endif // QT_CONFIG(tooltip)
+        self.refreshDataBtn.setText(QCoreApplication.translate("MainWindow", u"Refresh", None))
+#if QT_CONFIG(tooltip)
+        self.itemFilterEntry.setToolTip(QCoreApplication.translate("MainWindow", u"regular expression to fliter the items when press \"ENTER\" key or press \"Refresh\" button:\n"
+"e.g. (?i)emg.*ch03.*noise: this regexp will search items which:\n"
+"1. ignores case (?i) \n"
+"2. and include \"emg\"\n"
+"3. and then follows with any number of characters \n"
+"3. and then follows with \"ch03\"\n"
+"4. and then follows with any number of characters \n"
+"5. and then follows with \"noise\"", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
         self.itemFilterLabel.setToolTip(QCoreApplication.translate("MainWindow", u"regular expression to fliter the items when press \"ENTER\" key or press \"Refresh\" button:\n"
 "e.g. (?i)emg.*ch03.*noise: this regexp will search items which:\n"
 "1. ignores case (?i) \n"
@@ -866,21 +955,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.itemFilterLabel.setText(QCoreApplication.translate("MainWindow", u"Item Filter", None))
         self.stationFilterLab.setText(QCoreApplication.translate("MainWindow", u"Station Filter", None))
-#if QT_CONFIG(tooltip)
-        self.itemFilterEntry.setToolTip(QCoreApplication.translate("MainWindow", u"regular expression to fliter the items when press \"ENTER\" key or press \"Refresh\" button:\n"
-"e.g. (?i)emg.*ch03.*noise: this regexp will search items which:\n"
-"1. ignores case (?i) \n"
-"2. and include \"emg\"\n"
-"3. and then follows with any number of characters \n"
-"3. and then follows with \"ch03\"\n"
-"4. and then follows with any number of characters \n"
-"5. and then follows with \"noise\"", None))
-#endif // QT_CONFIG(tooltip)
         self.snFilterLab.setText(QCoreApplication.translate("MainWindow", u"SN Filter", None))
-#if QT_CONFIG(tooltip)
-        self.refreshDataBtn.setToolTip(QCoreApplication.translate("MainWindow", u"Click me to refresh the items' checkbox", None))
-#endif // QT_CONFIG(tooltip)
-        self.refreshDataBtn.setText(QCoreApplication.translate("MainWindow", u"Refresh", None))
         self.goBtn.setText(QCoreApplication.translate("MainWindow", u"GO", None))
     # retranslateUi
 

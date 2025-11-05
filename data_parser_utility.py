@@ -733,7 +733,7 @@ class GEN2SensorDataParser(RawSensorDataParser):
             return ErrorCode.ERR_BAD_DATA, None
 
 
-def RawDataParser(project="malibu", logger=None):
+def RawDataParser(project="malibu", **kwarge):
     parser = {
         "malibu": MalibuSensorDataParser,
         "ceres": CeresSensorDataParser,
@@ -742,9 +742,9 @@ def RawDataParser(project="malibu", logger=None):
         "gen2": GEN2SensorDataParser,
     }
     if project in parser:
-        return parser[project](logger=logger)
+        return parser[project](**kwarge)
     else:
-        return MalibuSensorDataParser(logger=logger)
+        return MalibuSensorDataParser(**kwarge)
 
 
 # example

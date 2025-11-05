@@ -29,38 +29,38 @@ sensor_name = {
 # [<data rate>, <drop start>, <drop end>]
 defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
                    "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                   "emg": {"rate": 8192, "drop start": 0, "drop end": -1, "gain": 1},
-                   "imu": {"rate": 128, "drop start": 25, "drop end": -1, "gain": 1},
-                   "mag": {"rate": 64, "drop start": 0, "drop end": -1, "gain": 1},
-                   "ppg": {"rate": 32, "drop start": 160, "drop end": -1, "gain": 1},
-                   "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                   "emg": {"rate": 8192, "drop start": 0, "drop end": 0, "gain": 1},
+                   "imu": {"rate": 128, "drop start": 25, "drop end": 0, "gain": 1},
+                   "mag": {"rate": 64, "drop start": 0, "drop end": 0, "gain": 1},
+                   "ppg": {"rate": 32, "drop start": 160, "drop end": 0, "gain": 1},
+                   "others": {"rate": 1, "drop start": 0, "drop end": 0, "gain": 1},
                    }
 
-bali_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
+bali_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "gain": 1},
                         "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                        "emg": {"rate": 2048, "drop start": 20, "drop end": -1, "gain": 1},
-                        "imu": {"rate": 30, "drop start": 20, "drop end": -1, "gain": 1},
-                        "mag": {"rate": 50, "drop start": 0, "drop end": -1, "gain": 1},
-                        "ppg": {"rate": 32, "drop start": 160, "drop end": -1, "gain": 1},
-                        "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                        "emg": {"rate": 2048, "drop start": 200, "drop end": 0, "gain": 1},
+                        "imu": {"rate": 30, "drop start": 20, "drop end": 0, "gain": 1},
+                        "mag": {"rate": 50, "drop start": 25, "drop end": 25, "gain": 1},
+                        "ppg": {"rate": 32, "drop start": 160, "drop end": 0, "gain": 1},
+                        "others": {"rate": 1, "drop start": 0, "drop end": 0, "gain": 1},
                         }
 
-ceres_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
+ceres_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "gain": 1},
                          "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                         "emg": {"rate": 8192, "drop start": 0, "drop end": 8192, "gain": 1},
-                         "imu": {"rate": 120, "drop start": 10, "drop end": 490, "gain": 1},
-                         "mag": {"rate": 50, "drop start": 0, "drop end": -1, "gain": 1},
-                         "ppg": {"rate": 25, "drop start": 125, "drop end": 500, "gain": 1},
-                         "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                         "emg": {"rate": 8192, "drop start": 0, "drop end": 0, "gain": 1},
+                         "imu": {"rate": 120, "drop start": 10, "drop end": 10, "gain": 1},
+                         "mag": {"rate": 50, "drop start": 0, "drop end": 0, "gain": 1},
+                         "ppg": {"rate": 25, "drop start": 125, "drop end": 0, "gain": 1},
+                         "others": {"rate": 1, "drop start": 0, "drop end": 0, "gain": 1},
                          }
 
-gen2_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
+gen2_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "gain": 1},
                         "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                        "emg": {"rate": 2048, "drop start": 500, "drop end": -1, "gain": 1},
-                        "imu": {"rate": 128, "drop start": 25, "drop end": -1, "gain": 1},
-                        "mag": {"rate": 64, "drop start": 0, "drop end": -1, "gain": 1},
-                        "ppg": {"rate": 32, "drop start": 160, "drop end": -1, "gain": 1},
-                        "others": {"rate": 1, "drop start": 0, "drop end": -1, "gain": 1},
+                        "emg": {"rate": 2048, "drop start": 500, "drop end": 0, "gain": 1},
+                        "imu": {"rate": 128, "drop start": 25, "drop end": 0, "gain": 1},
+                        "mag": {"rate": 64, "drop start": 0, "drop end": 0, "gain": 1},
+                        "ppg": {"rate": 32, "drop start": 160, "drop end": 0, "gain": 1},
+                        "others": {"rate": 1, "drop start": 0, "drop end": 0, "gain": 1},
                         }
 
 project_defaultSettings = {
@@ -70,6 +70,7 @@ project_defaultSettings = {
     "tycho":    bali_defaultSettings,
     "gen2":     gen2_defaultSettings,
 }
+
 
 class FlowControl:
     def __init__(self, root, ui: Ui_MainWindow, **kwargs):
@@ -86,24 +87,29 @@ class FlowControl:
                                            btn_obj=self.ui.refreshDataBtn, logger=self.logger,
                                            func=self.on_fresh_data_button_clicked)
         self.paramKeeper.state_configure(0)
-        self.plotName = LabelEntry(labObj=self.ui.plotNameLab, entryObj=self.ui.plotNameEntry,
-                                   root=self.root, logger=self.logger)
-        self.plotName.state_configure(0)
+        # self.plotName = LabelEntry(labObj=self.ui.plotNameLab, entryObj=self.ui.plotNameEntry,
+        #                            root=self.root, logger=self.logger)
+        # self.plotName.state_configure(0)
         self.paramEntry = ParameterEntry(root=self.root, logger=self.logger,
                                          _combo={"project": self.ui.projectComb,"sensor_type": self.ui.sensorTypeComb,
-                                                 "data_type": self.ui.dataTypeComb},
+                                                 "data_type": self.ui.dataTypeComb,
+                                                 "convert_type": self.ui.convertTypeComb},
                                          _entry={"data_rate": self.ui.dataRateEntry,
                                                  "data_drop_start": self.ui.dataDropStartEntry,
                                                  "data_drop_end": self.ui.dataDropEndEntry,
-                                                 "gain": self.ui.gainEntry})
+                                                 "gain": self.ui.gainEntry,
+                                                 "plot_name": self.ui.plotNameEntry})
         self.paramEntry.add_items({"project": project_name.keys()})
-        self.paramEntry.state_configure(_comb={"project": 0, "sensor_type": 0, "data_type": 0},
+        self.paramEntry.state_configure(_comb={"project": 0, "sensor_type": 0, "data_type": 0, "convert_type": 0},
                                         _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0,
-                                                "gain": 0})
+                                                "gain": 0, "plot_name": 0})
         self.ui.projectComb.currentIndexChanged.connect(self.on_project_type_changed)
         self.ui.sensorTypeComb.currentIndexChanged.connect(self.on_sensor_type_changed)
         self.ui.dataTypeComb.currentIndexChanged.connect(self.on_data_type_changed)
 
+        self.manualSearchPeak = FilterEntry(checkbox_obj=self.ui.mspChkb, edit_objs={"freq": self.ui.mspFreqEntry},
+                                            label_objs=[self.ui.mspFreqLab])
+        self.manualSearchPeak.state_configure(0)
         self.highPassFilter = FilterEntry(checkbox_obj=self.ui.hpfChkb, combobox_objs={"type": self.ui.hpfTypeComb},
                                           edit_objs={"order": self.ui.hpfOrdEntry, "freq": self.ui.hpfFreqEntry},
                                           label_objs=[self.ui.hpfTypeLab, self.ui.hpfOrdLab, self.ui.hpfFreqLab],
@@ -206,7 +212,8 @@ class FlowControl:
     def on_finish_path_edit(self):
         self.logger.debug("finished editing extra process ...")
         self.paramKeeper.state_configure(1)
-        self.plotName.state_configure(1)
+        # self.plotName.state_configure(1)
+        self.paramEntry.state_configure(_entry={"plot_name": 1})
         self.textFilter.state_configure(1)
         _file_path = self.get_file_paths()
         if not len(_file_path):
@@ -222,7 +229,7 @@ class FlowControl:
             self.df_data = None
             self.dv_params.data_drop = [0, -1]
             self.toggle_parameters_chkb(False)
-            self.paramEntry.state_configure(_comb={"project": 1, "sensor_type": 0, "data_type": 0},
+            self.paramEntry.state_configure(_comb={"project": 1, "sensor_type": 0, "data_type": 0, "convert_type": 0},
                                             _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
             self.refresh_data_channels(False)
         elif _file_path != self.file_path and self.data_type and self.sensor_type:
@@ -260,6 +267,7 @@ class FlowControl:
             return sorted(result)
 
     def toggle_parameters_chkb(self, checked: bool):
+        self.manualSearchPeak.set_checked(checked)
         self.highPassFilter.set_checked(checked)
         self.lowPassFilter.set_checked(checked)
         self.notchFilter3.set_checked(checked)
@@ -281,7 +289,8 @@ class FlowControl:
                                     "data_drop_start": settings["drop start"],
                                     "data_drop_end": settings["drop end"],
                                     "gain": settings["gain"]})
-        self.highPassFilter.set_checked(False)
+        # self.highPassFilter.set_checked(False)
+        self.toggle_parameters_chkb(False)
         if sensor[:3].lower() == 'ppg':
             self.highPassFilter.set_checked(True)
             self.highPassFilter.set(comb={"type": 1}, edit={"order": 3, "freq": 0.5})
@@ -306,6 +315,11 @@ class FlowControl:
             self.paramEntry.state_configure(_comb={"sensor_type": 1, "data_type": 1},
                                             _entry={"data_rate": 1, "data_drop_start": 1, "data_drop_end": 1,
                                                     "gain": 1})
+        if val.lower() == "emg":
+            self.paramEntry.state_configure(_comb={"convert_type": 1})
+        else:
+            self.paramEntry.state_configure(_comb={"convert_type": 0})
+
         # if self.data_type is not None and self.data_type.lower() == "summary data":
         if self.data_type is not None:
             self.refresh_data_channels()
@@ -472,7 +486,7 @@ class FlowControl:
             return
 
         self.get_data_visualize_parameters()
-        self.dv = DataVisualize(params=self.dv_params, logger=self.logger)
+        self.dv = DataVisualize(params=self.dv_params, logger=self.logger, canvas=self.plotCanvas)
 
         if self.dv_params.selected_columns is not None and len(self.dv_params.selected_columns):
             if len(self.df_data.keys()) > 1:  # for multiple files
@@ -489,7 +503,7 @@ class FlowControl:
                     self.logger.error(f"Error during plot!! {err_code}")
                     self.messagebox.warning("Error", ErrorMsg[f"{err_code}"])
                 else:
-                    self.plotCanvas.create_canvas(fig)
+                    # self.plotCanvas.create_canvas(fig)
                     self.plotCanvas.show_plot()
         else:
             self.messagebox.information("info", "Select at least one channel!!")
@@ -569,9 +583,14 @@ class FlowControl:
 
         val = self.paramEntry.get(_entry='gain')
         self.dv_params.gain = float(val) if val is not None and len(val) else 1
-
-        self.dv_params.plot_name = self.plotName.get()
+        val = self.paramEntry.get(_comb='convert_type')
+        self.dv_params.freq_convert_type = val.lower() if val is not None else "fft"
+        self.logger.debug(f"freq_convert_type: {self.dv_params.freq_convert_type}")
+        # self.dv_params.plot_name = self.plotName.get()
+        self.dv_params.plot_name = self.paramEntry.get(_entry='plot_name')
         self.logger.debug(f"plot name: {self.dv_params.plot_name}")
+        val = self.get_filer_parameters_dict(self.manualSearchPeak)
+        self.dv_params.search_peak = float(val["freq"]) if val is not None else 0
 
         self.dv_params.high_pass_filter = self.get_filer_parameters_dict(self.highPassFilter, ['order', 'freq'])
         self.dv_params.low_pass_filter = self.get_filer_parameters_dict(self.lowPassFilter, ['order', 'freq'])
@@ -579,8 +598,8 @@ class FlowControl:
         self.dv_params.notch_filter["1"] = self.get_filer_parameters_dict(self.notchFilter2)
         self.dv_params.notch_filter["2"] = self.get_filer_parameters_dict(self.notchFilter3)
 
-        self.dv_params.fft_scale["x"] = self.get_filer_parameters_dict(self.fftXScale)
-        self.dv_params.fft_scale["y"] = self.get_filer_parameters_dict(self.fftYScale)
+        self.dv_params.freq_scale["x"] = self.get_filer_parameters_dict(self.fftXScale)
+        self.dv_params.freq_scale["y"] = self.get_filer_parameters_dict(self.fftYScale)
 
         # filters = dict()
         # filters.update({"summYScale": self.get_filer_parameters_list(self.summPlotScale)})

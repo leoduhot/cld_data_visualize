@@ -267,6 +267,8 @@ class DataVisualization:
                 self.draw_freq_domain_line(new_layout, stype, i)
                 # mark peak freq with solid 'o' and '|'
                 self.draw_peak_freq_marker(i)
+                plt.text(-0.05, 1.15, f"{self.target_channels[i]}[unit/sqrt(Hz)]",
+                         fontsize=10, transform=plt.gca().transAxes)
                 plt.xlabel('Frequency [Hz]')
                 plt.xticks(fontsize=8)
                 plt.yticks(fontsize=8)

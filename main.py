@@ -25,7 +25,7 @@ class MyApp(QMainWindow):
 if __name__ == "__main__":
     app = QApplication([])
     app.setStyle("Fusion")
-    logger = MyLogger(level='debug', save=True)
+    logger = MyLogger(level='info', save=True)
     window = MyApp(logger=logger)
     icon = QIcon(os.path.join(logger.resource_path, "icon.ico"))
     app.setWindowIcon(icon)

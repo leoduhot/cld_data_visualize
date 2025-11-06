@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>856</width>
-    <height>686</height>
+    <width>1004</width>
+    <height>689</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -91,7 +91,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>852</width>
+         <width>1000</width>
          <height>698</height>
         </rect>
        </property>
@@ -280,10 +280,60 @@
               <property name="bottomMargin">
                <number>0</number>
               </property>
-              <item row="0" column="0">
-               <widget class="QLabel" name="projectLab">
+              <item row="0" column="2">
+               <widget class="QLabel" name="label">
                 <property name="text">
-                 <string>Project</string>
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="10">
+               <widget class="QComboBox" name="convertTypeComb">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>1</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>FFT</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>PSD</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="0" column="5">
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="4">
+               <widget class="QComboBox" name="sensorTypeComb">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>1</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>80</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="9">
+               <widget class="QLabel" name="convertTypeLab">
+                <property name="text">
+                 <string>Sig convert type</string>
                 </property>
                </widget>
               </item>
@@ -303,37 +353,28 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="2">
-               <widget class="QLabel" name="sensorTypeLab">
+              <item row="0" column="0">
+               <widget class="QLabel" name="projectLab">
                 <property name="text">
-                 <string>Sensor Type</string>
+                 <string>Project</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="3">
-               <widget class="QComboBox" name="sensorTypeComb">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                  <horstretch>1</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>80</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="4">
+              <item row="0" column="6">
                <widget class="QLabel" name="dataTypeLab">
                 <property name="text">
                  <string>Data Type</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="5">
+              <item row="0" column="3">
+               <widget class="QLabel" name="sensorTypeLab">
+                <property name="text">
+                 <string>Sensor Type</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="7">
                <widget class="QComboBox" name="dataTypeComb">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -364,25 +405,11 @@
                 </item>
                </widget>
               </item>
-              <item row="0" column="6">
-               <widget class="QLabel" name="convertTypeLab">
+              <item row="0" column="8">
+               <widget class="QLabel" name="label_3">
                 <property name="text">
-                 <string>Sig convert type</string>
+                 <string/>
                 </property>
-               </widget>
-              </item>
-              <item row="0" column="7">
-               <widget class="QComboBox" name="convertTypeComb">
-                <item>
-                 <property name="text">
-                  <string>FFT</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>PSD</string>
-                 </property>
-                </item>
                </widget>
               </item>
              </layout>
@@ -415,26 +442,14 @@
               <property name="bottomMargin">
                <number>0</number>
               </property>
-              <item row="0" column="4">
-               <widget class="QLineEdit" name="dataDropEndEntry">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>1</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>40</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;end number of samples, -1 for the end of data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <item row="0" column="2">
+               <widget class="QLabel" name="label_4">
+                <property name="text">
+                 <string/>
                 </property>
                </widget>
               </item>
-              <item row="0" column="10">
+              <item row="0" column="12">
                <widget class="QLabel" name="plotNameLab">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -450,18 +465,11 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="dataRateLab">
-                <property name="text">
-                 <string>Data Rate</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLineEdit" name="dataRateEntry">
+              <item row="0" column="5">
+               <widget class="QLineEdit" name="dataDropEndEntry">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>1</horstretch>
+                  <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
@@ -471,47 +479,23 @@
                   <height>0</height>
                  </size>
                 </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <widget class="QLabel" name="dataDropsLab">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;specify the data to drop, e.g.: start 2, end 100, mean only visulize data from line 2 to line 100&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;end number of samples, -1 for the end of data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="dataRateLab">
                 <property name="text">
-                 <string>Data Drops</string>
+                 <string>Data Rate</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="9">
-               <widget class="QLineEdit" name="gainEntry">
-                <property name="minimumSize">
-                 <size>
-                  <width>40</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="11">
-               <widget class="QLineEdit" name="plotNameEntry">
-                <property name="toolTip">
-                 <string>Specify a string used as plot image name, default use sensor tpye</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="6">
-               <widget class="QLabel" name="gainLab">
-                <property name="text">
-                 <string>Gain</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="3">
+              <item row="0" column="4">
                <widget class="QLineEdit" name="dataDropStartEntry">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>1</horstretch>
+                  <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
@@ -523,6 +507,82 @@
                 </property>
                 <property name="toolTip">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;start number of samples&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="10">
+               <widget class="QLineEdit" name="gainEntry">
+                <property name="minimumSize">
+                 <size>
+                  <width>40</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="13">
+               <widget class="QLineEdit" name="plotNameEntry">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>1</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>60</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>Specify a string used as plot image name, default use sensor tpye</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="7">
+               <widget class="QLabel" name="gainLab">
+                <property name="text">
+                 <string>Gain</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QLabel" name="dataDropsLab">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;specify the data to drop, e.g.: start 2, end 100, mean only visulize data from line 2 to line 100&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Data Drops</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="dataRateEntry">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>40</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="6">
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="11">
+               <widget class="QLabel" name="label_6">
+                <property name="text">
+                 <string/>
                 </property>
                </widget>
               </item>
@@ -614,95 +674,6 @@
            <property name="bottomMargin">
             <number>6</number>
            </property>
-           <item row="1" column="4">
-            <widget class="QLabel" name="lpfOrdLab">
-             <property name="text">
-              <string>Order</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="7">
-            <widget class="QLineEdit" name="lpfFreqEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="pfPadLab1">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="7">
-            <widget class="QLineEdit" name="hpfFreqEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="4">
-            <widget class="QLabel" name="hpfOrdLab">
-             <property name="text">
-              <string>Order</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="lpfChkb">
-             <property name="toolTip">
-              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;), btype=‘low’)
-new_data = lfilter(b, a, &lt;data&gt;, axis=-1)
-new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
-             </property>
-             <property name="text">
-              <string>Low Pass Filter</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="5">
-            <widget class="QLineEdit" name="hpfOrdEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
-             </property>
-             <property name="styleSheet">
-              <string notr="true"/>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="6">
-            <widget class="QLabel" name="lpfFreqLab">
-             <property name="text">
-              <string>Freq</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="6">
-            <widget class="QLabel" name="hpfFreqLab">
-             <property name="text">
-              <string>Freq</string>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="0">
             <widget class="QCheckBox" name="hpfChkb">
              <property name="toolTip">
@@ -712,71 +683,6 @@ new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
              </property>
              <property name="text">
               <string>High Pass Filter</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="pfPadLad2">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="3">
-            <widget class="QComboBox" name="lpfTypeComb">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>0</height>
-              </size>
-             </property>
-             <item>
-              <property name="text">
-               <string/>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>lfilter</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>filtfilt</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="1" column="5">
-            <widget class="QLineEdit" name="lpfOrdEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="hpfTypeLab">
-             <property name="text">
-              <string>Type</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="lpfTypeLab">
-             <property name="text">
-              <string>Type</string>
              </property>
             </widget>
            </item>
@@ -811,6 +717,188 @@ new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
              </item>
             </widget>
            </item>
+           <item row="0" column="8">
+            <widget class="QLabel" name="hpfFreqLab">
+             <property name="text">
+              <string>Freq</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QLabel" name="lpfOrdLab">
+             <property name="text">
+              <string>Order</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lpfTypeLab">
+             <property name="text">
+              <string>Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="6">
+            <widget class="QLineEdit" name="lpfOrdEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="6">
+            <widget class="QLineEdit" name="hpfOrdEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="9">
+            <widget class="QLineEdit" name="hpfFreqEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QLabel" name="hpfOrdLab">
+             <property name="text">
+              <string>Order</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="8">
+            <widget class="QLabel" name="lpfFreqLab">
+             <property name="text">
+              <string>Freq</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="lpfChkb">
+             <property name="toolTip">
+              <string>b, a = butter(&lt;order&gt;, &lt;freq&gt;/(0.5x&lt;data rate&gt;), btype=‘low’)
+new_data = lfilter(b, a, &lt;data&gt;, axis=-1)
+new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
+             </property>
+             <property name="text">
+              <string>Low Pass Filter</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="hpfTypeLab">
+             <property name="text">
+              <string>Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="pfPadLad2">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="pfPadLab1">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="9">
+            <widget class="QLineEdit" name="lpfFreqEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QComboBox" name="lpfTypeComb">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>0</height>
+              </size>
+             </property>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>lfilter</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>filtfilt</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="7">
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="7">
+            <widget class="QLabel" name="label_19">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -835,14 +923,17 @@ new_data = filtfilt(b, a, &lt;data&gt;, axis=-1)</string>
            <property name="bottomMargin">
             <number>6</number>
            </property>
-           <item row="0" column="0">
-            <widget class="QCheckBox" name="nf1Chkb">
-             <property name="toolTip">
-              <string>b1, a1 = signal.iirnotch(w0=float(&lt;freq&gt;), Q=float(&lt;q value&gt;), fs=&lt;data rate&gt;)
-new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
-             </property>
+           <item row="1" column="1">
+            <widget class="QLabel" name="nfPadLab2">
              <property name="text">
-              <string>Notch Filter 1</string>
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="nf3FreqLab">
+             <property name="text">
+              <string>Freq</string>
              </property>
             </widget>
            </item>
@@ -850,13 +941,6 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
             <widget class="QLabel" name="nfPadLab1">
              <property name="text">
               <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="nf1FreqLab">
-             <property name="text">
-              <string>Freq</string>
              </property>
             </widget>
            </item>
@@ -873,14 +957,67 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="4">
-            <widget class="QLabel" name="nf1QLab">
+           <item row="1" column="6">
+            <widget class="QLineEdit" name="nf2QEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QLabel" name="nf2QLab">
              <property name="text">
               <string>Q value</string>
              </property>
             </widget>
            </item>
            <item row="0" column="5">
+            <widget class="QLabel" name="nf1QLab">
+             <property name="text">
+              <string>Q value</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QLineEdit" name="nf3FreqEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="nfPadLab3">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="6">
+            <widget class="QLineEdit" name="nf3QEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="6">
             <widget class="QLineEdit" name="nf1QEntry">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -893,53 +1030,8 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="nf2Chkb">
-             <property name="toolTip">
-              <string>b1, a1 = signal.iirnotch(w0=float(&lt;freq&gt;), Q=float(&lt;q value&gt;), fs=&lt;data rate&gt;)
-new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
-             </property>
-             <property name="text">
-              <string>Notch Filter 2</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="nfPadLab2">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="nf2FreqLab">
-             <property name="text">
-              <string>Freq</string>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="3">
             <widget class="QLineEdit" name="nf2FreqEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="4">
-            <widget class="QLabel" name="nf2QLab">
-             <property name="text">
-              <string>Q value</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="5">
-            <widget class="QLineEdit" name="nf2QEntry">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>1</horstretch>
@@ -962,50 +1054,67 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="1">
-            <widget class="QLabel" name="nfPadLab3">
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="nf1Chkb">
+             <property name="toolTip">
+              <string>b1, a1 = signal.iirnotch(w0=float(&lt;freq&gt;), Q=float(&lt;q value&gt;), fs=&lt;data rate&gt;)
+new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
+             </property>
              <property name="text">
-              <string/>
+              <string>Notch Filter 1</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="2">
-            <widget class="QLabel" name="nf3FreqLab">
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="nf2Chkb">
+             <property name="toolTip">
+              <string>b1, a1 = signal.iirnotch(w0=float(&lt;freq&gt;), Q=float(&lt;q value&gt;), fs=&lt;data rate&gt;)
+new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
+             </property>
+             <property name="text">
+              <string>Notch Filter 2</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="nf1FreqLab">
              <property name="text">
               <string>Freq</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="3">
-            <widget class="QLineEdit" name="nf3FreqEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="4">
+           <item row="2" column="5">
             <widget class="QLabel" name="nf3QLab">
              <property name="text">
               <string>Q value</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="5">
-            <widget class="QLineEdit" name="nf3QEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
+           <item row="1" column="2">
+            <widget class="QLabel" name="nf2FreqLab">
+             <property name="text">
+              <string>Freq</string>
              </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="4">
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string/>
              </property>
             </widget>
            </item>
@@ -1033,6 +1142,19 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
            <property name="bottomMargin">
             <number>6</number>
            </property>
+           <item row="0" column="6">
+            <widget class="QLineEdit" name="fftScaleXEndEntry">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>1</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptDrops">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
            <item row="2" column="2">
             <widget class="QLabel" name="summPlotLimitLowerLab">
              <property name="text">
@@ -1060,15 +1182,36 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="4">
-            <widget class="QLabel" name="fftScaleYEndLab">
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="fftScaleXChkb">
              <property name="text">
-              <string>End</string>
+              <string>FFT Scale(X-axis)</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
             <widget class="QLabel" name="fftPadLab2">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="summPlotLimitChkb">
+             <property name="text">
+              <string>Summary Plot Scale(Y-axis)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="5">
+            <widget class="QLabel" name="summPlotLimitUpperLab">
+             <property name="text">
+              <string>Upper</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="fftPadLab1">
              <property name="text">
               <string/>
              </property>
@@ -1081,17 +1224,7 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="fftScaleYChkb">
-             <property name="text">
-              <string>FFT Scale(Y-axis)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="5">
-            <widget class="QLineEdit" name="summPlotLimitUpperEntry"/>
-           </item>
-           <item row="1" column="5">
+           <item row="1" column="6">
             <widget class="QLineEdit" name="fftScaleYEndEntry">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -1104,51 +1237,30 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="4">
+           <item row="2" column="6">
+            <widget class="QLineEdit" name="summPlotLimitUpperEntry"/>
+           </item>
+           <item row="0" column="5">
             <widget class="QLabel" name="fftScaleXEndLab">
              <property name="text">
               <string>End</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QCheckBox" name="summPlotLimitChkb">
+           <item row="2" column="3">
+            <widget class="QLineEdit" name="summPlotLimitLowerEntry"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="fftScaleYChkb">
              <property name="text">
-              <string>Summary Plot Scale(Y-axis)</string>
+              <string>FFT Scale(Y-axis)</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="fftPadLab1">
+           <item row="1" column="5">
+            <widget class="QLabel" name="fftScaleYEndLab">
              <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QCheckBox" name="fftScaleXChkb">
-             <property name="text">
-              <string>FFT Scale(X-axis)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="4">
-            <widget class="QLabel" name="summPlotLimitUpperLab">
-             <property name="text">
-              <string>Upper</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="5">
-            <widget class="QLineEdit" name="fftScaleXEndEntry">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
+              <string>End</string>
              </property>
             </widget>
            </item>
@@ -1165,8 +1277,26 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="3">
-            <widget class="QLineEdit" name="summPlotLimitLowerEntry"/>
+           <item row="0" column="4">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="4">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -1186,37 +1316,27 @@ new_data = signal.lfilter(b1, a1, &lt;data&gt;)</string>
            <property name="bottomMargin">
             <number>6</number>
            </property>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="refreshDataBtn">
-             <property name="toolTip">
-              <string>Click me to refresh the items' checkbox</string>
-             </property>
+           <item row="0" column="9">
+            <widget class="QLineEdit" name="stationFilterEntry"/>
+           </item>
+           <item row="0" column="5">
+            <widget class="QLabel" name="snFilterLab">
              <property name="text">
-              <string>Refresh</string>
+              <string>SN Filter</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
-            <widget class="QLineEdit" name="itemFilterEntry">
-             <property name="toolTip">
-              <string>regular expression to fliter the items when press &quot;ENTER&quot; key or press &quot;Refresh&quot; button:
-e.g. (?i)emg.*ch03.*noise: this regexp will search items which:
-1. ignores case (?i) 
-2. and include &quot;emg&quot;
-3. and then follows with any number of characters 
-3. and then follows with &quot;ch03&quot;
-4. and then follows with any number of characters 
-5. and then follows with &quot;noise&quot;</string>
+           <item row="0" column="8">
+            <widget class="QLabel" name="stationFilterLab">
+             <property name="text">
+              <string>Station Filter</string>
              </property>
             </widget>
            </item>
            <item row="0" column="6">
-            <widget class="QLineEdit" name="stationFilterEntry"/>
-           </item>
-           <item row="0" column="4">
             <widget class="QLineEdit" name="snFilterEntry"/>
            </item>
-           <item row="0" column="1">
+           <item row="0" column="2">
             <widget class="QLabel" name="itemFilterLabel">
              <property name="toolTip">
               <string>regular expression to fliter the items when press &quot;ENTER&quot; key or press &quot;Refresh&quot; button:
@@ -1233,17 +1353,48 @@ e.g. (?i)emg.*ch03.*noise: this regexp will search items which:
              </property>
             </widget>
            </item>
-           <item row="0" column="5">
-            <widget class="QLabel" name="stationFilterLab">
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_7">
              <property name="text">
-              <string>Station Filter</string>
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="refreshDataBtn">
+             <property name="toolTip">
+              <string>Click me to refresh the items' checkbox</string>
+             </property>
+             <property name="text">
+              <string>Refresh</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string/>
              </property>
             </widget>
            </item>
            <item row="0" column="3">
-            <widget class="QLabel" name="snFilterLab">
+            <widget class="QLineEdit" name="itemFilterEntry">
+             <property name="toolTip">
+              <string>regular expression to fliter the items when press &quot;ENTER&quot; key or press &quot;Refresh&quot; button:
+e.g. (?i)emg.*ch03.*noise: this regexp will search items which:
+1. ignores case (?i) 
+2. and include &quot;emg&quot;
+3. and then follows with any number of characters 
+3. and then follows with &quot;ch03&quot;
+4. and then follows with any number of characters 
+5. and then follows with &quot;noise&quot;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="7">
+            <widget class="QLabel" name="label_9">
              <property name="text">
-              <string>SN Filter</string>
+              <string/>
              </property>
             </widget>
            </item>

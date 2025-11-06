@@ -29,7 +29,7 @@ sensor_name = {
 # [<data rate>, <drop start>, <drop end>]
 defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 1},
                    "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                   "emg": {"rate": 8192, "drop start": 0, "drop end": 0, "gain": 1},
+                   "emg": {"rate": 8192, "drop start": 0, "drop end": 0, "gain": 1, "convert_type": 0},
                    "imu": {"rate": 128, "drop start": 25, "drop end": 0, "gain": 1},
                    "mag": {"rate": 64, "drop start": 0, "drop end": 0, "gain": 1},
                    "ppg": {"rate": 32, "drop start": 160, "drop end": 0, "gain": 1},
@@ -38,7 +38,7 @@ defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": -1, "gain": 
 
 bali_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "gain": 1},
                         "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                        "emg": {"rate": 2048, "drop start": 200, "drop end": 0, "gain": 1},
+                        "emg": {"rate": 2048, "drop start": 200, "drop end": 0, "gain": 1, "convert_type": 1},
                         "imu": {"rate": 30, "drop start": 20, "drop end": 0, "gain": 1},
                         "mag": {"rate": 50, "drop start": 25, "drop end": 25, "gain": 1},
                         "ppg": {"rate": 32, "drop start": 160, "drop end": 0, "gain": 1},
@@ -47,7 +47,7 @@ bali_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "gai
 
 ceres_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "gain": 1},
                          "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                         "emg": {"rate": 8192, "drop start": 0, "drop end": 0, "gain": 1},
+                         "emg": {"rate": 8192, "drop start": 0, "drop end": 0, "gain": 1, "convert_type": 0},
                          "imu": {"rate": 120, "drop start": 10, "drop end": 10, "gain": 1},
                          "mag": {"rate": 50, "drop start": 0, "drop end": 0, "gain": 1},
                          "ppg": {"rate": 25, "drop start": 125, "drop end": 0, "gain": 1},
@@ -56,7 +56,7 @@ ceres_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "ga
 
 gen2_defaultSettings = {"alt": {"rate": 10, "drop start": 0, "drop end": 0, "gain": 1},
                         "bti": {"rate": 31.25, "drop start": 10, "drop end": 72, "gain": 1},
-                        "emg": {"rate": 2048, "drop start": 500, "drop end": 0, "gain": 1},
+                        "emg": {"rate": 2048, "drop start": 500, "drop end": 0, "gain": 1, "convert_type": 1},
                         "imu": {"rate": 128, "drop start": 25, "drop end": 0, "gain": 1},
                         "mag": {"rate": 64, "drop start": 0, "drop end": 0, "gain": 1},
                         "ppg": {"rate": 32, "drop start": 160, "drop end": 0, "gain": 1},
@@ -104,7 +104,7 @@ class FlowControl:
                                         _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0,
                                                 "gain": 0, "plot_name": 0})
         self.ui.projectComb.currentIndexChanged.connect(self.on_project_type_changed)
-        self.ui.sensorTypeComb.currentIndexChanged.connect(self.on_sensor_type_changed)
+        self.sensor_change_signal = self.ui.sensorTypeComb.currentIndexChanged.connect(self.on_sensor_type_changed)
         self.ui.dataTypeComb.currentIndexChanged.connect(self.on_data_type_changed)
 
         self.manualSearchPeak = FilterEntry(checkbox_obj=self.ui.mspChkb, edit_objs={"freq": self.ui.mspFreqEntry},
@@ -158,15 +158,15 @@ class FlowControl:
         self.summPlotScale.state_configure(0)
         self.textFilter = TextFilter(editObj=self.ui.itemFilterEntry, labelObj=self.ui.itemFilterLabel,
                                      logger=self.logger, root=self.root,
-                                     command=self.on_fresh_data_button_clicked)
+                                     command=self.refresh_data_channels)
         self.textFilter.state_configure(0)
         self.snFilter = TextFilter(editObj=self.ui.snFilterEntry, labelObj=self.ui.snFilterLab,
-                                     logger=self.logger, root=self.root,
-                                     command=self.on_fresh_data_button_clicked)
+                                   logger=self.logger, root=self.root,
+                                   command=self.refresh_data_channels)
         self.snFilter.state_configure(0)
         self.stationFilter = TextFilter(editObj=self.ui.stationFilterEntry, labelObj=self.ui.stationFilterLab,
-                                   logger=self.logger, root=self.root,
-                                   command=self.on_fresh_data_button_clicked)
+                                        logger=self.logger, root=self.root,
+                                        command=self.refresh_data_channels)
         self.stationFilter.state_configure(0)
         self.channelsSelector = ChannelSelector(root=self.root, logger=self.logger, containObj=self.ui.channelFrm)
         self.goButton = SingleButton(root=self.root, logger=self.logger, btnObj=self.ui.goBtn, command=self.on_button_go)
@@ -178,10 +178,11 @@ class FlowControl:
         self.status_bar.show_message("By APAC HW Engineering Team")
 
         self.dv_params = VisualizeParameters()
-        self.rdp = RawDataParser(logger=self.logger)
+        # self.rdp = RawDataParser(logger=self.logger)
         # self.dv = DataVisualization(logger=self.logger, canvas=self.plotCanvas)
-        self.sdp = SummaryDataParser(root=self.root, logger=self.logger, canvas=self.plotCanvas)
+        # self.sdp = SummaryDataParser(root=self.root, logger=self.logger, canvas=self.plotCanvas)
         self.dv = None
+        self.rdp = None
         self.file_path = list()
         self.sensor_type = None
         self.data_type = None
@@ -223,22 +224,21 @@ class FlowControl:
         if not self.paramKeeper.isChecked:
             self.logger.debug("Keeper is not checked, clear parameters")
             self.file_path = _file_path
+            # disable first to avoid on_change event
+            self.paramEntry.state_configure(_comb={"project": 0, "sensor_type": 0, "data_type": 0, "convert_type": 0},
+                                            _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
             self.paramEntry.clear()
             self.sensor_type = None
             self.data_type = None
             self.df_data = None
             self.dv_params.data_drop = [0, -1]
             self.toggle_parameters_chkb(False)
-            self.paramEntry.state_configure(_comb={"project": 1, "sensor_type": 0, "data_type": 0, "convert_type": 0},
-                                            _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
+            self.paramEntry.state_configure(_comb={"project": 1})
             self.refresh_data_channels(False)
         elif _file_path != self.file_path and self.data_type and self.sensor_type:
             self.logger.debug(f"file changed, update df_data, [{self.sensor_type}], [{self.data_type}]")
             # self.file_path = _file_path
-            if self.data_type.lower() == 'raw data':
-                self.convert_raw_data_to_csv()
-            else:
-                self.get_df_data()
+            self.read_data()
             self.refresh_data_channels(True)
 
     def get_file_paths(self) -> list:
@@ -289,6 +289,10 @@ class FlowControl:
                                     "data_drop_start": settings["drop start"],
                                     "data_drop_end": settings["drop end"],
                                     "gain": settings["gain"]})
+        if "data_type" in settings:
+            self.paramEntry.set(_combIndex={"data_type": settings["data_type"]})
+        if "convert_type" in settings:
+            self.paramEntry.set(_combIndex={"convert_type": settings["convert_type"]})
         # self.highPassFilter.set_checked(False)
         self.toggle_parameters_chkb(False)
         if sensor[:3].lower() == 'ppg':
@@ -297,47 +301,74 @@ class FlowControl:
 
     def on_project_type_changed(self, index):
         self.logger.debug(f"project type, selected index: {index}")
+        self.rdp = None
         val = self.get_parameter_project()
-        self.paramEntry.add_items({"sensor_type": [_s.upper() for _s in sensor_name[val]]})
-        self.paramEntry.state_configure(_comb={"sensor_type": 1})
-        self.rdp = RawDataParser(logger=self.logger, project=val)
+        if val is not None:
+            self.rdp = RawDataParser(val, logger=self.logger)
+            if self.sensor_change_signal is not None:
+                self.ui.sensorTypeComb.currentIndexChanged.disconnect(self.sensor_change_signal)
+            self.paramEntry.add_items({"sensor_type": [_s.upper() for _s in sensor_name[val]]})
+            self.paramEntry.set(_combIndex={"sensor_type": -1})
+            self.paramEntry.state_configure(_comb={"sensor_type": 1})
+            self.paramEntry.set(_combIndex={"data_type": -1})
+            self.paramEntry.state_configure(_comb={"data_type": 0})
+            self.sensor_change_signal = self.ui.sensorTypeComb.currentIndexChanged.connect(self.on_sensor_type_changed)
 
     def on_sensor_type_changed(self, index):
         self.logger.debug(f"sensor type, selected index: {index}")
         val = self.paramEntry.get(_comb='sensor_type')
         # if val is None or not len(val):
-        if val is None:
+        if val is None or len(val) == 0:
             self.logger.error("Invalid sensor type!! do nothing")
             return
-        if self.sensor_type != val:
-            self.sensor_type = val
-            self.set_default_values(self.sensor_type.strip())
-            self.paramEntry.state_configure(_comb={"sensor_type": 1, "data_type": 1},
-                                            _entry={"data_rate": 1, "data_drop_start": 1, "data_drop_end": 1,
-                                                    "gain": 1})
+        self.logger.debug(f"sensor: {val}")
+        self.sensor_type = val
+        self.set_default_values(self.sensor_type.strip().lower())
+        self.paramEntry.state_configure(_comb={"data_type": 1},
+                                        _entry={"data_rate": 1, "data_drop_start": 1, "data_drop_end": 1,
+                                                "gain": 1})
         if val.lower() == "emg":
             self.paramEntry.state_configure(_comb={"convert_type": 1})
         else:
             self.paramEntry.state_configure(_comb={"convert_type": 0})
+            self.paramEntry.set(_combIndex={"convert_type": -1})
+        self.paramEntry.set(_combIndex={"data_type": self.determine_data_type_via_file_name()})
+        # try to update channel table
+        # self.refresh_data_channels(self.read_data())
 
-        # if self.data_type is not None and self.data_type.lower() == "summary data":
-        if self.data_type is not None:
-            self.refresh_data_channels()
+    def determine_data_type_via_file_name(self) -> int:
+        file_list = self.get_file_paths()
+        if len(file_list) != 0:
+            postfix = os.path.basename(file_list[0]).split(".")[-1]
+            if postfix.lower() in ["txt", "log"]:
+                return 0  # raw data
+            elif postfix.lower() == "csv":
+                return 1  # csv data
+        return -1  # not select
 
     def on_data_type_changed(self, index):
-        self.logger.debug(f"data type, selected index: {index}")
-        self.data_type = self.paramEntry.get(_comb='data_type')
-        if self.data_type is None or not len(self.data_type.strip()):
-            self.logger.error("Invalid data type!! do nothing")
-            return
+        try:
+            self.logger.debug(f"data type, selected index: {index}")
+            self.data_type = self.paramEntry.get(_comb='data_type')
+            if self.data_type is None or not len(self.data_type.strip()):
+                self.logger.error("Invalid data type!! do nothing")
+                return
+            ret = self.read_data()
+            if not ret:
+                self.paramEntry.set(_combIndex={'data_type': -1}, )
+                self.data_type = None
+            self.refresh_data_channels(ret)
+        except Exception as e:
+            self.paramEntry.set(_combIndex={'data_type': -1}, )
+
+    def read_data(self) -> bool:
+        if not self.get_parameters():
+            return False
         if self.data_type.lower() == 'raw data':
             ret = self.convert_raw_data_to_csv()
         else:
             ret = self.get_df_data()
-
-        if not ret:
-            self.paramEntry.set(_combIndex={'data_type': -1}, )
-        self.refresh_data_channels(ret)
+        return ret
 
     #  from raw text to csv
     def convert_raw_data_to_csv(self) -> bool:
@@ -359,6 +390,8 @@ class FlowControl:
                 if _answer:
                     continue
                 else:
+                    self.df_data = dict()
+                    self.file_path = list()
                     return False
             self.df_data.update({_name: df_data})
             self.file_path.append(save_path)
@@ -399,9 +432,9 @@ class FlowControl:
     def get_df_data(self):
         try:
             if self.get_parameter_project() == 'ceres' and self.data_type.lower() == "tester data":
-                self.convert_test_data("ceres", "emg")
+                ret = self.convert_test_data("ceres", "emg")
             # if self.get_parameter_project() == 'bali' and self.data_type.lower() == "tester data":
-            #     self.convert_test_data("bali", "emg")
+            #     ret = self.convert_test_data("bali", "emg")
             else:
                 file_path = self.get_file_paths()
                 self.file_path = list()
@@ -416,7 +449,8 @@ class FlowControl:
                         continue
                     self.file_path.append(file)
                     self.df_data.update({_name: data})
-            ret = True
+                    self.logger.debug(f"read csv: {_name}")
+                ret = True
         except Exception as ex:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             ret = False
@@ -426,17 +460,18 @@ class FlowControl:
 
     def on_fresh_data_button_clicked(self):
         self.logger.debug("refresh data button clicked")
-        if self.data_type.lower() == 'raw data':
-            self.convert_raw_data_to_csv()
-        else:
-            self.get_df_data()
-        self.refresh_data_channels()
+        if not self.get_parameters():
+            self.logger.error("some parameters are not selected!!")
+            self.messagebox.warning("Error", "Some parameters are not selected!!")
+            self.refresh_data_channels(False)
+            return
+        self.refresh_data_channels(self.read_data())
         pass
 
     def get_parameter_project(self):
         p = self.paramEntry.get(_comb='project')
         self.logger.debug(f"project selected: {p}")
-        return project_name[p] if p in project_name else project_name["01"]
+        return project_name[p] if p in project_name else None
 
     def get_filer_parameters_list(self, filter_obj: FilterEntry, keys: list = None):
         # keys: specify the keys whose value need to be converted
@@ -565,6 +600,17 @@ class FlowControl:
                 return
             columns = new_col if len(new_col) else columns
         self.channelsSelector.show_channels(columns, self.data_type)
+
+    def get_parameters(self) -> bool:
+        self.project = self.get_parameter_project()
+        self.sensor_type = self.paramEntry.get(_comb="sensor_type")
+        self.data_type = self.paramEntry.get(_comb="data_type")
+        if (self.project is not None
+                and self.sensor_type is not None and len(self.sensor_type) != 0
+                and self.data_type is not None and len(self.data_type) != 0):
+            return True
+        else:
+            return False
 
     def get_data_visualize_parameters(self):
         self.dv_params.data_type = self.paramEntry.get(_comb='data_type')

@@ -321,27 +321,27 @@ class RawSensorDataParser:
             self.logger.error(f"{str(ex)}\nin {__file__}:{str(ex.__traceback__.tb_lineno)}")
             return ErrorCode.ERR_BAD_DATA, None
 
-    #convert adc code to target value, and save to csv file
+    # convert adc code to target value, and save to csv file
     def convert_emg_data(self):
-        pass
+        return ErrorCode.ERR_NO_ERROR, self.data
 
     def convert_ppg_data(self):
-        pass
+        return ErrorCode.ERR_NO_ERROR, self.data
 
     def convert_imu_data(self):
-        pass
+        return ErrorCode.ERR_NO_ERROR, self.data
 
     def convert_alt_data(self):
-        pass
+        return ErrorCode.ERR_NO_ERROR, self.data
 
     def convert_mag_data(self):
-        pass
+        return ErrorCode.ERR_NO_ERROR, self.data
 
     def convert_bti_data(self):
-        pass
+        return ErrorCode.ERR_NO_ERROR, self.data
 
     def convert_als_data(self):
-        pass
+        return ErrorCode.ERR_NO_ERROR, self.data
 
     def extract_json_data(self, _data, _reg=None):
         try:
@@ -429,9 +429,6 @@ class MalibuSensorDataParser(RawSensorDataParser):
 
 
 class BaliSensorDataParser(RawSensorDataParser):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def extract_emg_data(self):
         try:
             if self.data is None:
@@ -693,9 +690,6 @@ class CeresSensorDataParser(RawSensorDataParser):
 
 
 class GEN2SensorDataParser(RawSensorDataParser):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def extract_emg_data(self):
         try:
             if self.data is None:

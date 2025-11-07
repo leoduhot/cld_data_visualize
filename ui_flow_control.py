@@ -168,6 +168,7 @@ class FlowControl:
                                         logger=self.logger, root=self.root,
                                         command=self.refresh_data_channels)
         self.stationFilter.state_configure(0)
+        self.itemSelector = ChannelSelector(root=self.root, logger=self.logger, containObj=self.ui.testItemFrm)
         self.channelsSelector = ChannelSelector(root=self.root, logger=self.logger, containObj=self.ui.channelFrm)
         self.goButton = SingleButton(root=self.root, logger=self.logger, btnObj=self.ui.goBtn, command=self.on_button_go)
         self.plotCanvas = PlotCanvas(logger=self.logger)
@@ -177,6 +178,7 @@ class FlowControl:
         self.status_bar = StatusBar(statusBarObj=self.ui.statusBar, click=self.on_statusbar_clicked)
         self.status_bar.show_message("By APAC HW Engineering Team")
 
+        self.selected_files = list()
         self.dv_params = VisualizeParameters()
         # self.rdp = RawDataParser(logger=self.logger)
         # self.dv = DataVisualization(logger=self.logger, canvas=self.plotCanvas)
@@ -513,6 +515,11 @@ class FlowControl:
             self.logger.error("Invalid sensor type!! do nothing")
             self.messagebox.warning("Error", "Invalid sensor type!!")
             return
+        self.selected_files = self.get_selected_files()
+        if len(self.selected_files) < 1:
+            self.logger.error("Files are not selected!! do nothing")
+            self.messagebox.warning("Error", "No files selected!!")
+            return
         # if self.file_path != _file and self.data_type is not None and self.data_type.lower() == 'raw data':
         #     if not self.convert_raw_data_to_csv():
         #         return
@@ -525,11 +532,11 @@ class FlowControl:
         self.dv = DataVisualize(params=self.dv_params, logger=self.logger, canvas=self.plotCanvas)
 
         if self.dv_params.selected_columns is not None and len(self.dv_params.selected_columns):
-            if len(self.df_data.keys()) > 1:  # for multiple files
+            if len(self.selected_files) > 1:  # for multiple files
                 self.popup = Popup(msg="Generating plot pictures ...", parent=self.root)
                 _thread = Thread(
                     target=self.visualize_process,
-                    args=(self.dv_params.selected_columns, ),
+                    args=(self.selected_files, ),
                     daemon=True
                 )
                 _thread.start()
@@ -557,7 +564,7 @@ class FlowControl:
         self.signal.threadStateChanged.emit([0, 0])
         for file in file_list:
             self.dv_params.df_data = self.df_data[file]
-            self.dv_params.selected_columns = []
+            # self.dv_params.selected_columns = []
             self.dv_params.plot_name = file
             _err_code, _ = self.do_visualize(False)
             if _err_code != ErrorCode.ERR_NO_ERROR:
@@ -578,7 +585,47 @@ class FlowControl:
                 self.popup.close()
             self.goButton.state_configure(1)
 
+    def refresh_test_items(self, show: bool = True):
+        if not show:
+            self.itemSelector.show_channels()
+            return
+        if self.df_data is None or len(self.df_data) == 0:
+            self.messagebox.warning("Error", "No data available!!")
+            self.itemSelector.show_channels()
+            return
+        if len(self.df_data) == 1:  # don't show file selector if only one file
+            self.itemSelector.show_channels()
+            return
+        self.logger.debug(f"refresh: [{self.sensor_type}], [{self.data_type}]")
+        # self.item_filter = self.textFilter.get_text()
+        keys = [val for val in self.df_data.keys()]
+        self.itemSelector.show_channels(keys, self.data_type)
+        self.itemSelector.check_all(True)
+
     def refresh_data_channels(self, show: bool = True):
+        self.refresh_test_items(show)
+        if not show:
+            self.channelsSelector.show_channels()
+            return
+        if self.df_data is None or len(self.df_data) == 0:
+            self.messagebox.warning("Error", "No data available!!")
+            return
+        self.logger.debug(f"refresh: [{self.sensor_type}], [{self.data_type}]")
+        self.item_filter = self.textFilter.get_text()
+        keys = [val for val in self.df_data.keys()]
+        columns = self.df_data[keys[0]].columns.dropna().tolist()
+        if self.item_filter is not None and len(self.item_filter.strip()):
+            self.logger.debug(f"reg:{self.item_filter.strip()}")
+            try:
+                new_col = [val for val in columns if re.search(fr'{self.item_filter.strip()}', val)]
+            except Exception as ex:
+                self.messagebox.warning("Error", f"{ex}")
+                return
+            columns = new_col if len(new_col) else columns
+        self.channelsSelector.show_channels(columns, self.data_type)
+        # QTimer.singleShot(2, self.scroll_to_bottom)
+
+    def _refresh_data_channels(self, show: bool = True):
         if not show:
             self.channelsSelector.show_channels()
             return
@@ -603,6 +650,15 @@ class FlowControl:
         self.channelsSelector.show_channels(columns, self.data_type)
         # QTimer.singleShot(2, self.scroll_to_bottom)
 
+    def get_selected_files(self):
+        if len(self.df_data) == 1:
+            self.selected_files = [val for val in self.df_data.keys()]
+        elif len(self.df_data) < 1:
+            self.selected_files = list()
+        else:
+            self.selected_files = self.itemSelector.get_checked_list()
+        return self.selected_files
+
     def get_parameters(self) -> bool:
         self.project = self.get_parameter_project()
         self.sensor_type = self.paramEntry.get(_comb="sensor_type")
@@ -617,7 +673,10 @@ class FlowControl:
     def get_data_visualize_parameters(self):
         self.dv_params.data_type = self.paramEntry.get(_comb='data_type')
         self.dv_params.sensor = self.paramEntry.get(_comb='sensor_type')
-        self.dv_params.df_data = next(iter(self.df_data.values()))  # value of first key
+        if len(self.selected_files):
+            self.dv_params.df_data = self.df_data[self.selected_files[0]]
+        else:
+            self.dv_params.df_data = next(iter(self.df_data.values()))  # value of first key
         val = self.paramEntry.get(_entry='data_rate')
         self.dv_params.sample_rate = float(val) if val is not None and len(val) else 1
         self.logger.debug(f"data rate: {self.dv_params.sample_rate}")

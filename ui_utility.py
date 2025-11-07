@@ -574,6 +574,10 @@ class ChannelSelector:
                     _channel_list.append(ch)
             return _channel_list
 
+    def check_all(self, checked):
+        self.chkb_all.setChecked(checked)
+        for ch in self.check_boxes:
+            self.check_boxes[ch].setChecked(checked)
 
 class SingleButton:
     def __init__(self, btnObj: QPushButton = None, command = None, **kwargs):

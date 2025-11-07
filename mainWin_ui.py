@@ -64,7 +64,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1000, 678))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1000, 698))
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy2.setHorizontalStretch(1)
         sizePolicy2.setVerticalStretch(1)
@@ -828,6 +828,18 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.frame)
 
+        self.testItemFrm = QFrame(self.scrollAreaWidgetContents)
+        self.testItemFrm.setObjectName(u"testItemFrm")
+        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy9.setHorizontalStretch(1)
+        sizePolicy9.setVerticalStretch(0)
+        sizePolicy9.setHeightForWidth(self.testItemFrm.sizePolicy().hasHeightForWidth())
+        self.testItemFrm.setSizePolicy(sizePolicy9)
+        self.testItemFrm.setFrameShape(QFrame.Shape.StyledPanel)
+        self.testItemFrm.setFrameShadow(QFrame.Shadow.Raised)
+
+        self.verticalLayout_3.addWidget(self.testItemFrm)
+
         self.refreshFrm = QFrame(self.scrollAreaWidgetContents)
         self.refreshFrm.setObjectName(u"refreshFrm")
         sizePolicy6.setHeightForWidth(self.refreshFrm.sizePolicy().hasHeightForWidth())
@@ -842,9 +854,6 @@ class Ui_MainWindow(object):
 
         self.channelFrm = QFrame(self.scrollAreaWidgetContents)
         self.channelFrm.setObjectName(u"channelFrm")
-        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        sizePolicy9.setHorizontalStretch(1)
-        sizePolicy9.setVerticalStretch(0)
         sizePolicy9.setHeightForWidth(self.channelFrm.sizePolicy().hasHeightForWidth())
         self.channelFrm.setSizePolicy(sizePolicy9)
         self.channelFrm.setFrameShape(QFrame.Shape.StyledPanel)
@@ -897,6 +906,7 @@ class Ui_MainWindow(object):
         self.filterfFm2.raise_()
         self.contactFrm.raise_()
         self.frame.raise_()
+        self.testItemFrm.raise_()
         self.frame_3.raise_()
 
         self.verticalLayout.addWidget(self.scrollArea)

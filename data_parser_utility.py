@@ -569,7 +569,7 @@ class BaliSensorDataParser(RawSensorDataParser):
                 output_arr.append(arr)
             output_arr = np.column_stack(output_arr)
             self.logger.debug(f"output_arr {output_arr}")
-            print(f"output_arr:\n {output_arr}")
+            # print(f"output_arr:\n {output_arr}")
             df = pd.DataFrame(output_arr)
             df.columns = sensor_param[_sensor]
             return ErrorCode.ERR_NO_ERROR, df

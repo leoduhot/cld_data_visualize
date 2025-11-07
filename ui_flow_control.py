@@ -226,7 +226,8 @@ class FlowControl:
             self.file_path = _file_path
             # disable first to avoid on_change event
             self.paramEntry.state_configure(_comb={"project": 0, "sensor_type": 0, "data_type": 0, "convert_type": 0},
-                                            _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0})
+                                            _entry={"data_rate": 0, "data_drop_start": 0, "data_drop_end": 0,
+                                                    "gain": 0, "plot_name": 0})
             self.paramEntry.clear()
             self.sensor_type = None
             self.data_type = None
@@ -326,7 +327,7 @@ class FlowControl:
         self.set_default_values(self.sensor_type.strip().lower())
         self.paramEntry.state_configure(_comb={"data_type": 1},
                                         _entry={"data_rate": 1, "data_drop_start": 1, "data_drop_end": 1,
-                                                "gain": 1})
+                                                "gain": 1, "plot_name": 1})
         if val.lower() == "emg":
             self.paramEntry.state_configure(_comb={"convert_type": 1})
         else:

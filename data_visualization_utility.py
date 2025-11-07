@@ -1748,7 +1748,7 @@ def DataVisualize(params: VisualizeParameters, **kwargs):
     if params.data_type.lower() == "summary data":
         return SummaryDataVisualization(**kwargs)
     else:
-        if params.project.lower() ["gen2"]:
+        if params.project.lower() in ["gen2"]:
             return GEN2DataVisualization(**kwargs)
         elif params.project.lower() in ["bali", "malibu2"]:
             return BaliDataVisualization(**kwargs)

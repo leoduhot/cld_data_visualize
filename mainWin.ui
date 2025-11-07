@@ -92,7 +92,7 @@
          <x>0</x>
          <y>0</y>
          <width>1000</width>
-         <height>698</height>
+         <height>678</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -1402,22 +1402,6 @@ e.g. (?i)emg.*ch03.*noise: this regexp will search items which:
          </widget>
         </item>
         <item>
-         <widget class="QFrame" name="testItemFrm">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>1</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Shape::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Raised</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QFrame" name="refreshFrm">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1548,7 +1532,6 @@ e.g. (?i)emg.*ch03.*noise: this regexp will search items which:
        <zorder>filterfFm2</zorder>
        <zorder>contactFrm</zorder>
        <zorder>frame</zorder>
-       <zorder>testItemFrm</zorder>
        <zorder>frame_3</zorder>
       </widget>
      </widget>

@@ -600,6 +600,7 @@ class FlowControl:
                 return
             columns = new_col if len(new_col) else columns
         self.channelsSelector.show_channels(columns, self.data_type)
+        # QTimer.singleShot(2, self.scroll_to_bottom)
 
     def get_parameters(self) -> bool:
         self.project = self.get_parameter_project()
@@ -655,3 +656,5 @@ class FlowControl:
         self.logger.debug(f"selected channels: {self.dv_params.selected_columns}")
         self.dv_params.project = self.get_parameter_project()
 
+    def scroll_to_bottom(self):
+        self.ui.scrollArea.verticalScrollBar().setValue(self.ui.scrollArea.verticalScrollBar().maximum())

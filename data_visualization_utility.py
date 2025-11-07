@@ -1278,6 +1278,12 @@ class BaliDataVisualization(DataVisualization):
         return self.parameters.df_data
 
 
+class TychoDataVisualization(BaliDataVisualization):
+    def convert_emg_adc_data(self) -> pd.DataFrame:
+        self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
+        return self.parameters.df_data
+
+
 class GEN2DataVisualization(DataVisualization):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1742,10 +1748,12 @@ def DataVisualize(params: VisualizeParameters, **kwargs):
     if params.data_type.lower() == "summary data":
         return SummaryDataVisualization(**kwargs)
     else:
-        if params.project.lower() == "gen2":
+        if params.project.lower() ["gen2"]:
             return GEN2DataVisualization(**kwargs)
-        elif params.project.lower() in ["bali", "tycho", "malibu2"]:
+        elif params.project.lower() in ["bali", "malibu2"]:
             return BaliDataVisualization(**kwargs)
+        elif params.project.lower() in ["tycho"]:
+            return TychoDataVisualization(**kwargs)
         else:
             return MalibuDataVisualization(**kwargs)
 

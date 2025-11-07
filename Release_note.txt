@@ -1,3 +1,11 @@
+v0.5.321
+1. add individual visualize class for tycho
+
+v0.5.320
+1. fix error when data is invalid
+2. dynamic set log level according to min version
+3. update ui flow
+
 v0.5.312
 1. update visualize functions for malibu2
 2. add manual search peak and emg signal convert options

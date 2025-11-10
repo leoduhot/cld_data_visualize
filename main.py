@@ -6,7 +6,7 @@ from my_logger import *
 import sys
 import os
 
-VERSION = "v0.5.321"
+VERSION = "v0.5.322"
 tag = "2025/11/07 12:00"
 
 

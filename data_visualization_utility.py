@@ -1273,7 +1273,8 @@ class BaliDataVisualization(DataVisualization):
             return ErrorCode.ERR_BAD_UNKNOWN
 
     def convert_emg_adc_data(self) -> pd.DataFrame:
-        self.parameters.df_data = (self.parameters.df_data.sub(4096)).div(4096)
+        if self.parameters.data_type == "Raw Data":
+            self.parameters.df_data = (self.parameters.df_data.sub(4096)).div(4096)
         self.parameters.df_data = self.parameters.df_data.div(self.parameters.gain)
         return self.parameters.df_data
 
